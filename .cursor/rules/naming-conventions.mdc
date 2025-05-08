@@ -11,11 +11,33 @@ alwaysApply: true
 - **No shortnames**: Use descriptive, explicit names. Avoid abbreviations or single-letter names unless they are universally understood (e.g., `id`).
 - **Prefix everything with the module**: All files, folders, and components should begin with the relevant module name to ensure clarity and avoid naming collisions (e.g., `user-profile-controller.ts`, `auth-login-route.ts`).
 
+## Database Field Naming
+
+- **All database table and column names must use snake_case** (e.g., `user_id`, `created_at`, `display_name`).
+- **Do not use camelCase or kebab-case for database field names.**
+- **In JavaScript/TypeScript models and code, use camelCase for property names** (e.g., `userId`, `createdAt`, `displayName`).
+- Use Sequelize's `field` option to map between snake_case DB columns and camelCase model properties.
+
+### Example
+
+| In Database (GOOD) | In JS/TS Model (GOOD) |
+|--------------------|-----------------------|
+| user_id            | userId                |
+| created_at         | createdAt             |
+| display_name       | displayName           |
+
+## Migration File Naming & Syntax
+
+- **Migration files must use kebab-case and include a timestamp prefix** in the format `YYYYMMDDHHMMSS-module-description-migration.ts` (e.g., `20240607153000-user-model-migration.ts`).
+- **Migration files must use CommonJS syntax** (`require`/`module.exports`). Do **not** use ES module syntax (`import`/`export`) in migration files, as Sequelize CLI requires CommonJS.
+- This ensures proper ordering, clarity, and compatibility with Sequelize CLI.
+
 ## Examples
 
 - `user-profile-controller.ts` (GOOD)
 - `auth-login-route.ts` (GOOD)
 - `order-history-service.ts` (GOOD)
+- `20240607153000-user-model-migration.ts` (GOOD)
 
 ## Anti-Patterns
 
@@ -23,9 +45,15 @@ alwaysApply: true
 - `usr-ctrl.ts` (BAD: shortname and not descriptive)
 - `profile.ts` (BAD: not prefixed with module)
 - `UserProfileController.ts` (BAD: not kebab-case)
+- `user-migration.ts` (BAD: missing timestamp)
+- `import ... from ...` in migration files (BAD: must use CommonJS)
+- `userId` as a DB column (BAD: should be `user_id`)
 
 ## Rationale
 
-- Kebab-case improves readability and consistency across the codebase.
+- Kebab-case improves readability and consistency across the codebase for files and folders.
+- Snake_case is the standard for SQL databases and improves compatibility and clarity for DB field names.
 - Explicit, module-prefixed names make it easier to locate and understand files, especially in large projects.
 - Avoiding shortnames reduces ambiguity and improves maintainability.
+- Timestamped migration files ensure correct execution order and traceability.
+- CommonJS syntax in migrations ensures compatibility with Sequelize CLI.

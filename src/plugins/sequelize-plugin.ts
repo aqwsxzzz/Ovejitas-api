@@ -1,16 +1,18 @@
 import fp from "fastify-plugin";
-import { Sequelize } from "sequelize";
+import { Options, Sequelize } from "sequelize";
 import { FastifyInstance } from "fastify";
-import sequelizeConfig from "../config/sequelize-config";
+import sequelizeConfig = require("../config/sequelize-config");
 
-// Type augmentation for FastifyInstance
+const env = (process.env.NODE_ENV || "development") as keyof typeof sequelizeConfig;
+const envConfig = sequelizeConfig[env] as Options;
+
 declare module "fastify" {
 	interface FastifyInstance {
 		sequelize: Sequelize;
 	}
 }
 
-const sequelize = new Sequelize(sequelizeConfig);
+const sequelize = new Sequelize(envConfig);
 
 export default fp(async (fastify: FastifyInstance) => {
 	try {

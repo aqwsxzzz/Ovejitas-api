@@ -1,0 +1,23 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+As a developer, I want to create a user model and migration with validated fields so that user data is stored securely and consistently in the database.
+
+Acceptance Criteria:
+- User model and migration exist in the correct folders (`src/models/`, `src/migrations/`)
+- All fields are present:
+  - `displayName` (string, required)
+  - `email` (string, required, unique, valid email format)
+  - `password` (string, required, hashed)
+  - `createdAt` (date, auto-generated)
+  - `updatedAt` (date, auto-generated)
+  - `isActive` (boolean, default: true)
+  - `role` (string, e.g., 'user', 'admin', optional)
+- `email` is unique and validated for proper format
+- `password` is required and stored as a hash (not plain text)
+- Timestamps (`createdAt`, `updatedAt`) are automatically managed
+- Zod schema exists for user creation and update, validating all fields
+- Migration creates the correct table and constraints
+- Model and validation are covered by at least one test

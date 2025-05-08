@@ -13,12 +13,13 @@ alwaysApply: true
 /
 ├── src/
 │   ├── models/         # Sequelize models
-│   ├── migrations/     # Sequelize migrations
+│   ├── migrations/     # Sequelize migrations (CommonJS, kebab-case, timestamped)
 │   ├── seeders/        # Sequelize seeders (optional)
 │   ├── routes/         # Fastify route definitions
 │   ├── controllers/    # Route handlers/business logic
 │   ├── plugins/        # Fastify plugins (e.g., db connection)
 │   ├── config/         # Sequelize and app config
+│   ├── schemas/        # Zod or other validation schemas
 │   └── index.ts        # Fastify app entry point
 │
 ├── .cursor/            # Project metadata, rules, and user stories
@@ -37,16 +38,23 @@ alwaysApply: true
 
 ## Rules
 
-- All source code (models, routes, controllers, plugins, config, etc.) must be placed inside `src/`.
+- All source code (models, routes, controllers, plugins, config, schemas, etc.) must be placed inside `src/`.
 - Only configuration, build, environment files, and the `.cursor` folder are allowed at the root level.
-- No business logic or application code should exist outside `src/`.
+- No business logic, application code, or migrations should exist outside `src/`.
 - Use subfolders in `src/` for clear separation of concerns:
   - `models/` for Sequelize models
-  - `migrations/` for Sequelize migrations
+  - `migrations/` for Sequelize migrations (**must use CommonJS syntax and be named in kebab-case with a timestamp and module prefix**)
   - `seeders/` for optional seed data
   - `routes/` for Fastify route definitions
   - `controllers/` for business logic
   - `plugins/` for Fastify plugins (e.g., DB connection)
   - `config/` for configuration files (e.g., Sequelize config)
+  - `schemas/` for Zod or other validation schemas (do not place validation schemas in `models/`)
 - The entry point (`index.ts`) must be in `src/`.
 - The `.cursor/` folder is reserved for project metadata, rules, and user stories. Do not place application code here.
+
+## Migration File Requirements
+
+- All migration files must be placed in `src/migrations/`.
+- Migration files must use CommonJS (`require`/`module.exports`), not ES module syntax.
+- Migration files must be named in kebab-case, with a timestamp prefix and module prefix (e.g., `20240607153000-user-model-migration.ts`).
