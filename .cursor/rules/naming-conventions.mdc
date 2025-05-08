@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor Rule: Naming Conventions
+
+## General Principles
+
+- **Prefer kebab-case** for all file and folder names (e.g., `user-profile-controller.ts`).
+- **No shortnames**: Use descriptive, explicit names. Avoid abbreviations or single-letter names unless they are universally understood (e.g., `id`).
+- **Prefix everything with the module**: All files, folders, and components should begin with the relevant module name to ensure clarity and avoid naming collisions (e.g., `user-profile-controller.ts`, `auth-login-route.ts`).
+
+## Examples
+
+- `user-profile-controller.ts` (GOOD)
+- `auth-login-route.ts` (GOOD)
+- `order-history-service.ts` (GOOD)
+
+## Anti-Patterns
+
+- `controller.ts` (BAD: not prefixed with module)
+- `usr-ctrl.ts` (BAD: shortname and not descriptive)
+- `profile.ts` (BAD: not prefixed with module)
+- `UserProfileController.ts` (BAD: not kebab-case)
+
+## Rationale
+
+- Kebab-case improves readability and consistency across the codebase.
+- Explicit, module-prefixed names make it easier to locate and understand files, especially in large projects.
+- Avoiding shortnames reduces ambiguity and improves maintainability.

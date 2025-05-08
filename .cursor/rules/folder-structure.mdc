@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor Rule: Project Folder Structure
+
+**All application code and logic must reside inside the `src/` directory. The root should only contain configuration, build, environment files, and the `.cursor` folder for project metadata and rules.**
+
+## Root Directory
+
+```plaintext
+/
+├── src/
+│   ├── models/         # Sequelize models
+│   ├── migrations/     # Sequelize migrations
+│   ├── seeders/        # Sequelize seeders (optional)
+│   ├── routes/         # Fastify route definitions
+│   ├── controllers/    # Route handlers/business logic
+│   ├── plugins/        # Fastify plugins (e.g., db connection)
+│   ├── config/         # Sequelize and app config
+│   └── index.ts        # Fastify app entry point
+│
+├── .cursor/            # Project metadata, rules, and user stories
+│   ├── rules/          # Cursor rules (project conventions)
+│   └── user-stories/   # User stories for the project
+│
+├── .env                # Environment variables
+├── .gitignore
+├── docker-compose.yml
+├── Dockerfile
+├── nodemon.json
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## Rules
+
+- All source code (models, routes, controllers, plugins, config, etc.) must be placed inside `src/`.
+- Only configuration, build, environment files, and the `.cursor` folder are allowed at the root level.
+- No business logic or application code should exist outside `src/`.
+- Use subfolders in `src/` for clear separation of concerns:
+  - `models/` for Sequelize models
+  - `migrations/` for Sequelize migrations
+  - `seeders/` for optional seed data
+  - `routes/` for Fastify route definitions
+  - `controllers/` for business logic
+  - `plugins/` for Fastify plugins (e.g., DB connection)
+  - `config/` for configuration files (e.g., Sequelize config)
+- The entry point (`index.ts`) must be in `src/`.
+- The `.cursor/` folder is reserved for project metadata, rules, and user stories. Do not place application code here.

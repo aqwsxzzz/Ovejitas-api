@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+As a developer, I want the Sequelize setup to be production-ready and avoid using `sync`, so that all database schema changes are managed safely and reproducibly through migrations.
+
+Acceptance Criteria:
+- Sequelize is initialized without using `sequelize.sync()` in any environment.
+- All database schema changes (tables, columns, indexes, etc.) are performed exclusively via Sequelize migrations.
+- There is a clear process for running migrations in development, staging, and production.
+- Documentation exists for how to create, run, and revert migrations.
+- The setup is compatible with CI/CD pipelines and does not require manual intervention for schema updates.
+- No business logic or schema changes are performed outside of migrations.

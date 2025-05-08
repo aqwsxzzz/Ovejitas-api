@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+    app:
+        build:
+            context: .
+            target: dev
+        container_name: fastify-app
+        volumes:
+            - ./:/app
+            - /app/node_modules
+            - /app/build
+        ports:
+            - "8080:8080"
+        environment:
+            - NODE_ENV=development
+            - DB_NAME=sheep
+            - DB_USER=postgres
+            - DB_PASS=postgres
+            - DB_HOST=postgres
+        depends_on:
+            - postgres
+        command: npx nodemon --config nodemon.json --legacy-watch
+
+    postgres:
+        image: postgres:14-alpine
+        container_name: fastify-postgres
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+            - POSTGRES_DB=sheep
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+
+volumes:
+    postgres-data:

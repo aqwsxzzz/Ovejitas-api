@@ -1,0 +1,34 @@
+# Node modules
+node_modules/
+
+# Build output
+build/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Local data
+*.local
+
+# Mac system files
+.DS_Store
+
+# Bruno API client workspace
+little-sheep/*.bru
+
+# Docker volumes (if any local files are created)
+postgres-data/
+
+# Ignore output from test/coverage tools (if added later)
+coverage/
+
+# Ignore editor/project files
+.vscode/
+.idea/ 

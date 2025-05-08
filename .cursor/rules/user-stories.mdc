@@ -1,0 +1,50 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Rule: User Stories
+
+User stories are short, simple descriptions of a feature told from the perspective of the person who desires the new capability, usually a user or customer of the system.
+
+## User Story Format
+
+**All user stories must be created as individual files inside the `.cursor/user-stories` directory.**
+
+Each user story should follow this template:
+
+```
+As a <type of user>, I want <some goal> so that <some reason>.
+```
+
+### Example
+
+```
+As a registered user, I want to reset my password so that I can regain access if I forget it.
+```
+
+## Acceptance Criteria
+
+Each user story must include clear acceptance criteria that define when the story is complete. Use bullet points or a checklist.
+
+### Example
+
+-   User can request a password reset link via email
+-   User receives a reset link that expires in 1 hour
+-   User can set a new password using the link
+-   User is notified of success or failure
+
+## Best Practices
+
+-   **Create each user story as a separate file in `.cursor/user-stories`**
+-   Focus on the user's needs and value
+-   Keep stories small and actionable
+-   Avoid technical details in the story itself (put those in tasks or subtasks)
+-   Write acceptance criteria that are clear, testable, and unambiguous
+-   Collaborate with stakeholders to refine stories
+
+## Anti-Patterns
+
+-   Avoid stories that are too large (split them if needed)
+-   Avoid vague acceptance criteria
+-   Avoid technical implementation details in the story description
