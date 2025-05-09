@@ -1,15 +1,15 @@
 import Fastify, { FastifyInstance } from "fastify";
 import sequelizePlugin from "./plugins/sequelize-plugin";
+import responseWrapperPlugin from "./plugins/response-wrapper-plugin";
+import userRoutes from "./routes/v1/user-route";
 
 const server: FastifyInstance = Fastify({
 	logger: true,
 });
 
 server.register(sequelizePlugin);
-
-server.get("/ping", async (request, reply) => {
-	return { status: "ok", message: "pong 342" };
-});
+server.register(responseWrapperPlugin);
+server.register(userRoutes, { prefix: "/v1" });
 
 const start = async () => {
 	try {

@@ -1,0 +1,77 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Rule: bruno
+
+**Purpose:**
+Automate the creation of Bruno API endpoint files for a specified model, based on the controller methods, to be used with the Bruno API client.
+
+## Rule Details
+
+- When the user specifies a model (e.g., `user`), do the following:
+  1. **Read the controller** for that model (e.g., `src/controllers/v1/user-controller.ts`).
+  2. **Identify all CRUD (and other) endpoints** defined in the controller.
+  3. **Generate Bruno API endpoint files** (e.g., `.bru` files) for each endpoint, matching the HTTP method and route as defined in the Fastify route file.
+  4. **Create a subfolder** inside `/little-sheep` named after the model (e.g., `/little-sheep/user/`).
+  5. **Place all generated Bruno endpoint files** for that model inside this subfolder.
+- The generated files must be compatible with [Bruno's API collection format](mdc:https:/www.usebruno.com).
+- **Each .bru file must start with a meta block** (with `name`, `type`, and `seq` fields) as required by Bruno.
+- **Each .bru file must use Bruno's block format, not JSON.**
+  - Example for GET:
+    ```
+    meta {
+      name: Get User
+      type: http
+      seq: 2
+    }
+
+    get {
+      url: http://localhost:8080/v1/users/1
+      body: none
+      auth: none
+    }
+    ```
+  - Example for non-GET (POST/PUT/PATCH/DELETE with body):
+    ```
+    meta {
+      name: Create User
+      type: http
+      seq: 1
+    }
+
+    post {
+      url: http://localhost:8080/v1/users
+      body: json
+      auth: none
+    }
+
+    body:json {
+      {
+        "displayName": "John Doe",
+        "email": "john@example.com",
+        "password": "password123",
+        "role": "user"
+      }
+    }
+    ```
+  - Use the appropriate HTTP verb block (`get`, `post`, `put`, `delete`, etc.)
+  - For non-GET requests with a body, use `body: json` in the verb block and a separate `body:json { ... }` block for the payload.
+  - Include `url`, `body`, and `auth` fields as needed
+- The endpoints must match the actual API routes and HTTP methods as defined in your Fastify routes.
+- The rule supports any model/controller following the project conventions.
+
+## Example Workflow
+
+- User says:
+  > Generate Bruno endpoints for the `user` model.
+- The rule will:
+  - Read `src/controllers/v1/user-controller.ts`
+  - Create `/little-sheep/user/`
+  - Generate `.bru` files for each CRUD endpoint (e.g., `create-user.bru`, `get-user.bru`, etc.) inside `/little-sheep/user/`
+
+## Notes
+- This rule is intended to keep Bruno API collections in sync with your backend controllers and routes.
+- Only generate endpoints for controllers and routes that exist and follow the project's naming conventions.
+- If a controller or route is missing, notify the user.

@@ -1,0 +1,20 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:8080/v1/users/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "displayName": "Jane Doe",
+    "email": "jane@example.com",
+    "password": "newpassword123",
+    "role": "admin"
+  }
+} 

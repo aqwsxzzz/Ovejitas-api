@@ -1,0 +1,148 @@
+---
+description: This rule enforces conventions for Fastify route file structure, validation schema usage, and response serialization schemas. It provides required patterns and examples for defining routes, ensuring all new route modules are consistent, maintainable, and secure. Reference this rule when creating or updating any route files.
+globs:
+alwaysApply: false
+---
+
+---
+
+description: >
+This rule enforces conventions for Fastify route file structure, validation schema usage, and response serialization schemas. It provides required patterns and examples for defining routes, ensuring all new route modules are consistent, maintainable, and secure. Reference this rule when creating or updating any route files.
+
+---
+
+# Cursor Rule: Route Definition, Validation, and Serialization
+
+## Route File Structure and Conventions
+
+-   **All route files must be placed in `src/routes/` and organized by API version and module.**
+    -   Example: `src/routes/v1/user-route.ts`
+-   **Route files must be named using the pattern: `<module>-route.ts`** (e.g., `user-route.ts`, `auth-route.ts`).
+-   **Route files must export a default async function that registers all routes for the module.**
+-   **Route files must not contain business logic.** They should only define endpoints and wire up controllers, validation, and serialization.
+
+## Validation Schema Usage
+
+-   **All request validation schemas must be imported from `src/schemas/`.**
+-   **Validation schemas must be defined in files named `<module>-schema.ts`** (e.g., `user-schema.ts`).
+-   **Schemas must use JSON Schema format.**
+-   **Schemas must be referenced in the route options under the `schema` property.**
+-   **Do not define validation schemas inline in route files.**
+
+## Serialization Schema Usage
+
+-   **All response serialization schemas must be imported from `src/serializers/`.**
+-   **Serialization schemas must be defined in files named `<module>-serializer.ts`** (e.g., `user-serializer.ts`).
+-   **Schemas must use JSON Schema format.**
+-   **Schemas must be referenced in the route options under the `schema.response` property.**
+-   **Do not define serialization schemas inline in route files.**
+
+## Example: User Route
+
+### Route File (`src/routes/v1/user-route.ts`)
+
+```typescript
+import { FastifyInstance } from "fastify";
+import * as userController from "../../controllers/v1/user-controller";
+import { userCreateSchema, userUpdateSchema } from "../../schemas/user-schema";
+import { userResponseSchema } from "../../serializers/user-serializer";
+
+export default async function userRoutes(fastify: FastifyInstance) {
+	fastify.post(
+		"/users",
+		{
+			schema: { body: userCreateSchema, response: { 201: userResponseSchema } },
+		},
+		userController.createUser
+	);
+
+	fastify.get(
+		"/users",
+		{
+			schema: { response: { 200: { type: "array", items: userResponseSchema } } },
+		},
+		userController.listUsers
+	);
+
+	fastify.get(
+		"/users/:id",
+		{
+			schema: { response: { 200: userResponseSchema } },
+		},
+		userController.getUser
+	);
+
+	fastify.put(
+		"/users/:id",
+		{
+			schema: { body: userUpdateSchema, response: { 200: userResponseSchema } },
+		},
+		userController.updateUser
+	);
+
+	fastify.delete("/users/:id", userController.deleteUser);
+}
+```
+
+### Validation Schema File (`src/schemas/user-schema.ts`)
+
+```typescript
+import { UserRole } from "../models/user-model";
+
+export const userCreateSchema = {
+	type: "object",
+	required: ["displayName", "email", "password"],
+	properties: {
+		displayName: { type: "string", minLength: 1 },
+		email: { type: "string", format: "email" },
+		password: { type: "string", minLength: 8 },
+		isActive: { type: "boolean" },
+		role: { type: "string", enum: Object.values(UserRole) },
+	},
+	additionalProperties: false,
+};
+
+export const userUpdateSchema = {
+	type: "object",
+	properties: {
+		displayName: { type: "string", minLength: 1 },
+		email: { type: "string", format: "email" },
+		password: { type: "string", minLength: 8 },
+		isActive: { type: "boolean" },
+		role: { type: "string", enum: Object.values(UserRole) },
+	},
+	additionalProperties: false,
+};
+```
+
+### Serialization Schema File (`src/serializers/user-serializer.ts`)
+
+```typescript
+import { UserRole } from "../models/user-model";
+
+export const userResponseSchema = {
+	type: "object",
+	properties: {
+		id: { type: "number" },
+		displayName: { type: "string" },
+		email: { type: "string" },
+		isActive: { type: "boolean" },
+		role: { type: "string", enum: Object.values(UserRole) },
+		createdAt: { type: "string", format: "date-time" },
+		updatedAt: { type: "string", format: "date-time" },
+	},
+	required: ["id", "displayName", "email", "isActive", "role", "createdAt", "updatedAt"],
+	additionalProperties: false,
+};
+```
+
+## Additional Rules
+
+-   **Do not mix validation and serialization schemas.** Validation schemas are for input, serialization schemas are for output.
+-   **Always use explicit imports for schemas.** Do not use dynamic imports or require.
+-   **All schemas must be strongly typed and validated.**
+-   **All endpoints must specify both request validation and response serialization schemas where applicable.**
+
+---
+
+This rule ensures all routes are consistent, maintainable, and secure, and that validation and serialization are handled in a standardized way across your project.

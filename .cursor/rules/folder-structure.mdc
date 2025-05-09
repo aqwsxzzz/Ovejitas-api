@@ -19,7 +19,8 @@ alwaysApply: true
 │   ├── controllers/    # Route handlers/business logic
 │   ├── plugins/        # Fastify plugins (e.g., db connection)
 │   ├── config/         # Sequelize and app config
-│   ├── schemas/        # Zod or other validation schemas
+│   ├── schemas/        # JSON Schema or other validation schemas
+│   ├── serializers/    # Response serialization logic (e.g., DTOs, output shaping)
 │   └── index.ts        # Fastify app entry point
 │
 ├── .cursor/            # Project metadata, rules, and user stories
@@ -38,7 +39,7 @@ alwaysApply: true
 
 ## Rules
 
-- All source code (models, routes, controllers, plugins, config, schemas, etc.) must be placed inside `src/`.
+- All source code (models, routes, controllers, plugins, config, schemas, serializers, etc.) must be placed inside `src/`.
 - Only configuration, build, environment files, and the `.cursor` folder are allowed at the root level.
 - No business logic, application code, or migrations should exist outside `src/`.
 - Use subfolders in `src/` for clear separation of concerns:
@@ -49,7 +50,8 @@ alwaysApply: true
   - `controllers/` for business logic
   - `plugins/` for Fastify plugins (e.g., DB connection)
   - `config/` for configuration files (e.g., Sequelize config)
-  - `schemas/` for Zod or other validation schemas (do not place validation schemas in `models/`)
+  - `schemas/` for JSON Schema or other validation schemas (do not place validation schemas in `models/`)
+  - `serializers/` for response serialization logic (e.g., DTOs, output shaping)
 - The entry point (`index.ts`) must be in `src/`.
 - The `.cursor/` folder is reserved for project metadata, rules, and user stories. Do not place application code here.
 
