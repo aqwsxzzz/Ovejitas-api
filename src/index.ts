@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance } from "fastify";
 import sequelizePlugin from "./plugins/sequelize-plugin";
 import responseWrapperPlugin from "./plugins/response-wrapper-plugin";
 import userRoutes from "./routes/v1/user-route";
+import authRoutes from "./routes/v1/auth-route";
 
 const server: FastifyInstance = Fastify({
 	logger: true,
@@ -10,6 +11,7 @@ const server: FastifyInstance = Fastify({
 server.register(sequelizePlugin);
 server.register(responseWrapperPlugin);
 server.register(userRoutes, { prefix: "/v1" });
+server.register(authRoutes, { prefix: "/v1" });
 
 const start = async () => {
 	try {

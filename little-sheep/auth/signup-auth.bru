@@ -1,11 +1,11 @@
 meta {
-  name: Create User
+  name: Sign Up
   type: http
   seq: 1
 }
 
 post {
-  url: http://localhost:8080/v1/users
+  url: http://localhost:8080/v1/auth/signup
   body: json
   auth: none
 }
@@ -14,7 +14,6 @@ body:json {
   {
     "displayName": "John Doe",
     "email": "john@example.com",
-    "password": "password123",
-    "role": "user"
+    "password": "Password1"
   }
-}
+} 
