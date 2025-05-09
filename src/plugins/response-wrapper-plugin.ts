@@ -2,9 +2,7 @@ import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
 
 const responseWrapperPlugin: FastifyPluginAsync = async (fastify) => {
-	console.log("a");
 	fastify.addHook("onSend", async (request, reply, payload) => {
-		console.log("b");
 		if (reply.getHeader("content-type")?.toString().includes("application/json")) {
 			let data;
 			try {

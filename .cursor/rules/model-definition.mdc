@@ -1,0 +1,108 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Rule: Sequelize Model Definition
+
+## Purpose
+
+All Sequelize models must follow a consistent structure to ensure type safety, maintainability, and alignment with project conventions. This rule describes how to define models, using `user-model.ts` as the reference example.
+
+## Model Definition Requirements
+
+-   **Attributes Interface:**
+    -   Define a `UserAttributes` (or equivalent) interface listing all model fields, including types and optional fields for timestamps.
+-   **Creation Attributes:**
+    -   Use `Pick` to define a `UserCreationAttributes` type for only the fields required at creation (e.g., `displayName`, `email`, `password`).
+-   **Model Class:**
+    -   Extend `Model<Attributes, CreationAttributes>`.
+    -   Do **not** declare public class fields for model attributes (to avoid shadowing Sequelize's internals).
+    -   Implement TypeScript getters for each attribute to provide type safety and autocompletion (e.g., `get displayName(): string { ... }`).
+-   **Model Initialization:**
+    -   Use `Model.init` to define all fields, their types, nullability, and DB column mapping (`field`).
+    -   Use snake_case for DB fields and camelCase for JS/TS properties.
+    -   Set default values and validation as needed.
+-   **Enums:**
+    -   Use TypeScript enums for fields like `role` and map them in the model definition.
+-   **Timestamps:**
+    -   Include `createdAt` and `updatedAt` fields, with appropriate types and default values.
+-   **No Implements:**
+    -   Do **not** use `implements Attributes` on the model class; rely on generics and getters for type safety.
+
+## Example
+
+```ts
+import { DataTypes, Model } from "sequelize";
+import { Sequelize } from "sequelize";
+
+export enum UserRole {
+	USER = "user",
+	ADMIN = "admin",
+}
+
+interface UserAttributes {
+	id: number;
+	displayName: string;
+	email: string;
+	password: string;
+	isActive: boolean;
+	role: UserRole;
+	createdAt?: Date;
+	updatedAt?: Date;
+}
+
+type UserCreationAttributes = Pick<UserAttributes, "displayName" | "email" | "password">;
+
+export class User extends Model<UserAttributes, UserCreationAttributes> {
+	get id(): number {
+		return this.getDataValue("id");
+	}
+	get displayName(): string {
+		return this.getDataValue("displayName");
+	}
+	get email(): string {
+		return this.getDataValue("email");
+	}
+	get password(): string {
+		return this.getDataValue("password");
+	}
+	get isActive(): boolean {
+		return this.getDataValue("isActive");
+	}
+	get role(): UserRole {
+		return this.getDataValue("role");
+	}
+	get createdAt(): Date | undefined {
+		return this.getDataValue("createdAt");
+	}
+	get updatedAt(): Date | undefined {
+		return this.getDataValue("updatedAt");
+	}
+}
+
+User.init(
+	{
+		id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true, field: "id" },
+		displayName: { type: DataTypes.STRING, allowNull: false, field: "display_name" },
+		email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true }, field: "email" },
+		password: { type: DataTypes.STRING, allowNull: false, field: "password" },
+		isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: "is_active" },
+		role: { type: DataTypes.ENUM(...Object.values(UserRole)), allowNull: false, defaultValue: UserRole.USER, field: "role" },
+		createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, field: "created_at" },
+		updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, field: "updated_at" },
+	},
+	{
+		sequelize,
+		tableName: "users",
+		modelName: "User",
+		timestamps: true,
+	}
+);
+```
+
+## Rationale
+
+-   Prevents attribute shadowing and runtime bugs.
+-   Ensures type safety and autocompletion in TypeScript.
+-   Keeps model definitions clear, explicit, and maintainable.

@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { User } from "../../models/user-model";
 import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
@@ -15,17 +15,7 @@ export const signUp = async (request: FastifyRequest, reply: FastifyReply) => {
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
 		const user = await User.create({ displayName, email, password: hashedPassword });
-		// const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1d" });
-		reply
-			// .setCookie("jwt", token, {
-			// 	httpOnly: true,
-			// 	path: "/",
-			// 	sameSite: true,
-			// 	secure: process.env.NODE_ENV === "production",
-			// 	maxAge: 60 * 60 * 24, // 1 day
-			// })
-			// .code(201)
-			.send({ user: { id: user.id, displayName: user.displayName, email: user.email, role: user.role } });
+		reply.send(user);
 	} catch (error) {
 		reply.code(500).send({ message: "Internal server error" });
 	}
@@ -42,31 +32,43 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!isMatch) {
 			return reply.code(401).send({ message: "Invalid email or password" });
 		}
-		// const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1d" });
+		const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1d" });
 		reply
-			// .setCookie("jwt", token, {
-			// 	httpOnly: true,
-			// 	path: "/",
-			// 	sameSite: true,
-			// 	secure: process.env.NODE_ENV === "production",
-			// 	maxAge: 60 * 60 * 24, // 1 day
-			// })
-			.send({ user: { id: user.id, displayName: user.displayName, email: user.email, role: user.role } });
+			.setCookie("jwt", token, {
+				httpOnly: true,
+				path: "/",
+				sameSite: true,
+				secure: process.env.NODE_ENV === "production",
+				maxAge: 60 * 60 * 24, // 1 day
+			})
+			.send(user);
 	} catch (error) {
 		reply.code(500).send({ message: "Internal server error" });
 	}
 };
 
 export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
-	// reply.clearCookie("jwt", { path: "/" });
+	reply.clearCookie("jwt", { path: "/" });
 	reply.send({ message: "Logged out" });
 };
 
 export const getCurrentUser = async (request: FastifyRequest, reply: FastifyReply) => {
-	// Passport will attach user to request if authenticated
-	const user = (request as any).user;
-	if (!user) {
-		return reply.code(401).send({ message: "Unauthorized" });
+	try {
+		const token = request.cookies.jwt;
+		console.log(request.user);
+		if (!token) {
+			return reply.code(401).send({ message: "Unauthorized" });
+		}
+
+		const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
+		const user = await User.findByPk(decoded.id);
+
+		if (!user) {
+			return reply.code(404).send({ message: "User not found" });
+		}
+
+		reply.send({ user });
+	} catch (error) {
+		reply.code(401).send({ message: "Invalid or expired token" });
 	}
-	reply.send({ user });
 };

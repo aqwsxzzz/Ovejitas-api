@@ -1,0 +1,93 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+# Cursor Rule: JSON Schema for Validation and Serialization
+
+## Purpose
+
+All request validation and response serialization for Fastify routes **must** use JSON Schema objects, defined in the `src/schemas/` and `src/serializers/` directories, respectively. This ensures consistent, secure, and maintainable validation and output shaping across the codebase.
+
+## Requirements
+
+-   **Location:**
+    -   All request JSON Schemas must be placed in `src/schemas/`.
+    -   All response serialization schemas must be placed in `src/serializers/`.
+-   **Naming:**
+    -   Schema and serializer files must be named with the module prefix and purpose, using kebab-case (e.g., `user-schema.ts`, `user-serializer.ts`).
+-   **Export:**
+    -   Each schema/serializer must be exported as a named constant (e.g., `userCreateSchema`, `userResponseSchema`).
+-   **Structure:**
+    -   Schemas and serializers must use the JSON Schema standard, specifying `type`, `required`, `properties`, and `additionalProperties` as appropriate.
+-   **Enum Usage:**
+    -   For enums, reference the relevant model enum (e.g., `enum: Object.values(UserRole)`).
+-   **No Validation in Models:**
+    -   Do not place validation logic in Sequelize models. All validation must be handled by JSON Schemas.
+
+## Example: Request Schema
+
+```ts
+// src/schemas/user-schema.ts
+import { UserRole } from "../models/user-model";
+
+export const userCreateSchema = {
+	type: "object",
+	required: ["displayName", "email", "password"],
+	properties: {
+		displayName: { type: "string", minLength: 1 },
+		email: { type: "string", format: "email" },
+		password: { type: "string", minLength: 8 },
+		isActive: { type: "boolean" },
+		role: { type: "string", enum: Object.values(UserRole) },
+	},
+	additionalProperties: false,
+};
+```
+
+## Example: Response Serializer
+
+```ts
+// src/serializers/user-serializer.ts
+import { UserRole } from "../models/user-model";
+
+export const userResponseSchema = {
+	type: "object",
+	properties: {
+		id: { type: "number" },
+		displayName: { type: "string" },
+		email: { type: "string" },
+		isActive: { type: "boolean" },
+		role: { type: "string", enum: Object.values(UserRole) },
+		createdAt: { type: "string", format: "date-time" },
+		updatedAt: { type: "string", format: "date-time" },
+	},
+	required: ["id", "displayName", "email", "isActive", "role", "createdAt", "updatedAt"],
+	additionalProperties: false,
+};
+```
+
+## Usage in Routes
+
+-   **Always** include the relevant request schema in the `schema.body` property and the response serializer in the `schema.response` property of Fastify route definitions.
+-   **Example:**
+
+```ts
+fastify.put(
+	"/users/:id",
+	{
+		schema: {
+			body: userUpdateSchema,
+			response: { 200: userResponseSchema },
+		},
+	},
+	userController.updateUser
+);
+```
+
+## Rationale
+
+-   Centralizes validation and serialization logic for maintainability and security.
+-   Ensures all input is validated and all output is shaped before reaching controllers or clients.
+-   Promotes reusability and consistency across modules.

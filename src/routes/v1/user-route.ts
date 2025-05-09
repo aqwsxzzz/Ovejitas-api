@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import * as userController from "../../controllers/v1/user-controller";
-import { userCreateSchema, userUpdateSchema } from "../../schemas/user-schema";
+import { userUpdateSchema } from "../../schemas/user-schema";
 import { userResponseSchema } from "../../serializers/user-serializer";
 
 export default async function userRoutes(fastify: FastifyInstance) {

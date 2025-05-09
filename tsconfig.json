@@ -14,4 +14,12 @@
     "rootDir": "./src",
     "allowJs": true
   },
+  "include": [
+    "src/**/*.ts",
+    "types"
+  ],
+  "typeRoots": [
+    "./node_modules/@types",
+    "./types"
+  ],
 }

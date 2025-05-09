@@ -21,17 +21,33 @@ interface UserAttributes {
 	updatedAt?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "isActive" | "role" | "createdAt" | "updatedAt"> {}
+type UserCreationAttributes = Pick<UserAttributes, "displayName" | "email" | "password">;
 
-export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
-	public id!: number;
-	public displayName!: string;
-	public email!: string;
-	public password!: string;
-	public isActive!: boolean;
-	public role!: UserRole;
-	public readonly createdAt!: Date;
-	public readonly updatedAt!: Date;
+export class User extends Model<UserAttributes, UserCreationAttributes> {
+	get id(): number {
+		return this.getDataValue("id");
+	}
+	get displayName(): string {
+		return this.getDataValue("displayName");
+	}
+	get email(): string {
+		return this.getDataValue("email");
+	}
+	get password(): string {
+		return this.getDataValue("password");
+	}
+	get isActive(): boolean {
+		return this.getDataValue("isActive");
+	}
+	get role(): UserRole {
+		return this.getDataValue("role");
+	}
+	get createdAt(): Date | undefined {
+		return this.getDataValue("createdAt");
+	}
+	get updatedAt(): Date | undefined {
+		return this.getDataValue("updatedAt");
+	}
 }
 
 User.init(
