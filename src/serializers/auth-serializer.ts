@@ -3,29 +3,17 @@ import { UserRole } from "../models/user-model";
 export const authSignUpResponseSchema = {
 	type: "object",
 	properties: {
-		id: { type: "number" },
-		displayName: { type: "string" },
-		email: { type: "string" },
-		isActive: { type: "boolean" },
-		role: { type: "string", enum: Object.values(UserRole) },
-		createdAt: { type: "string", format: "date-time" },
-		updatedAt: { type: "string", format: "date-time" },
+		message: { type: "string" },
 	},
-	required: ["id", "displayName", "email"],
+	required: ["message"],
 	additionalProperties: false,
 };
 
 export const authLoginResponseSchema = {
 	type: "object",
 	properties: {
-		id: { type: "number" },
-		displayName: { type: "string" },
-		email: { type: "string" },
-		isActive: { type: "boolean" },
-		role: { type: "string", enum: Object.values(UserRole) },
-		createdAt: { type: "string", format: "date-time" },
-		updatedAt: { type: "string", format: "date-time" },
+		message: { type: "string" },
 	},
-	required: ["id", "displayName", "email", "isActive", "role", "createdAt", "updatedAt"],
+	required: ["message"],
 	additionalProperties: false,
 };

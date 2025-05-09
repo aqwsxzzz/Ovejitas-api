@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { User } from "../../models/user-model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { serializeUser } from "../../serializers/user-serializer";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
@@ -15,7 +16,7 @@ export const signUp = async (request: FastifyRequest, reply: FastifyReply) => {
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
 		const user = await User.create({ displayName, email, password: hashedPassword });
-		reply.send(user);
+		reply.send({ message: "User created" });
 	} catch (error) {
 		reply.code(500).send({ message: "Internal server error" });
 	}
@@ -41,7 +42,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 				secure: process.env.NODE_ENV === "production",
 				maxAge: 60 * 60 * 24, // 1 day
 			})
-			.send(user);
+			.send({ message: "Logged in" });
 	} catch (error) {
 		reply.code(500).send({ message: "Internal server error" });
 	}
@@ -60,12 +61,13 @@ export const getCurrentUser = async (request: FastifyRequest, reply: FastifyRepl
 		}
 
 		const user = await User.findByPk(request.user.id);
+		console.log(" user:", user?.id);
 
 		if (!user) {
 			return reply.code(404).send({ message: "User not found" });
 		}
 
-		reply.send({ user });
+		reply.send(serializeUser(user));
 	} catch (error) {
 		reply.code(401).send({ message: "Invalid or expired token" });
 	}
