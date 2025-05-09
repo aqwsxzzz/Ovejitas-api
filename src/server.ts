@@ -7,9 +7,15 @@ import userRoutes from "./routes/v1/user-route";
 import authRoutes from "./routes/v1/auth-route";
 import fastifyCookie from "@fastify/cookie";
 import authPlugin from "./plugins/auth-plugin";
+import fastifyCors from "@fastify/cors";
 
 const server: FastifyInstance = Fastify({
 	logger: true,
+});
+
+server.register(fastifyCors, {
+	origin: ["http://localhost:5173"],
+	credentials: true,
 });
 
 server.register(sequelizePlugin);
