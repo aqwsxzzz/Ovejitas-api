@@ -54,14 +54,12 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
 
 export const getCurrentUser = async (request: FastifyRequest, reply: FastifyReply) => {
 	try {
-		const token = request.cookies.jwt;
-		console.log(request.user);
-		if (!token) {
+		// Check if user is set by the auth plugin
+		if (!request.user) {
 			return reply.code(401).send({ message: "Unauthorized" });
 		}
 
-		const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
-		const user = await User.findByPk(decoded.id);
+		const user = await User.findByPk(request.user.id);
 
 		if (!user) {
 			return reply.code(404).send({ message: "User not found" });

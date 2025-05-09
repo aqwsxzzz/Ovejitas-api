@@ -13,7 +13,9 @@ export default fp(async function authPlugin(fastify: FastifyInstance) {
 			const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; role: string };
 			request.user = decoded;
 		} catch (err) {
+			request.user = null;
 			reply.code(401).send({ message: "Unauthorized" });
+			return;
 		}
 	});
 });

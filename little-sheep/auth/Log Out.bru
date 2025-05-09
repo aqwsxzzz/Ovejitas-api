@@ -5,7 +5,11 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/auth/logout
-  body: none
+  url: http://localhost:8080/v1/auth/logout
+  body: json
   auth: none
+}
+
+body:json {
+  {}
 }
