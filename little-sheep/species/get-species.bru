@@ -5,7 +5,11 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/v1/species
+  url: http://localhost:8080/v1/species?language=es
   body: none
   auth: none
-} 
+}
+
+query {
+  language: es
+}
