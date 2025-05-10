@@ -1,7 +1,9 @@
 import { RouteGenericInterface } from "fastify";
+import { UserLanguage } from "../models/user-model";
+
 interface ISpecieTranslationBody {
 	speciesId: string;
-	languageCode: string;
+	languageCode: UserLanguage;
 	name: string;
 }
 
@@ -16,7 +18,7 @@ export interface SpeciesTranslationIdParams {
 export interface SpeciesTranslationAttributes {
 	id: number;
 	speciesId: number;
-	languageCode: string;
+	languageCode: UserLanguage;
 	name: string;
 	createdAt?: Date;
 	updatedAt?: Date;

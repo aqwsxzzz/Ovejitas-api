@@ -1,10 +1,12 @@
 import { RouteGenericInterface } from "fastify";
+import { UserLanguage } from "../models/user-model";
+
 export interface SpeciesCreateRoute extends RouteGenericInterface {
 	Body: ISpeciesCreateBody;
 }
 
 interface ISpeciesCreateBody {
-	languageCode: string;
+	languageCode: UserLanguage;
 	name: string;
 }
 

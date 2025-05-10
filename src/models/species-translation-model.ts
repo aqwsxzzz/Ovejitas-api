@@ -6,6 +6,7 @@ const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_E
 const sequelize = new Sequelize(sequelizeConfig);
 import { Species } from "./species-model";
 import { SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes } from "../types/species-translation-types";
+import { UserLanguage } from "./user-model";
 
 export class SpeciesTranslation extends Model<SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes> {
 	get id(): number {
@@ -47,7 +48,7 @@ SpeciesTranslation.init(
 			onDelete: "CASCADE",
 		},
 		languageCode: {
-			type: DataTypes.STRING(5),
+			type: DataTypes.ENUM(...Object.values(UserLanguage)),
 			allowNull: false,
 			field: "language_code",
 		},
