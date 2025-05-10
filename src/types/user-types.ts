@@ -1,6 +1,7 @@
+import { RouteGenericInterface } from "fastify";
 import { UserLanguage, UserRole } from "../models/user-model";
 
-export interface IUserUpdateBody {
+interface IUserUpdateBody {
 	displayName: string;
 	email: string;
 	isActive: boolean;
@@ -8,10 +9,19 @@ export interface IUserUpdateBody {
 	language: UserLanguage;
 }
 
-export interface IUserUpdateParams {
+interface IUserUpdateParams {
 	id: string;
 }
 
-export interface IUserDeleteParams {
+interface IUserDeleteParams {
 	id: string;
+}
+
+export interface UserDeleteRoute extends RouteGenericInterface {
+	Params: IUserDeleteParams;
+}
+
+export interface UserUpdateRoute extends RouteGenericInterface {
+	Params: IUserUpdateParams;
+	Body: IUserUpdateBody;
 }
