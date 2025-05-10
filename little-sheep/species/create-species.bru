@@ -1,0 +1,17 @@
+meta {
+  name: Create Species
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/v1/species
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Sheep"
+  }
+} 

@@ -1,9 +1,8 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
-
 # Cursor Rule: JSON Schema for Validation and Serialization
 
 ## Purpose
@@ -25,6 +24,8 @@ All request validation and response serialization for Fastify routes **must** us
     -   For enums, reference the relevant model enum (e.g., `enum: Object.values(UserRole)`).
 -   **No Validation in Models:**
     -   Do not place validation logic in Sequelize models. All validation must be handled by JSON Schemas.
+-   **ID Hashing/Encoding:**
+    -   All response serializers **must** encode/hash the `id` field (e.g., using `encodeId`) and return it as a string, not a number. This applies to all modules. The JSON schema for the response must specify `id` as `{ type: "string" }`.
 
 ## Example: Request Schema
 
@@ -50,12 +51,13 @@ export const userCreateSchema = {
 
 ```ts
 // src/serializers/user-serializer.ts
-import { UserRole } from "../models/user-model";
+import { User, UserRole } from "../models/user-model";
+import { encodeId } from "../utils/id-hash-util";
 
 export const userResponseSchema = {
 	type: "object",
 	properties: {
-		id: { type: "number" },
+		id: { type: "string" },
 		displayName: { type: "string" },
 		email: { type: "string" },
 		isActive: { type: "boolean" },
@@ -66,6 +68,18 @@ export const userResponseSchema = {
 	required: ["id", "displayName", "email", "isActive", "role", "createdAt", "updatedAt"],
 	additionalProperties: false,
 };
+
+export function serializeUser(user: User) {
+	return {
+		id: encodeId(user.id),
+		displayName: user.displayName,
+		email: user.email,
+		isActive: user.isActive,
+		role: user.role,
+		createdAt: user.createdAt,
+		updatedAt: user.updatedAt,
+	};
+}
 ```
 
 ## Usage in Routes
@@ -91,3 +105,4 @@ fastify.put(
 -   Centralizes validation and serialization logic for maintainability and security.
 -   Ensures all input is validated and all output is shaped before reaching controllers or clients.
 -   Promotes reusability and consistency across modules.
+-   **Hashing/encoding the id field prevents leaking raw database IDs and improves security.**

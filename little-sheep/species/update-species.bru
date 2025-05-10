@@ -1,0 +1,17 @@
+meta {
+  name: Update Species
+  type: http
+  seq: 3
+}
+
+put {
+  url: http://localhost:8080/v1/species/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Goat"
+  }
+} 
