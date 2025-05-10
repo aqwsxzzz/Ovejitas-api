@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { User } from "../../models/user-model";
 import { UserDeleteRoute, UserUpdateRoute } from "../../types/user-types";
 import { decodeId } from "../../utils/id-hash-util";
+import { serializeUser } from "../../serializers/user-serializer";
 
 export const updateUser = async (request: FastifyRequest<UserUpdateRoute>, reply: FastifyReply) => {
 	const { id } = request.params;
@@ -16,7 +17,7 @@ export const updateUser = async (request: FastifyRequest<UserUpdateRoute>, reply
 
 	await user.save();
 
-	reply.send(user);
+	reply.send(serializeUser(user));
 };
 
 export const deleteUser = async (request: FastifyRequest<UserDeleteRoute>, reply: FastifyReply) => {

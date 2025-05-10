@@ -2,6 +2,7 @@ import { DataTypes, Model, Optional } from "sequelize";
 import { Sequelize } from "sequelize";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_ENV || "development"];
+import { UserAttributes, UserCreationAttributes } from "../types/user-types";
 
 const sequelize = new Sequelize(sequelizeConfig);
 
@@ -14,20 +15,6 @@ export enum UserLanguage {
 	EN = "en",
 	ES = "es",
 }
-
-interface UserAttributes {
-	id: number;
-	displayName: string;
-	email: string;
-	password: string;
-	isActive: boolean;
-	role: UserRole;
-	language: UserLanguage;
-	createdAt?: Date;
-	updatedAt?: Date;
-}
-
-type UserCreationAttributes = Pick<UserAttributes, "displayName" | "email" | "password" | "language">;
 
 export class User extends Model<UserAttributes, UserCreationAttributes> {
 	get id(): number {

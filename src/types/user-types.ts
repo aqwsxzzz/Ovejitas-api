@@ -25,3 +25,17 @@ export interface UserUpdateRoute extends RouteGenericInterface {
 	Params: IUserUpdateParams;
 	Body: IUserUpdateBody;
 }
+
+export interface UserAttributes {
+	id: number;
+	displayName: string;
+	email: string;
+	password: string;
+	isActive: boolean;
+	role: UserRole;
+	language: UserLanguage;
+	createdAt?: Date;
+	updatedAt?: Date;
+}
+
+export type UserCreationAttributes = Pick<UserAttributes, "displayName" | "email" | "password" | "language">;
