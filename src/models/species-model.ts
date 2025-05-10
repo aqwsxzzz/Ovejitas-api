@@ -3,16 +3,9 @@ import { Sequelize } from "sequelize";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_ENV || "development"];
 import { SpeciesTranslation } from "./species-translation-model";
+import { SpeciesAttributes, SpeciesCreationAttributes } from "../types/species-types";
 
 const sequelize = new Sequelize(sequelizeConfig);
-
-export interface SpeciesAttributes {
-	id: number;
-	createdAt?: Date;
-	updatedAt?: Date;
-}
-
-type SpeciesCreationAttributes = {};
 
 export class Species extends Model<SpeciesAttributes, SpeciesCreationAttributes> {
 	get id(): number {

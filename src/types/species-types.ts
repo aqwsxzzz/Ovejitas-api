@@ -19,3 +19,11 @@ export interface IGetSpeciesByIdQuery {
 export interface SpeciesListParams {
 	language: string;
 }
+
+export interface SpeciesAttributes {
+	id: number;
+	createdAt?: Date;
+	updatedAt?: Date;
+}
+
+export type SpeciesCreationAttributes = {};
