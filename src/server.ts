@@ -9,6 +9,7 @@ import fastifyCookie from "@fastify/cookie";
 import authPlugin from "./plugins/auth-plugin";
 import fastifyCors from "@fastify/cors";
 import speciesRoutes from "./routes/v1/species-route";
+import speciesTranslationRoutes from "./routes/v1/species-translation-routes";
 
 const server: FastifyInstance = Fastify({
 	logger: true,
@@ -25,6 +26,7 @@ server.register(responseWrapperPlugin);
 server.register(fastifyCookie);
 server.register(userRoutes, { prefix: "/v1" });
 server.register(speciesRoutes, { prefix: "/v1" });
+server.register(speciesTranslationRoutes, { prefix: "/v1" });
 server.register(authRoutes, { prefix: "/v1" });
 
 const start = async () => {
