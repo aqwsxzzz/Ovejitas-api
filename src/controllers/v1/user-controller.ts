@@ -9,14 +9,14 @@ export interface UserUpdateRoute extends RouteGenericInterface {
 
 export const updateUser = async (request: FastifyRequest<UserUpdateRoute>, reply: FastifyReply) => {
 	const { id } = request.params;
-	const { displayName, email, isActive, role } = request.body;
+	const { displayName, email, isActive, role, language } = request.body;
 
 	const user = await User.findByPk(id);
 	if (!user) {
 		return reply.code(404).send({ message: "User not found" });
 	}
 
-	user.set({ displayName, email, isActive, role });
+	user.set({ displayName, email, isActive, role, language });
 
 	await user.save();
 

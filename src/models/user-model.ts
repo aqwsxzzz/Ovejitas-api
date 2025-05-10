@@ -10,6 +10,11 @@ export enum UserRole {
 	ADMIN = "admin",
 }
 
+export enum UserLanguage {
+	EN = "en",
+	ES = "es",
+}
+
 interface UserAttributes {
 	id: number;
 	displayName: string;
@@ -17,11 +22,12 @@ interface UserAttributes {
 	password: string;
 	isActive: boolean;
 	role: UserRole;
+	language: UserLanguage;
 	createdAt?: Date;
 	updatedAt?: Date;
 }
 
-type UserCreationAttributes = Pick<UserAttributes, "displayName" | "email" | "password">;
+type UserCreationAttributes = Pick<UserAttributes, "displayName" | "email" | "password" | "language">;
 
 export class User extends Model<UserAttributes, UserCreationAttributes> {
 	get id(): number {
@@ -41,6 +47,9 @@ export class User extends Model<UserAttributes, UserCreationAttributes> {
 	}
 	get role(): UserRole {
 		return this.getDataValue("role");
+	}
+	get language(): UserLanguage {
+		return this.getDataValue("language");
 	}
 	get createdAt(): Date | undefined {
 		return this.getDataValue("createdAt");
@@ -88,6 +97,12 @@ User.init(
 			allowNull: false,
 			defaultValue: UserRole.USER,
 			field: "role",
+		},
+		language: {
+			type: DataTypes.ENUM(...Object.values(UserLanguage)),
+			allowNull: false,
+			defaultValue: UserLanguage.EN,
+			field: "language",
 		},
 		createdAt: {
 			type: DataTypes.DATE,

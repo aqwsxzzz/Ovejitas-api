@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { User } from "../../models/user-model";
+import { User, UserLanguage } from "../../models/user-model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { serializeUser } from "../../serializers/user-serializer";
@@ -8,17 +8,17 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 export const signUp = async (request: FastifyRequest, reply: FastifyReply) => {
 	try {
-		const { displayName, email, password } = request.body as User;
+		const { displayName, email, password, language = "es" } = request.body as { displayName: string; email: string; password: string; language?: string };
 		const existingUser = await User.findOne({ where: { email } });
 		if (existingUser) {
 			return reply.code(400).send({ message: "Email already in use" });
 		}
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
-		const user = await User.create({ displayName, email, password: hashedPassword });
+		const user = await User.create({ displayName, email, password: hashedPassword, language: language as UserLanguage });
 		reply.send({ message: "User created" });
 	} catch (error) {
-		reply.code(500).send({ message: "Internal server error" });
+		reply.code(500).send({ message: "Internal server error", error: error instanceof Error ? error.message : "Unknown error" });
 	}
 };
 

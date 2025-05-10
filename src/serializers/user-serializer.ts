@@ -1,4 +1,4 @@
-import { User, UserRole } from "../models/user-model";
+import { User, UserRole, UserLanguage } from "../models/user-model";
 import { encodeId } from "../utils/id-hash-util";
 
 export const userResponseSchema = {
@@ -9,10 +9,11 @@ export const userResponseSchema = {
 		email: { type: "string" },
 		isActive: { type: "boolean" },
 		role: { type: "string", enum: Object.values(UserRole) },
+		language: { type: "string", enum: Object.values(UserLanguage) },
 		createdAt: { type: "string", format: "date-time" },
 		updatedAt: { type: "string", format: "date-time" },
 	},
-	required: ["id", "displayName", "email", "isActive", "role", "createdAt", "updatedAt"],
+	required: ["id", "displayName", "email", "isActive", "role", "language", "createdAt", "updatedAt"],
 	additionalProperties: false,
 };
 
@@ -23,6 +24,7 @@ export function serializeUser(user: User) {
 		email: user.email,
 		isActive: user.isActive,
 		role: user.role,
+		language: user.language,
 		createdAt: user.createdAt,
 		updatedAt: user.updatedAt,
 	};
