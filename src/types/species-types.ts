@@ -1,11 +1,21 @@
-export interface ISpeciesUpdateBody {
+import { RouteGenericInterface } from "fastify";
+export interface SpeciesCreateRoute extends RouteGenericInterface {
+	Body: ISpeciesCreateBody;
+}
+
+interface ISpeciesCreateBody {
+	languageCode: string;
 	name: string;
 }
 
-export interface ISpeciesUpdateParams {
+export interface ISpeciesIdParam {
 	id: string;
 }
 
-export interface ISpeciesDeleteParams {
-	id: string;
+export interface IGetSpeciesByIdQuery {
+	language: string;
+}
+
+export interface SpeciesListParams {
+	language: string;
 }

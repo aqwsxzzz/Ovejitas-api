@@ -1,7 +1,8 @@
 import { FastifyInstance } from "fastify";
 import * as speciesController from "../../controllers/v1/species-controller";
-import { speciesCreateSchema, speciesUpdateSchema } from "../../schemas/species-schema";
+import { speciesCreateSchema } from "../../schemas/species-schema";
 import { speciesResponseSchema } from "../../serializers/species-serializer";
+import { IGetSpeciesByIdQuery, ISpeciesIdParam, SpeciesListParams } from "../../types/species-types";
 
 export default async function speciesRoutes(fastify: FastifyInstance) {
 	fastify.post(
@@ -16,7 +17,7 @@ export default async function speciesRoutes(fastify: FastifyInstance) {
 		speciesController.createSpecies
 	);
 
-	fastify.get(
+	fastify.get<{ Querystring: SpeciesListParams }>(
 		"/species",
 		{
 			preHandler: [fastify.authenticate],
@@ -27,19 +28,14 @@ export default async function speciesRoutes(fastify: FastifyInstance) {
 		speciesController.getSpecies
 	);
 
-	fastify.put(
+	fastify.get<{ Params: ISpeciesIdParam; Querystring: IGetSpeciesByIdQuery }>(
 		"/species/:id",
 		{
 			preHandler: [fastify.authenticate],
-			schema: {
-				body: speciesUpdateSchema,
-				response: { 200: speciesResponseSchema },
-			},
 		},
-		speciesController.updateSpecies
+		speciesController.getSpeciesById
 	);
-
-	fastify.delete(
+	fastify.delete<{ Params: ISpeciesIdParam }>(
 		"/species/:id",
 		{
 			preHandler: [fastify.authenticate],

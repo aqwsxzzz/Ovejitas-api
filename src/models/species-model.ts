@@ -1,25 +1,22 @@
-import { DataTypes, Model } from "sequelize";
+import { DataTypes, Model, Association } from "sequelize";
 import { Sequelize } from "sequelize";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_ENV || "development"];
+import { SpeciesTranslation } from "./species-translation-model";
 
 const sequelize = new Sequelize(sequelizeConfig);
 
 export interface SpeciesAttributes {
 	id: number;
-	name: string;
 	createdAt?: Date;
 	updatedAt?: Date;
 }
 
-type SpeciesCreationAttributes = Pick<SpeciesAttributes, "name">;
+type SpeciesCreationAttributes = {};
 
 export class Species extends Model<SpeciesAttributes, SpeciesCreationAttributes> {
 	get id(): number {
 		return this.getDataValue("id");
-	}
-	get name(): string {
-		return this.getDataValue("name");
 	}
 	get createdAt(): Date | undefined {
 		return this.getDataValue("createdAt");
@@ -27,6 +24,9 @@ export class Species extends Model<SpeciesAttributes, SpeciesCreationAttributes>
 	get updatedAt(): Date | undefined {
 		return this.getDataValue("updatedAt");
 	}
+	public static associations: {
+		translations: Association<Species, SpeciesTranslation>;
+	};
 }
 
 Species.init(
@@ -36,12 +36,6 @@ Species.init(
 			autoIncrement: true,
 			primaryKey: true,
 			field: "id",
-		},
-		name: {
-			type: DataTypes.STRING,
-			allowNull: false,
-			unique: true,
-			field: "name",
 		},
 		createdAt: {
 			type: DataTypes.DATE,

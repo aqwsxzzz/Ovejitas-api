@@ -1,23 +1,36 @@
 import { Species } from "../models/species-model";
+import { SpeciesTranslation } from "../models/species-translation-model";
 import { encodeId } from "../utils/id-hash-util";
 
 export const speciesResponseSchema = {
 	type: "object",
 	properties: {
 		id: { type: "string" },
-		name: { type: "string" },
+		translation: {
+			type: "object",
+			properties: {
+				id: { type: "string" },
+				language: { type: "string" },
+				name: { type: "string" },
+			},
+		},
 		createdAt: { type: "string", format: "date-time" },
 		updatedAt: { type: "string", format: "date-time" },
 	},
-	required: ["id", "name", "createdAt", "updatedAt"],
+	required: ["id", "translation", "createdAt", "updatedAt"],
 	additionalProperties: false,
 };
 
-// Optionally, a serializer function for output shaping
-export function serializeSpecies(species: Species) {
+export function serializeSpecies(species: Species, translation?: SpeciesTranslation) {
 	return {
 		id: encodeId(species.id),
-		name: species.name,
+		translation: translation
+			? {
+					id: encodeId(translation.id),
+					language: translation.languageCode,
+					name: translation.name,
+			  }
+			: undefined,
 		createdAt: species.createdAt,
 		updatedAt: species.updatedAt,
 	};
