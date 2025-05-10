@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { createSpecieTranslationSchema, deleteSpecieTranslationSchema } from "../../serializers/species-translation-serializer";
+import { speciesTranslationCreateSchema, speciesTranslationDeleteSchema } from "../../schemas/species-translation-schema";
 import * as speciesTranslationController from "../../controllers/v1/species-translation-controller";
 import { SpeciesTranslationIdParams } from "../../types/species-translation-types";
 
@@ -9,8 +9,8 @@ export default async function speciesTranslationRoutes(fastify: FastifyInstance)
 		{
 			preHandler: [fastify.authenticate],
 			schema: {
-				body: createSpecieTranslationSchema,
-				response: { 201: createSpecieTranslationSchema },
+				body: speciesTranslationCreateSchema,
+				response: { 201: speciesTranslationCreateSchema },
 			},
 		},
 		speciesTranslationController.createSpecieTranslation
@@ -21,7 +21,7 @@ export default async function speciesTranslationRoutes(fastify: FastifyInstance)
 		{
 			preHandler: [fastify.authenticate],
 			schema: {
-				params: deleteSpecieTranslationSchema,
+				params: speciesTranslationDeleteSchema,
 			},
 		},
 		speciesTranslationController.deleteSpecieTranslation

@@ -5,17 +5,7 @@ const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_E
 
 const sequelize = new Sequelize(sequelizeConfig);
 import { Species } from "./species-model";
-
-export interface SpeciesTranslationAttributes {
-	id: number;
-	speciesId: number;
-	languageCode: string;
-	name: string;
-	createdAt?: Date;
-	updatedAt?: Date;
-}
-
-type SpeciesTranslationCreationAttributes = Omit<SpeciesTranslationAttributes, "id" | "createdAt" | "updatedAt">;
+import { SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes } from "../types/species-translation-types";
 
 export class SpeciesTranslation extends Model<SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes> {
 	get id(): number {

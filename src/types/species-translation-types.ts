@@ -12,3 +12,14 @@ export interface ICreateSpecieBody extends RouteGenericInterface {
 export interface SpeciesTranslationIdParams {
 	translationId: string;
 }
+
+export interface SpeciesTranslationAttributes {
+	id: number;
+	speciesId: number;
+	languageCode: string;
+	name: string;
+	createdAt?: Date;
+	updatedAt?: Date;
+}
+
+export type SpeciesTranslationCreationAttributes = Omit<SpeciesTranslationAttributes, "id" | "createdAt" | "updatedAt">;

@@ -1,0 +1,76 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Rule: Model CRUD Structure
+
+## Purpose
+This rule enforces the required structure, conventions, and file locations for defining new Sequelize models and their CRUD logic. It ensures consistency, maintainability, and clarity across all model-related code.
+
+## Scope
+- Applies to **all models/resources** that require CRUD operations.
+- Does **not** cover migrations, seeders, or plugins.
+
+## Requirements
+
+### 1. Model Definition
+- All models **must** be Sequelize models (extend `Model`).
+- All associations (e.g., `hasMany`, `belongsTo`) **must** be defined in the model file.
+- Model files must be placed in `src/models/` and named with the module prefix and `-model.ts` (e.g., `species-model.ts`).
+
+### 2. Schema Definition
+- Each resource/module must have a **single schema file** for all route validation.
+- All schemas must use **JSON Schema** format.
+- Schema files must be placed in `src/schemas/` and named with the module prefix and `-schema.ts` (e.g., `species-schema.ts`).
+- Every route (even if it only takes a single param) must have its own schema defined in this file.
+
+### 3. Serializer
+- If output shaping/DTO logic is needed, a serializer file must be created.
+- Response schemas must be defined in the serializer file.
+- Serializer files must be placed in `src/serializers/` and named with the module prefix and `-serializer.ts` (e.g., `species-serializer.ts`).
+
+### 4. Controller
+- Controller files must be placed in `src/controllers/v{version}/` (e.g., `src/controllers/v1/`).
+- Controllers must only contain **route handler logic** (no business logic).
+- Controller files must be named with the module prefix and `-controller.ts` (e.g., `species-controller.ts`).
+
+### 5. Types
+- All TypeScript types/interfaces must be placed in `src/types/`.
+- Types must be grouped by module in a single file (e.g., `species-types.ts`).
+- No types should be colocated in other files.
+
+### 6. Utils
+- All helper/utility functions must be placed in `src/utils/`.
+- Utility files must always be named with the module prefix and `-util.ts` (e.g., `species-util.ts`).
+- No utility functions should be colocated in other files.
+
+### 7. Naming Conventions
+- All files and folders must use **kebab-case** and be prefixed with the module name.
+- All requirements from the `naming-conventions` rule must be followed.
+
+## Example Structure (for `species` resource)
+
+```
+src/
+  models/
+    species-model.ts
+  schemas/
+    species-schema.ts
+  serializers/
+    species-serializer.ts
+  controllers/
+    v1/
+      species-controller.ts
+  types/
+    species-types.ts
+  utils/
+    species-util.ts
+```
+
+## Rationale
+This structure ensures:
+- Clear separation of concerns
+- Consistent file organization
+- Easy discoverability and maintainability
+- Enforced naming and validation standards
