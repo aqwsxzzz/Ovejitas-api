@@ -12,8 +12,9 @@ export const userResponseSchema = {
 		language: { type: "string", enum: Object.values(UserLanguage) },
 		createdAt: { type: "string", format: "date-time" },
 		updatedAt: { type: "string", format: "date-time" },
+		lastVisitedFarmId: { type: "string" },
 	},
-	required: ["id", "displayName", "email", "isActive", "role", "language", "createdAt", "updatedAt"],
+	required: ["id", "displayName", "email", "isActive", "role", "language", "createdAt", "updatedAt", "lastVisitedFarmId"],
 	additionalProperties: false,
 };
 
@@ -27,5 +28,6 @@ export function serializeUser(user: User) {
 		language: user.language,
 		createdAt: user.createdAt,
 		updatedAt: user.updatedAt,
+		lastVisitedFarmId: user.lastVisitedFarmId ? encodeId(user.lastVisitedFarmId) : null,
 	};
 }

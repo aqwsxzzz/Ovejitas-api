@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+As a registered user, I want to have a personal farm (workspace) created for me by default upon my first login, so that I can immediately start managing my resources and later invite other users to collaborate.
+
+## Acceptance Criteria
+
+- A new farm is automatically created for every user upon their first login.
+- The user is assigned as the owner of their default farm.
+- Users can view and manage their farm (e.g., update farm details, manage resources).
+- Users can invite other users to join their farm as collaborators.
+- All resources (e.g., animals, assets, data) are associated with a farm, not directly with a user.
+- Users can see a list of members in their farm.
+- If a user is invited to another farm, they can switch between farms they belong to.
+- The system supports multiple users per farm for future collaboration features.
+- The user experience is seamless: the farm is ready to use immediately after login, with no manual setup required.

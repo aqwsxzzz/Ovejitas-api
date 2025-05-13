@@ -34,8 +34,9 @@ export interface UserAttributes {
 	isActive: boolean;
 	role: UserRole;
 	language: UserLanguage;
+	lastVisitedFarmId?: number;
 	createdAt?: Date;
 	updatedAt?: Date;
 }
 
-export type UserCreationAttributes = Pick<UserAttributes, "displayName" | "email" | "password" | "language">;
+export type UserCreationAttributes = Pick<UserAttributes, "displayName" | "email" | "password" | "language" | "lastVisitedFarmId">;

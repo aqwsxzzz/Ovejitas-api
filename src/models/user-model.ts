@@ -3,6 +3,7 @@ import { Sequelize } from "sequelize";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_ENV || "development"];
 import { UserAttributes, UserCreationAttributes } from "../types/user-types";
+import { Farm } from "./farm-model";
 
 const sequelize = new Sequelize(sequelizeConfig);
 
@@ -43,6 +44,9 @@ export class User extends Model<UserAttributes, UserCreationAttributes> {
 	}
 	get updatedAt(): Date | undefined {
 		return this.getDataValue("updatedAt");
+	}
+	get lastVisitedFarmId(): number | undefined {
+		return this.getDataValue("lastVisitedFarmId");
 	}
 }
 
@@ -102,6 +106,11 @@ User.init(
 			allowNull: false,
 			defaultValue: DataTypes.NOW,
 			field: "updated_at",
+		},
+		lastVisitedFarmId: {
+			type: DataTypes.INTEGER.UNSIGNED,
+			allowNull: true,
+			field: "last_visited_farm_id",
 		},
 	},
 	{

@@ -3,22 +3,22 @@ import { Sequelize } from "sequelize";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_ENV || "development"];
 
-const sequelize = new Sequelize(sequelizeConfig);
-import { SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes } from "../types/species-translation-types";
-import { UserLanguage } from "./user-model";
+import { FarmMembersAttributes, FarmMembersCreationAttributes, FarmMemberRole } from "../types/farm-members-types";
 
-export class SpeciesTranslation extends Model<SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes> {
+const sequelize = new Sequelize(sequelizeConfig);
+
+export class FarmMembers extends Model<FarmMembersAttributes, FarmMembersCreationAttributes> {
 	get id(): number {
 		return this.getDataValue("id");
 	}
-	get speciesId(): number {
-		return this.getDataValue("speciesId");
+	get farmId(): number {
+		return this.getDataValue("farmId");
 	}
-	get languageCode(): string {
-		return this.getDataValue("languageCode");
+	get userId(): number {
+		return this.getDataValue("userId");
 	}
-	get name(): string {
-		return this.getDataValue("name");
+	get role(): FarmMemberRole {
+		return this.getDataValue("role");
 	}
 	get createdAt(): Date | undefined {
 		return this.getDataValue("createdAt");
@@ -28,7 +28,7 @@ export class SpeciesTranslation extends Model<SpeciesTranslationAttributes, Spec
 	}
 }
 
-SpeciesTranslation.init(
+FarmMembers.init(
 	{
 		id: {
 			type: DataTypes.INTEGER.UNSIGNED,
@@ -36,25 +36,21 @@ SpeciesTranslation.init(
 			primaryKey: true,
 			field: "id",
 		},
-		speciesId: {
+		farmId: {
 			type: DataTypes.INTEGER.UNSIGNED,
 			allowNull: false,
-			field: "species_id",
-			references: {
-				model: "species",
-				key: "id",
-			},
-			onDelete: "CASCADE",
+			field: "farm_id",
 		},
-		languageCode: {
-			type: DataTypes.ENUM(...Object.values(UserLanguage)),
+		userId: {
+			type: DataTypes.INTEGER.UNSIGNED,
 			allowNull: false,
-			field: "language_code",
+			field: "user_id",
 		},
-		name: {
-			type: DataTypes.STRING,
+		role: {
+			type: DataTypes.ENUM("owner", "member"),
 			allowNull: false,
-			field: "name",
+			defaultValue: "member",
+			field: "role",
 		},
 		createdAt: {
 			type: DataTypes.DATE,
@@ -71,18 +67,8 @@ SpeciesTranslation.init(
 	},
 	{
 		sequelize,
-		tableName: "species_translation",
-		modelName: "SpeciesTranslation",
+		tableName: "farm_members",
+		modelName: "FarmMembers",
 		timestamps: true,
-		indexes: [
-			{
-				unique: true,
-				fields: ["speciesId", "name"],
-			},
-			{
-				unique: true,
-				fields: ["name", "languageCode"],
-			},
-		],
 	}
 );

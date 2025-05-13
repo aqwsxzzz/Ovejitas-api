@@ -10,6 +10,9 @@ import authPlugin from "./plugins/auth-plugin";
 import fastifyCors from "@fastify/cors";
 import speciesRoutes from "./routes/v1/species-route";
 import speciesTranslationRoutes from "./routes/v1/species-translation-routes";
+import "./models/associations";
+import farmRoutes from "./routes/v1/farm-route";
+import farmMembersRoutes from "./routes/v1/farm-members-route";
 
 const server: FastifyInstance = Fastify({
 	logger: true,
@@ -28,6 +31,8 @@ server.register(userRoutes, { prefix: "/v1" });
 server.register(speciesRoutes, { prefix: "/v1" });
 server.register(speciesTranslationRoutes, { prefix: "/v1" });
 server.register(authRoutes, { prefix: "/v1" });
+server.register(farmRoutes, { prefix: "/v1" });
+server.register(farmMembersRoutes, { prefix: "/v1" });
 
 const start = async () => {
 	try {

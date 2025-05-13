@@ -3,6 +3,8 @@ import { User, UserLanguage } from "../../models/user-model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { serializeUser } from "../../serializers/user-serializer";
+import { Farm } from "../../models/farm-model";
+import { FarmMembers } from "../../models/farm-members-model";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
@@ -16,6 +18,14 @@ export const signUp = async (request: FastifyRequest, reply: FastifyReply) => {
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
 		const user = await User.create({ displayName, email, password: hashedPassword, language: language as UserLanguage });
+
+		// Create default farm for the user
+		const farmName = language === "en" ? "My farm" : "Mi Granja";
+		const farm = await Farm.create({ name: farmName });
+		await FarmMembers.create({ farmId: farm.id, userId: user.id, role: "owner" });
+		user.set("lastVisitedFarmId", farm.id);
+		await user.save();
+
 		reply.send({ message: "User created" });
 	} catch (error) {
 		reply.code(500).send({ message: "Internal server error", error: error instanceof Error ? error.message : "Unknown error" });
