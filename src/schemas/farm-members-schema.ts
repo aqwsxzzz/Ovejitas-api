@@ -3,14 +3,21 @@ import type { FarmMemberRole } from "../types/farm-members-types";
 const roleEnum: FarmMemberRole[] = ["owner", "member"];
 
 export const farmMembersCreateSchema = {
-	body: {
+	params: {
 		type: "object",
 		properties: {
 			farmId: { type: "string" },
+		},
+		required: ["farmId"],
+		additionalProperties: false,
+	},
+	body: {
+		type: "object",
+		properties: {
 			userId: { type: "string" },
 			role: { type: "string", enum: roleEnum },
 		},
-		required: ["farmId", "userId", "role"],
+		required: ["userId", "role"],
 		additionalProperties: false,
 	},
 };
@@ -41,6 +48,29 @@ export const farmMembersIdParamSchema = {
 			id: { type: "string" },
 		},
 		required: ["id"],
+		additionalProperties: false,
+	},
+};
+
+export const farmMembersFarmIdParamSchema = {
+	params: {
+		type: "object",
+		properties: {
+			farmId: { type: "string" },
+		},
+		required: ["farmId"],
+		additionalProperties: false,
+	},
+};
+
+export const farmMembersFarmIdAndMemberIdParamSchema = {
+	params: {
+		type: "object",
+		properties: {
+			farmId: { type: "string" },
+			memberId: { type: "string" },
+		},
+		required: ["farmId", "memberId"],
 		additionalProperties: false,
 	},
 };

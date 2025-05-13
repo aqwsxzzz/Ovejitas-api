@@ -1,0 +1,17 @@
+meta {
+  name: Create Farm
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/v1/farms
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Sample Farm Name"
+  }
+} 

@@ -1,11 +1,11 @@
 import { FastifyInstance } from "fastify";
-import { createFarmMember, getFarmMemberById, updateFarmMember, deleteFarmMember } from "../../controllers/v1/farm-members-controller";
-import { farmMembersCreateSchema, farmMembersUpdateSchema, farmMembersIdParamSchema } from "../../schemas/farm-members-schema";
-import { farmMembersResponseSchema } from "../../serializers/farm-members-serializer";
+import { createFarmMember, getFarmMemberById, updateFarmMember, deleteFarmMember, getFarmMembersByFarmId } from "../../controllers/v1/farm-members-controller";
+import { farmMembersCreateSchema, farmMembersUpdateSchema, farmMembersIdParamSchema, farmMembersFarmIdParamSchema, farmMembersFarmIdAndMemberIdParamSchema } from "../../schemas/farm-members-schema";
+import { farmMembersResponseSchema, farmMembersArrayResponseSchema } from "../../serializers/farm-members-serializer";
 
 export default async function farmMembersRoutes(fastify: FastifyInstance) {
 	fastify.post(
-		"/farm-members",
+		"/farms/:farmId/members",
 		{
 			schema: {
 				...farmMembersCreateSchema,
@@ -16,10 +16,21 @@ export default async function farmMembersRoutes(fastify: FastifyInstance) {
 	);
 
 	fastify.get(
-		"/farm-members/:id",
+		"/farms/:farmId/members",
 		{
 			schema: {
-				...farmMembersIdParamSchema,
+				...farmMembersFarmIdParamSchema,
+				response: { 200: farmMembersArrayResponseSchema },
+			},
+		},
+		getFarmMembersByFarmId
+	);
+
+	fastify.get(
+		"/farms/:farmId/members/:memberId",
+		{
+			schema: {
+				...farmMembersFarmIdAndMemberIdParamSchema,
 				response: { 200: farmMembersResponseSchema },
 			},
 		},
@@ -27,10 +38,11 @@ export default async function farmMembersRoutes(fastify: FastifyInstance) {
 	);
 
 	fastify.patch(
-		"/farm-members/:id",
+		"/farms/:farmId/members/:memberId",
 		{
 			schema: {
-				...farmMembersUpdateSchema,
+				...farmMembersFarmIdAndMemberIdParamSchema,
+				body: farmMembersUpdateSchema.body,
 				response: { 200: farmMembersResponseSchema },
 			},
 		},
@@ -38,10 +50,10 @@ export default async function farmMembersRoutes(fastify: FastifyInstance) {
 	);
 
 	fastify.delete(
-		"/farm-members/:id",
+		"/farms/:farmId/members/:memberId",
 		{
 			schema: {
-				...farmMembersIdParamSchema,
+				...farmMembersFarmIdAndMemberIdParamSchema,
 				response: { 200: { type: "object", properties: { message: { type: "string" } }, required: ["message"] } },
 			},
 		},
