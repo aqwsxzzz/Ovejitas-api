@@ -1,7 +1,9 @@
 import "fastify";
+import { Sequelize } from "sequelize";
 
 declare module "fastify" {
 	interface FastifyInstance {
+		sequelize: Sequelize;
 		authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void>;
 	}
 
@@ -11,5 +13,6 @@ declare module "fastify" {
 			email: string;
 			role: string;
 		} | null;
+		lastVisitedFarmId: number;
 	}
 }

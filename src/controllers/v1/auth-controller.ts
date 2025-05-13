@@ -9,25 +9,29 @@ import { FarmMembers } from "../../models/farm-members-model";
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 export const signUp = async (request: FastifyRequest, reply: FastifyReply) => {
+	const transaction = await request.server.sequelize.transaction();
 	try {
 		const { displayName, email, password, language = "es" } = request.body as { displayName: string; email: string; password: string; language?: string };
-		const existingUser = await User.findOne({ where: { email } });
+		const existingUser = await User.findOne({ where: { email }, transaction });
 		if (existingUser) {
+			await transaction.rollback();
 			return reply.code(400).send({ message: "Email already in use" });
 		}
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
-		const user = await User.create({ displayName, email, password: hashedPassword, language: language as UserLanguage });
+		const user = await User.create({ displayName, email, password: hashedPassword, language: language as UserLanguage }, { transaction });
 
 		// Create default farm for the user
 		const farmName = language === "en" ? "My farm" : "Mi Granja";
-		const farm = await Farm.create({ name: farmName });
-		await FarmMembers.create({ farmId: farm.id, userId: user.id, role: "owner" });
+		const farm = await Farm.create({ name: farmName }, { transaction });
+		await FarmMembers.create({ farmId: farm.id, userId: user.id, role: "owner" }, { transaction });
 		user.set("lastVisitedFarmId", farm.id);
-		await user.save();
+		await user.save({ transaction });
 
+		await transaction.commit();
 		reply.send({ message: "User created" });
 	} catch (error) {
+		await transaction.rollback();
 		reply.code(500).send({ message: "Internal server error", error: error instanceof Error ? error.message : "Unknown error" });
 	}
 };
