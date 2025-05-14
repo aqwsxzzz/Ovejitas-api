@@ -1,35 +1,39 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { User, UserLanguage } from "../../models/user-model";
-import { hashPassword, comparePassword } from "../../utils/password-util";
+import { User } from "../../models/user-model";
+import { comparePassword } from "../../utils/password-util";
 import { createJwtToken } from "../../utils/token-util";
 import { serializeUser } from "../../serializers/user-serializer";
-import { Farm } from "../../models/farm-model";
-import { FarmMembers } from "../../models/farm-members-model";
-import { FarmMemberRoleEnum } from "../../types/farm-members-types";
+import { AuthSignUpBody } from "../../types/auth-types";
+import { handleInvitationSignUp, handleDefaultSignUp } from "../../utils/auth-util";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
-export const signUp = async (request: FastifyRequest, reply: FastifyReply) => {
+export const signUp = async (request: FastifyRequest<{ Body: AuthSignUpBody }>, reply: FastifyReply) => {
 	const transaction = await request.server.sequelize.transaction();
 	try {
-		const { displayName, email, password, language = "es" } = request.body as { displayName: string; email: string; password: string; language?: string };
+		const { email, invitationToken } = request.body;
 		const existingUser = await User.findOne({ where: { email }, transaction });
+
 		if (existingUser) {
 			await transaction.rollback();
 			return reply.code(400).send({ message: "Email already in use" });
 		}
-		const hashedPassword = await hashPassword(password);
-		const user = await User.create({ displayName, email, password: hashedPassword, language: language as UserLanguage }, { transaction });
+		let user;
 
-		// Create default farm for the user
-		const farmName = language === "en" ? "My farm" : "Mi Granja";
-		const farm = await Farm.create({ name: farmName }, { transaction });
-		await FarmMembers.create({ farmId: farm.id, userId: user.id, role: FarmMemberRoleEnum.OWNER }, { transaction });
-		user.set("lastVisitedFarmId", farm.id);
-		await user.save({ transaction });
-
-		await transaction.commit();
-		reply.send({ message: "User created" });
+		if (invitationToken) {
+			try {
+				user = await handleInvitationSignUp(request.body, transaction);
+			} catch (err) {
+				await transaction.rollback();
+				return reply.code(400).send({ message: err instanceof Error ? err.message : "Invitation error" });
+			}
+			await transaction.commit();
+			return reply.send({ message: "User created and added to farm via invitation" });
+		} else {
+			user = await handleDefaultSignUp(request.body, transaction);
+			await transaction.commit();
+			return reply.send({ message: "User created" });
+		}
 	} catch (error) {
 		await transaction.rollback();
 		reply.code(500).send({ message: "Internal server error", error: error instanceof Error ? error.message : "Unknown error" });

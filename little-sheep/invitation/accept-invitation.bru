@@ -1,0 +1,20 @@
+meta {
+  name: Accept Invitation
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/v1/invitations/accept
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "token": "sample-invitation-token",
+    "password": "password123",
+    "displayName": "Invited User",
+    "language": "en"
+  }
+} 

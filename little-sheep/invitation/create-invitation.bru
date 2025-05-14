@@ -1,0 +1,18 @@
+meta {
+  name: Create Invitation
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/v1/farms/1/invitations
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "invitee@example.com",
+    "role": "member"
+  }
+} 
