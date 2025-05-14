@@ -1,10 +1,11 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { User, UserLanguage } from "../../models/user-model";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { hashPassword, comparePassword } from "../../utils/password-util";
+import { createJwtToken } from "../../utils/token-util";
 import { serializeUser } from "../../serializers/user-serializer";
 import { Farm } from "../../models/farm-model";
 import { FarmMembers } from "../../models/farm-members-model";
+import { FarmMemberRoleEnum } from "../../types/farm-members-types";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
@@ -17,14 +18,13 @@ export const signUp = async (request: FastifyRequest, reply: FastifyReply) => {
 			await transaction.rollback();
 			return reply.code(400).send({ message: "Email already in use" });
 		}
-		const saltRounds = 10;
-		const hashedPassword = await bcrypt.hash(password, saltRounds);
+		const hashedPassword = await hashPassword(password);
 		const user = await User.create({ displayName, email, password: hashedPassword, language: language as UserLanguage }, { transaction });
 
 		// Create default farm for the user
 		const farmName = language === "en" ? "My farm" : "Mi Granja";
 		const farm = await Farm.create({ name: farmName }, { transaction });
-		await FarmMembers.create({ farmId: farm.id, userId: user.id, role: "owner" }, { transaction });
+		await FarmMembers.create({ farmId: farm.id, userId: user.id, role: FarmMemberRoleEnum.OWNER }, { transaction });
 		user.set("lastVisitedFarmId", farm.id);
 		await user.save({ transaction });
 
@@ -43,11 +43,11 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!user) {
 			return reply.code(401).send({ message: "Invalid email or password" });
 		}
-		const isMatch = await bcrypt.compare(password, user.password);
+		const isMatch = await comparePassword(password, user.password);
 		if (!isMatch) {
 			return reply.code(401).send({ message: "Invalid email or password" });
 		}
-		const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1d" });
+		const token = createJwtToken({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1d" });
 		reply
 			.setCookie("jwt", token, {
 				httpOnly: true,

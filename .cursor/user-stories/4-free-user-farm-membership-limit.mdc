@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+As a system administrator, I want to limit free users to a maximum of 2 farm memberships (either as owner or member) so that we can implement a freemium model with basic limitations.
+
+## Acceptance Criteria
+
+### Farm Membership Limits
+- Free users can be members of maximum 2 farms
+- This limit applies to both farm ownership and membership roles
+- The limit is enforced during:
+  - Initial farm creation during signup
+  - Accepting farm invitations
+  - Creating new farms
+  - Being added to farms by other users
+
+### User Experience
+- Users should be notified when they reach their farm membership limit
+- Users should see how many farm slots they have remaining
+- Users should receive clear error messages when trying to exceed their limit
+- The UI should prevent users from creating or joining farms when at their limit
+
+### System Behavior
+- The system should track the number of farm memberships per user
+- The system should enforce the limit before any new farm membership is created
+- The system should allow users to leave farms to free up slots
+- The system should prevent users from being added to new farms when at their limit
+
+### Error Handling
+- Clear error messages when:
+  - User tries to create a farm when at their limit
+  - User tries to accept an invitation when at their limit
+  - Another user tries to add a user who is at their limit
+  - User tries to join a farm when at their limit
+
+### Validation
+- The system should validate farm membership count before:
+  - Creating new farms
+  - Accepting invitations
+  - Adding users to farms
+  - Creating farm memberships

@@ -2,6 +2,11 @@ import { RouteGenericInterface } from "fastify";
 
 export type FarmMemberRole = "owner" | "member";
 
+export enum FarmMemberRoleEnum {
+	OWNER = "owner",
+	MEMBER = "member",
+}
+
 export interface FarmMembersAttributes {
 	id: number;
 	farmId: number;

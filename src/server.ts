@@ -13,6 +13,7 @@ import speciesTranslationRoutes from "./routes/v1/species-translation-routes";
 import "./models/associations";
 import farmRoutes from "./routes/v1/farm-route";
 import farmMembersRoutes from "./routes/v1/farm-members-route";
+import farmInvitationRoutes from "./routes/v1/farm-invitation-route";
 
 const server: FastifyInstance = Fastify({
 	logger: true,
@@ -33,6 +34,7 @@ server.register(speciesTranslationRoutes, { prefix: "/v1" });
 server.register(authRoutes, { prefix: "/v1" });
 server.register(farmRoutes, { prefix: "/v1" });
 server.register(farmMembersRoutes, { prefix: "/v1" });
+server.register(farmInvitationRoutes, { prefix: "/v1" });
 
 const start = async () => {
 	try {

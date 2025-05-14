@@ -16,7 +16,7 @@ This rule enforces the required structure, conventions, and file locations for d
 
 ### 1. Model Definition
 - All models **must** be Sequelize models (extend `Model`).
-- All associations (e.g., `hasMany`, `belongsTo`) **must** be defined in the model file.
+- All associations (e.g., `hasMany`, `belongsTo`) **must** be defined in the associations file.
 - Model files must be placed in `src/models/` and named with the module prefix and `-model.ts` (e.g., `species-model.ts`).
 
 ### 2. Schema Definition
