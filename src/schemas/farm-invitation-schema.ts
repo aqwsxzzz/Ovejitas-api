@@ -1,5 +1,4 @@
 import { UserRole } from "../models/user-model";
-import { FarmInvitationStatus } from "../types/farm-invitation-types";
 
 const roleEnum = Object.values(UserRole);
 

@@ -4,7 +4,7 @@ import { FarmMembers } from "../../models/farm-members-model";
 import { User, UserLanguage } from "../../models/user-model";
 import { decodeId } from "../../utils/id-hash-util";
 import { serializeFarmInvitation } from "../../serializers/farm-invitation-serializer";
-import { isAlreadyMemberOrInvited, getUserFarmCount, isFarmMemberRole } from "../../utils/farm-invitation-util";
+import { isAlreadyMemberOrInvited, getUserFarmCount } from "../../utils/farm-invitation-util";
 import { IFarmInvitationCreateBody, IFarmInvitationAcceptBody, IFarmInvitationIdParam, ISendInvitationParams } from "../../types/farm-invitation-types";
 import { hashPassword } from "../../utils/password-util";
 import { createInvitationToken } from "../../utils/token-util";

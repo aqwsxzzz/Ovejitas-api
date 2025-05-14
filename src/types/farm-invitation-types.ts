@@ -1,4 +1,3 @@
-import { UserRole } from "../models/user-model";
 import { FarmMemberRole } from "./farm-members-types";
 
 export type FarmInvitationStatus = "pending" | "accepted" | "expired" | "cancelled";
