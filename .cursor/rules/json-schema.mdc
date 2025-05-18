@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: src/schemas/*,src/serializers/*
 alwaysApply: false
 ---
 # Cursor Rule: JSON Schema for Validation and Serialization

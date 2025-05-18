@@ -1,6 +1,6 @@
-import { UserRole } from "../models/user-model";
+import { FarmMemberRoleEnum } from "../types/farm-members-types";
 
-const roleEnum = Object.values(UserRole);
+const roleEnum = Object.values(FarmMemberRoleEnum);
 
 export const farmInvitationCreateSchema = {
 	params: {

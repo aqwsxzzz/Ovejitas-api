@@ -1,6 +1,6 @@
 ---
-description: This rule enforces conventions for Fastify route file structure, validation schema usage, and response serialization schemas. It provides required patterns and examples for defining routes, ensuring all new route modules are consistent, maintainable, and secure. Reference this rule when creating or updating any route files.
-globs:
+description: 
+globs: src/routes/**
 alwaysApply: false
 ---
 

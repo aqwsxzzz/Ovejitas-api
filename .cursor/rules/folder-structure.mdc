@@ -54,6 +54,8 @@ alwaysApply: true
   - `schemas/` for JSON Schema or other validation schemas (do not place validation schemas in `models/`)
   - `serializers/` for response serialization logic (e.g., DTOs, output shaping)
   - `types/` for TypeScript type definitions (e.g., user-types.ts). Group related types by module/domain in a single file (e.g., `user-types.ts` for user-related types).
+  - `utils/` for general-purpose utility/helper functions that are not specific to a single module but are used across the application (e.g., authentication, token management, password hashing, farm invitation/member logic, species utilities, ID hashing).
+
 - The entry point (`index.ts`) must be in `src/`.
 - The `.cursor/` folder is reserved for project metadata, rules, and user stories. Do not place application code here.
 

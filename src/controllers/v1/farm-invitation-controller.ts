@@ -52,7 +52,7 @@ export const acceptInvitation = async (request: FastifyRequest<{ Body: IFarmInvi
 
 	if (!invitation) return reply.code(400).send({ message: "Invalid or expired invitation token" });
 
-	if (!decodeId(invitation.farmId)) return reply.code(400).send({ message: "Invalid farm ID" });
+	if (!invitation.farmId) return reply.code(400).send({ message: "Invalid farm ID" });
 
 	if (!invitation.expiresAt || invitation.expiresAt.getTime() < Date.now()) {
 		invitation.setDataValue("status", "expired");
@@ -69,6 +69,7 @@ export const acceptInvitation = async (request: FastifyRequest<{ Body: IFarmInvi
 			email: invitation.email,
 			password: hashedPassword,
 			language: (language as UserLanguage) || UserLanguage.ES,
+			lastVisitedFarmId: Number(invitation.farmId),
 		});
 	}
 	const farmCount = await getUserFarmCount(user.id);
@@ -78,12 +79,12 @@ export const acceptInvitation = async (request: FastifyRequest<{ Body: IFarmInvi
 	}
 
 	await FarmMembers.create({
-		farmId: decodeId(invitation.farmId)!,
+		farmId: Number(invitation.farmId),
 		userId: user.id,
-		role: "member",
+		role: invitation.role,
 	});
 
-	invitation.setDataValue("status", "accepted");
+	invitation.set("status", "accepted");
 	await invitation.save();
 
 	reply.send({ message: "Invitation accepted" });
