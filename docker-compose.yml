@@ -20,7 +20,7 @@ services:
             - DB_HOST=${DB_HOST}
         depends_on:
             - postgres
-        command: sh -c "npx sequelize-cli db:migrate --migrations-path src/migrations --config src/config/sequelize-config.js && npx nodemon --config nodemon.json --legacy-watch"
+        command: sh -c "npx sequelize-cli db:migrate --migrations-path src/migrations --config src/config/sequelize-config.js && npx sequelize-cli db:seed:all --seeders-path src/seeders --config src/config/sequelize-config.js && npx nodemon --config nodemon.json --legacy-watch"
 
     postgres:
         image: postgres:14-alpine
