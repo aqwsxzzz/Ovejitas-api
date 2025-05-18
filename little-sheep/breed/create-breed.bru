@@ -1,0 +1,18 @@
+meta {
+  name: Create Breed
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/v1/breeds
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "speciesId": "<encoded_species_id>",
+    "name": "Merino"
+  }
+} 

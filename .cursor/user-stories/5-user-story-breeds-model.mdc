@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+As a developer, I want admin users to be able to manage (add, edit, and remove) animal breeds in the database so that end users can select the correct breed when creating animal records.
+
+Acceptance Criteria:
+- Admin users can add new breeds, each associated with a specific species.
+- Breed names must be unique per species (e.g., "Angus" for cattle, "Yorkshire" for pigs).
+- Admin users can edit existing breed names and their associated species.
+- Admin users can remove breeds from the database.
+- Each breed record includes:
+  - id (int, PK)
+  - species_id (int, FK → SPECIES.id)
+  - name (string, unique per species)
+  - created_at (datetime)
+  - updated_at (datetime)
+- End users can select from the list of breeds (but not modify them) when creating animal records.
