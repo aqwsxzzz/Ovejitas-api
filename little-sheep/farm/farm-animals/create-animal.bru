@@ -1,0 +1,30 @@
+meta {
+  name: Create Animal
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/v1/farms/AdWNDqgV/animals
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+  
+    "speciesId": "AdWNDqgV",
+    "breedId": "AdWNDqgV",
+    "name": "Trixie",
+    "tagNumber": "A123",
+    "sex": "female",
+    "birthDate": "2023-01-01",
+    "weight": 75.5,
+    "status": "alive",
+    "reproductiveStatus": "open",
+    "parentId": null,
+    "motherId": null,
+    "acquisitionType": "born",
+    "acquisitionDate": "2023-01-01"
+  }
+}

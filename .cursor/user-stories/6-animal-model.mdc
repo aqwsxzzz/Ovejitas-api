@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+As a farm manager, I want to record and manage individual animals on my farm so that I can track their details, lineage, and status for better farm management.
+
+## Acceptance Criteria
+- Animal records must include: id, farm_id, species_id, breed_id (nullable), name, tag_number (unique per farm, optional), sex (male, female, unknown), birth_date, weight (optional, last known), status (alive, sold, deceased, etc.), reproductive_status (open, pregnant, lactating, etc.), parent_id (nullable, FK to animals), mother_id (nullable, FK to animals), acquisition_type (born, purchased, etc.), acquisition_date, created_at, updated_at.
+- Animal can be linked to a farm, species, breed.
+- Animal can reference parent and mother animals for lineage tracking.
+- Tag number must be unique within the same farm if provided.
+- Sex, status, reproductive_status, and acquisition_type must be restricted to allowed enum values.
+- Weight and breed_id are optional fields.
+- Animal records must track creation and update timestamps.
+- Users can view, create, update, and (soft) delete animal records.
+- Animal status changes (e.g., sold, deceased) must be tracked and auditable.

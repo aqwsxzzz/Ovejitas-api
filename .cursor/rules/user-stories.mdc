@@ -26,6 +26,7 @@ As a registered user, I want to reset my password so that I can regain access if
 ## Acceptance Criteria
 
 Each user story must include clear acceptance criteria that define when the story is complete. Use bullet points or a checklist.
+Each new user story should start with a number, following the order of **.cursor/user-stores** folder.
 
 ### Example
 

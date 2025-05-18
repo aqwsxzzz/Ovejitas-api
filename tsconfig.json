@@ -17,7 +17,7 @@
   "include": [
     "src/**/*.ts",
     "types"
-  ],
+, "src/migrations/20240610120000-animal-model-migration.js", "src/migrations/20240610120000-animal-model-migration.js"  ],
   "typeRoots": [
     "./node_modules/@types",
     "./types"
