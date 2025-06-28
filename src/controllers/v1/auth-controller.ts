@@ -60,7 +60,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 				secure: process.env.NODE_ENV === "production",
 				maxAge: 60 * 60 * 24, // 1 day
 			})
-			.send({ message: "Logged in" });
+			.send({ message: "Logged in", user: serializeUser(user) });
 	} catch (error) {
 		reply.code(500).send({ message: "Internal server error" });
 	}

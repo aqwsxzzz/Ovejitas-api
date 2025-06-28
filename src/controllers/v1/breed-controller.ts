@@ -3,7 +3,7 @@ import { Breed } from "../../models/breed-model";
 import { serializeBreed } from "../../serializers/breed-serializer";
 import { decodeId } from "../../utils/id-hash-util";
 import { findBreedById, findBreedsBySpeciesId, isBreedNameUniqueForSpecies } from "../../utils/breed-util";
-import { BreedCreateRoute, BreedUpdateRoute, BreedGetRoute, BreedDeleteRoute } from "../../types/breed-types";
+import { BreedCreateRoute, BreedUpdateRoute, BreedGetRoute, BreedDeleteRoute, BreedListRoute } from "../../types/breed-types";
 
 export const createBreed = async (request: FastifyRequest<BreedCreateRoute>, reply: FastifyReply) => {
 	const { speciesId, name } = request.body;
@@ -17,8 +17,14 @@ export const createBreed = async (request: FastifyRequest<BreedCreateRoute>, rep
 	reply.code(201).send(serializeBreed(breed));
 };
 
-export const listBreeds = async (request: FastifyRequest, reply: FastifyReply) => {
-	const breeds = await Breed.findAll();
+export const listBreeds = async (request: FastifyRequest<BreedListRoute>, reply: FastifyReply) => {
+	const { speciesId } = request.query;
+	let breeds;
+	if (speciesId) {
+		breeds = await findBreedsBySpeciesId(speciesId);
+	} else {
+		breeds = await Breed.findAll();
+	}
 	reply.send(breeds.map(serializeBreed));
 };
 

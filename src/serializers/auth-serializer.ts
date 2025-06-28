@@ -13,7 +13,14 @@ export const authLoginResponseSchema = {
 	type: "object",
 	properties: {
 		message: { type: "string" },
+		user: {
+			type: "object",
+			properties: {
+				lastVisitedFarmId: { type: "string" },
+			},
+			required: [],
+			additionalProperties: false,
+		},
 	},
-	required: ["message"],
 	additionalProperties: false,
 };

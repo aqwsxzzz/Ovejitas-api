@@ -40,3 +40,11 @@ export interface BreedDeleteRoute extends RouteGenericInterface {
 export interface BreedGetRoute extends RouteGenericInterface {
 	Params: IBreedIdParam;
 }
+
+export interface BreedListQuery {
+	speciesId?: string; // encoded, optional
+}
+
+export interface BreedListRoute extends RouteGenericInterface {
+	Querystring: BreedListQuery;
+}
