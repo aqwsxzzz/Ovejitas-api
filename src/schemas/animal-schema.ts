@@ -3,6 +3,7 @@ export const animalCreateSchema = {
 	required: ["speciesId", "name", "sex", "birthDate", "status", "reproductiveStatus", "acquisitionType", "acquisitionDate"],
 	properties: {
 		speciesId: { type: "string", minLength: 1 },
+		// breedId must belong to the provided speciesId. If not, a 400 error is returned.
 		breedId: { type: ["string", "null"], minLength: 1 },
 		name: { type: "string", minLength: 1 },
 		tagNumber: { type: ["string", "null"], minLength: 1 },

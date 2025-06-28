@@ -4,6 +4,7 @@ import { serializeAnimal } from "../../serializers/animal-serializer";
 import { decodeId } from "../../utils/id-hash-util";
 import { findAnimalById, findAnimalsByFarmId, isTagNumberUniqueForFarm } from "../../utils/animal-util";
 import { AnimalCreateRoute, AnimalUpdateRoute, AnimalGetRoute, AnimalDeleteRoute, AnimalListRoute, AnimalListByFarmRoute } from "../../types/animal-types";
+import { findBreedById } from "../../utils/breed-util";
 
 export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, reply: FastifyReply) => {
 	const { speciesId, breedId, name, tagNumber, sex, birthDate, weight, status, reproductiveStatus, parentId, motherId, acquisitionType, acquisitionDate } = request.body;
@@ -13,6 +14,17 @@ export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, r
 	const breedIdDecoded = breedId ? decodeId(breedId) : null;
 	const parentIdDecoded = parentId ? decodeId(parentId) : null;
 	const motherIdDecoded = motherId ? decodeId(motherId) : null;
+
+	// Validate breed-species match
+	if (breedId) {
+		const breed = await findBreedById(breedId);
+		if (!breed) {
+			return reply.code(400).send({ message: "Breed not found." });
+		}
+		if (breed.speciesId !== speciesIdDecoded) {
+			return reply.code(400).send({ message: "Selected breed does not belong to the specified species. Please select a valid breed for this species." });
+		}
+	}
 
 	// Check tag number uniqueness
 	if (tagNumber) {
