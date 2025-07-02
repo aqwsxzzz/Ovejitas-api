@@ -25,3 +25,11 @@ export const breedIdParamSchema = {
 	},
 	additionalProperties: false,
 };
+
+export const breedListQuerySchema = {
+	type: "object",
+	properties: {
+		speciesId: { type: "string", minLength: 1 },
+	},
+	additionalProperties: false,
+};

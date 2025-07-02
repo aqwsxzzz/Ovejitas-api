@@ -1,11 +1,15 @@
 meta {
-  name: List Breeds
+  name: List Breeds by Species
   type: http
-  seq: 2
+  seq: 3
 }
 
 get {
-  url: http://localhost:8080/v1/breeds
+  url: http://localhost:8080/v1/breeds?speciesId=NArJeWyE
   body: none
   auth: none
-} 
+}
+
+query {
+  speciesId: NArJeWyE
+}

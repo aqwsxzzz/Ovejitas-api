@@ -1,7 +1,8 @@
 import { FastifyInstance } from "fastify";
 import * as breedController from "../../controllers/v1/breed-controller";
-import { breedCreateSchema, breedUpdateSchema, breedIdParamSchema } from "../../schemas/breed-schema";
+import { breedCreateSchema, breedUpdateSchema, breedIdParamSchema, breedListQuerySchema } from "../../schemas/breed-schema";
 import { breedResponseSchema } from "../../serializers/breed-serializer";
+import { BreedListRoute } from "../../types/breed-types";
 
 export default async function breedRoutes(fastify: FastifyInstance) {
 	fastify.post(
@@ -16,11 +17,12 @@ export default async function breedRoutes(fastify: FastifyInstance) {
 		breedController.createBreed
 	);
 
-	fastify.get(
+	fastify.get<BreedListRoute>(
 		"/breeds",
 		{
 			preHandler: [fastify.authenticate],
 			schema: {
+				querystring: breedListQuerySchema,
 				response: { 200: { type: "array", items: breedResponseSchema } },
 			},
 		},
