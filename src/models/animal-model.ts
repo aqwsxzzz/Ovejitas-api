@@ -171,7 +171,7 @@ Animal.init(
 		indexes: [
 			{
 				unique: true,
-				fields: ["farm_id", "tag_number"],
+				fields: ["farm_id", "species_id", "tag_number"],
 				where: { tag_number: { $ne: null } },
 			},
 		],

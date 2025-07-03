@@ -7,59 +7,64 @@ import { AnimalCreateRoute, AnimalUpdateRoute, AnimalGetRoute, AnimalDeleteRoute
 import { findBreedById } from "../../utils/breed-util";
 
 export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, reply: FastifyReply) => {
-	const { speciesId, breedId, name, tagNumber, sex, birthDate, weight, status, reproductiveStatus, fatherId, motherId, acquisitionType, acquisitionDate } = request.body;
-	const { farmId } = request.params;
-	const farmIdDecoded = decodeId(farmId)!;
-	const speciesIdDecoded = decodeId(speciesId)!;
-	const breedIdDecoded = breedId ? decodeId(breedId) : null;
-	const fatherIdDecoded = fatherId ? decodeId(fatherId) : null;
-	const motherIdDecoded = motherId ? decodeId(motherId) : null;
+	try {
+		const { speciesId, breedId, name, tagNumber, sex, birthDate, weight, status, reproductiveStatus, fatherId, motherId, acquisitionType, acquisitionDate } = request.body;
+		const { farmId } = request.params;
+		const farmIdDecoded = decodeId(farmId)!;
+		const speciesIdDecoded = decodeId(speciesId)!;
+		const breedIdDecoded = breedId ? decodeId(breedId) : null;
+		const fatherIdDecoded = fatherId ? decodeId(fatherId) : null;
+		const motherIdDecoded = motherId ? decodeId(motherId) : null;
 
-	// Validate parent sex
-	let father: Animal | null = null;
-	let mother: Animal | null = null;
-	if (fatherIdDecoded) father = await Animal.findByPk(fatherIdDecoded);
-	if (motherIdDecoded) mother = await Animal.findByPk(motherIdDecoded);
-	const parentSexError = validateParentSex(father, mother);
-	if (parentSexError) {
-		return reply.code(400).send({ message: parentSexError });
-	}
+		// Validate parent sex
+		let father: Animal | null = null;
+		let mother: Animal | null = null;
+		if (fatherIdDecoded) father = await Animal.findByPk(fatherIdDecoded);
+		if (motherIdDecoded) mother = await Animal.findByPk(motherIdDecoded);
+		const parentSexError = validateParentSex(father, mother);
+		if (parentSexError) {
+			return reply.code(400).send({ message: parentSexError });
+		}
 
-	// Validate breed-species match
-	if (breedId) {
-		const breed = await findBreedById(breedId);
-		if (!breed) {
-			return reply.code(400).send({ message: "Breed not found." });
+		// Validate breed-species match
+		if (breedId) {
+			const breed = await findBreedById(breedId);
+			if (!breed) {
+				return reply.code(400).send({ message: "Breed not found." });
+			}
+			if (breed.speciesId !== speciesIdDecoded) {
+				return reply.code(400).send({ message: "Selected breed does not belong to the specified species. Please select a valid breed for this species." });
+			}
 		}
-		if (breed.speciesId !== speciesIdDecoded) {
-			return reply.code(400).send({ message: "Selected breed does not belong to the specified species. Please select a valid breed for this species." });
-		}
-	}
 
-	// Check tag number uniqueness
-	if (tagNumber) {
-		const isUnique = await isTagNumberUniqueForFarm(tagNumber, farmIdDecoded, speciesIdDecoded);
-		if (!isUnique) {
-			return reply.code(409).send({ message: "Tag number must be unique per farm." });
+		// Check tag number uniqueness
+		if (tagNumber) {
+			const isUnique = await isTagNumberUniqueForFarm(tagNumber, farmIdDecoded, speciesIdDecoded);
+			if (!isUnique) {
+				return reply.code(409).send({ message: "Tag number must be unique per  and species." });
+			}
 		}
+		const animal = await Animal.create({
+			farmId: farmIdDecoded,
+			speciesId: speciesIdDecoded,
+			breedId: breedIdDecoded,
+			name,
+			tagNumber: tagNumber ?? null,
+			sex,
+			birthDate: new Date(birthDate),
+			weight: weight ?? null,
+			status,
+			reproductiveStatus,
+			fatherId: fatherIdDecoded,
+			motherId: motherIdDecoded,
+			acquisitionType,
+			acquisitionDate: new Date(acquisitionDate),
+		});
+		return reply.code(201).send(serializeAnimal(animal));
+	} catch (error) {
+		console.error(error);
+		return reply.code(500).send({ message: "Internal server error", error: error });
 	}
-	const animal = await Animal.create({
-		farmId: farmIdDecoded,
-		speciesId: speciesIdDecoded,
-		breedId: breedIdDecoded,
-		name,
-		tagNumber: tagNumber ?? null,
-		sex,
-		birthDate: new Date(birthDate),
-		weight: weight ?? null,
-		status,
-		reproductiveStatus,
-		fatherId: fatherIdDecoded,
-		motherId: motherIdDecoded,
-		acquisitionType,
-		acquisitionDate: new Date(acquisitionDate),
-	});
-	reply.code(201).send(serializeAnimal(animal));
 };
 
 export const listAnimalsByFarm = async (request: FastifyRequest<AnimalListByFarmRoute>, reply: FastifyReply) => {
@@ -89,9 +94,11 @@ export const updateAnimal = async (request: FastifyRequest<AnimalUpdateRoute>, r
 	const { speciesId, breedId, name, tagNumber, sex, birthDate, weight, status, reproductiveStatus, fatherId, motherId, acquisitionType, acquisitionDate } = request.body;
 	const { farmId } = request.params;
 	if (tagNumber) {
-		const isUnique = await isTagNumberUniqueForFarm(tagNumber, farmId ? decodeId(farmId)! : animal.farmId, animal.id);
+		const farmIdToUse = farmId ? decodeId(farmId)! : animal.farmId;
+		const speciesIdToUse = speciesId ? decodeId(speciesId)! : animal.speciesId;
+		const isUnique = await isTagNumberUniqueForFarm(tagNumber, farmIdToUse, speciesIdToUse, animal.id);
 		if (!isUnique) {
-			return reply.code(409).send({ message: "Tag number must be unique per farm." });
+			return reply.code(409).send({ message: "Tag number must be unique per farm and species." });
 		}
 	}
 	if (farmId) animal.set("farmId", decodeId(farmId)!);
