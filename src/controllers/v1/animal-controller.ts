@@ -2,21 +2,43 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { Animal } from "../../models/animal-model";
 import { serializeAnimal } from "../../serializers/animal-serializer";
 import { decodeId } from "../../utils/id-hash-util";
-import { findAnimalById, findAnimalsByFarmId, isTagNumberUniqueForFarm } from "../../utils/animal-util";
+import { findAnimalById, findAnimalsByFarmId, isTagNumberUniqueForFarm, validateParentSex } from "../../utils/animal-util";
 import { AnimalCreateRoute, AnimalUpdateRoute, AnimalGetRoute, AnimalDeleteRoute, AnimalListRoute, AnimalListByFarmRoute } from "../../types/animal-types";
+import { findBreedById } from "../../utils/breed-util";
 
 export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, reply: FastifyReply) => {
-	const { speciesId, breedId, name, tagNumber, sex, birthDate, weight, status, reproductiveStatus, parentId, motherId, acquisitionType, acquisitionDate } = request.body;
+	const { speciesId, breedId, name, tagNumber, sex, birthDate, weight, status, reproductiveStatus, fatherId, motherId, acquisitionType, acquisitionDate } = request.body;
 	const { farmId } = request.params;
 	const farmIdDecoded = decodeId(farmId)!;
 	const speciesIdDecoded = decodeId(speciesId)!;
 	const breedIdDecoded = breedId ? decodeId(breedId) : null;
-	const parentIdDecoded = parentId ? decodeId(parentId) : null;
+	const fatherIdDecoded = fatherId ? decodeId(fatherId) : null;
 	const motherIdDecoded = motherId ? decodeId(motherId) : null;
+
+	// Validate parent sex
+	let father: Animal | null = null;
+	let mother: Animal | null = null;
+	if (fatherIdDecoded) father = await Animal.findByPk(fatherIdDecoded);
+	if (motherIdDecoded) mother = await Animal.findByPk(motherIdDecoded);
+	const parentSexError = validateParentSex(father, mother);
+	if (parentSexError) {
+		return reply.code(400).send({ message: parentSexError });
+	}
+
+	// Validate breed-species match
+	if (breedId) {
+		const breed = await findBreedById(breedId);
+		if (!breed) {
+			return reply.code(400).send({ message: "Breed not found." });
+		}
+		if (breed.speciesId !== speciesIdDecoded) {
+			return reply.code(400).send({ message: "Selected breed does not belong to the specified species. Please select a valid breed for this species." });
+		}
+	}
 
 	// Check tag number uniqueness
 	if (tagNumber) {
-		const isUnique = await isTagNumberUniqueForFarm(tagNumber, farmIdDecoded);
+		const isUnique = await isTagNumberUniqueForFarm(tagNumber, farmIdDecoded, speciesIdDecoded);
 		if (!isUnique) {
 			return reply.code(409).send({ message: "Tag number must be unique per farm." });
 		}
@@ -32,7 +54,7 @@ export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, r
 		weight: weight ?? null,
 		status,
 		reproductiveStatus,
-		parentId: parentIdDecoded,
+		fatherId: fatherIdDecoded,
 		motherId: motherIdDecoded,
 		acquisitionType,
 		acquisitionDate: new Date(acquisitionDate),
@@ -64,7 +86,7 @@ export const updateAnimal = async (request: FastifyRequest<AnimalUpdateRoute>, r
 	if (!animal) {
 		return reply.code(404).send({ message: "Animal not found" });
 	}
-	const { speciesId, breedId, name, tagNumber, sex, birthDate, weight, status, reproductiveStatus, parentId, motherId, acquisitionType, acquisitionDate } = request.body;
+	const { speciesId, breedId, name, tagNumber, sex, birthDate, weight, status, reproductiveStatus, fatherId, motherId, acquisitionType, acquisitionDate } = request.body;
 	const { farmId } = request.params;
 	if (tagNumber) {
 		const isUnique = await isTagNumberUniqueForFarm(tagNumber, farmId ? decodeId(farmId)! : animal.farmId, animal.id);
@@ -82,10 +104,22 @@ export const updateAnimal = async (request: FastifyRequest<AnimalUpdateRoute>, r
 	if (weight !== undefined) animal.set("weight", weight ?? null);
 	if (status) animal.set("status", status);
 	if (reproductiveStatus) animal.set("reproductiveStatus", reproductiveStatus);
-	if (parentId !== undefined) animal.set("parentId", parentId ? decodeId(parentId) : null);
+	if (fatherId !== undefined) animal.set("fatherId", fatherId ? decodeId(fatherId) : null);
 	if (motherId !== undefined) animal.set("motherId", motherId ? decodeId(motherId) : null);
 	if (acquisitionType) animal.set("acquisitionType", acquisitionType);
 	if (acquisitionDate) animal.set("acquisitionDate", new Date(acquisitionDate));
+
+	// Validate parent sex
+	let father: Animal | null = null;
+	let mother: Animal | null = null;
+	const fatherIdDecoded = fatherId ? decodeId(fatherId) : null;
+	const motherIdDecoded = motherId ? decodeId(motherId) : null;
+	if (fatherIdDecoded) father = await Animal.findByPk(fatherIdDecoded);
+	if (motherIdDecoded) mother = await Animal.findByPk(motherIdDecoded);
+	const parentSexError = validateParentSex(father, mother);
+	if (parentSexError) {
+		return reply.code(400).send({ message: parentSexError });
+	}
 
 	await animal.save();
 

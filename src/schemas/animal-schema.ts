@@ -3,6 +3,7 @@ export const animalCreateSchema = {
 	required: ["speciesId", "name", "sex", "birthDate", "status", "reproductiveStatus", "acquisitionType", "acquisitionDate"],
 	properties: {
 		speciesId: { type: "string", minLength: 1 },
+		// breedId must belong to the provided speciesId. If not, a 400 error is returned.
 		breedId: { type: ["string", "null"], minLength: 1 },
 		name: { type: "string", minLength: 1 },
 		tagNumber: { type: ["string", "null"], minLength: 1 },
@@ -11,7 +12,7 @@ export const animalCreateSchema = {
 		weight: { type: ["number", "null"] },
 		status: { type: "string", enum: ["alive", "sold", "deceased"] },
 		reproductiveStatus: { type: "string", enum: ["open", "pregnant", "lactating", "other"] },
-		parentId: { type: ["string", "null"], minLength: 1 },
+		fatherId: { type: ["string", "null"], minLength: 1 },
 		motherId: { type: ["string", "null"], minLength: 1 },
 		acquisitionType: { type: "string", enum: ["born", "purchased", "other"] },
 		acquisitionDate: { type: "string", format: "date" },
@@ -31,7 +32,7 @@ export const animalUpdateSchema = {
 		weight: { type: ["number", "null"] },
 		status: { type: "string", enum: ["alive", "sold", "deceased"] },
 		reproductiveStatus: { type: "string", enum: ["open", "pregnant", "lactating", "other"] },
-		parentId: { type: ["string", "null"], minLength: 1 },
+		fatherId: { type: ["string", "null"], minLength: 1 },
 		motherId: { type: ["string", "null"], minLength: 1 },
 		acquisitionType: { type: "string", enum: ["born", "purchased", "other"] },
 		acquisitionDate: { type: "string", format: "date" },

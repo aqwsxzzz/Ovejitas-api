@@ -11,4 +11,4 @@ so that I only see relevant breed options for the species I'm working with.
 -   API documentation (Bruno) is updated to reflect the new filter.
 -   Unit and integration tests cover this scenario.
 
-**Status:** To Do
+**Status:** Done

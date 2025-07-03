@@ -12,7 +12,7 @@ export interface AnimalAttributes {
 	weight?: number | null;
 	status: "alive" | "sold" | "deceased" | string;
 	reproductiveStatus: "open" | "pregnant" | "lactating" | "other" | string;
-	parentId?: number | null;
+	fatherId?: number | null;
 	motherId?: number | null;
 	acquisitionType: "born" | "purchased" | "other" | string;
 	acquisitionDate: Date;
@@ -32,7 +32,7 @@ export interface IAnimalCreateBody {
 	weight?: number | null;
 	status: "alive" | "sold" | "deceased" | string;
 	reproductiveStatus: "open" | "pregnant" | "lactating" | "other" | string;
-	parentId?: string | null;
+	fatherId?: string | null;
 	motherId?: string | null;
 	acquisitionType: "born" | "purchased" | "other" | string;
 	acquisitionDate: string;

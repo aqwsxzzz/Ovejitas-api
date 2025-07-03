@@ -12,4 +12,4 @@ so that my animal records are always accurate and consistent.
 -   API documentation (Bruno) is updated to reflect this validation.
 -   Unit and integration tests cover this scenario.
 
-**Status:** To Do
+**Status:** Done

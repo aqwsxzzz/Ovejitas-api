@@ -41,8 +41,8 @@ export class Animal extends Model<AnimalAttributes, AnimalCreationAttributes> {
 		return this.getDataValue("reproductiveStatus");
 	}
 
-	get parentId(): number | null | undefined {
-		return this.getDataValue("parentId");
+	get fatherId(): number | null | undefined {
+		return this.getDataValue("fatherId");
 	}
 	get motherId(): number | null | undefined {
 		return this.getDataValue("motherId");
@@ -126,10 +126,10 @@ Animal.init(
 			field: "reproductive_status",
 		},
 
-		parentId: {
+		fatherId: {
 			type: DataTypes.INTEGER.UNSIGNED,
 			allowNull: true,
-			field: "parent_id",
+			field: "father_id",
 			references: { model: "animals", key: "id" },
 			onDelete: "SET NULL",
 		},

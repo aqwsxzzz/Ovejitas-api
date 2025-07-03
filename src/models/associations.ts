@@ -24,6 +24,6 @@ Breed.belongsTo(Species, { foreignKey: "speciesId", as: "species" });
 Animal.belongsTo(Farm, { foreignKey: "farmId", as: "farm" });
 Animal.belongsTo(Species, { foreignKey: "speciesId", as: "species" });
 Animal.belongsTo(Breed, { foreignKey: "breedId", as: "breed" });
-Animal.belongsTo(Animal, { foreignKey: "parentId", as: "parent" });
+Animal.belongsTo(Animal, { foreignKey: "fatherId", as: "father" });
 Animal.belongsTo(Animal, { foreignKey: "motherId", as: "mother" });
-Animal.hasMany(Animal, { foreignKey: "parentId", as: "children" });
+Animal.hasMany(Animal, { foreignKey: "fatherId", as: "fatheredChildren" });
