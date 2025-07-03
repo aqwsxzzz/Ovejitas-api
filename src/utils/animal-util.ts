@@ -11,13 +11,14 @@ export async function findAnimalsByFarmId(farmId: string) {
 	return await Animal.findAll({ where: { farmId: id } });
 }
 
-export async function isTagNumberUniqueForFarm(tagNumber: string, farmId: number, excludeId?: number) {
+export async function isTagNumberUniqueForFarm(tagNumber: string, farmId: number, speciesId: number, excludeId?: number) {
 	if (!tagNumber) return true;
 	const where: {
 		tagNumber: string;
 		farmId: number;
+		speciesId: number;
 		id?: { $ne: number };
-	} = { tagNumber, farmId };
+	} = { tagNumber, farmId, speciesId };
 
 	if (excludeId) where.id = { $ne: excludeId };
 	const count = await Animal.count({ where });
