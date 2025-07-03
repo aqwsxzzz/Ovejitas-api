@@ -41,7 +41,7 @@ export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, r
 		if (tagNumber) {
 			const isUnique = await isTagNumberUniqueForFarm(tagNumber, farmIdDecoded, speciesIdDecoded);
 			if (!isUnique) {
-				return reply.code(409).send({ message: "Tag number must be unique per  and species." });
+				return reply.code(409).send({ message: "Tag number must be unique per farm and species." });
 			}
 		}
 		const animal = await Animal.create({
