@@ -60,7 +60,7 @@ export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, r
 			acquisitionType,
 			acquisitionDate: new Date(acquisitionDate),
 		});
-		return reply.code(201).send(serializeAnimal(animal));
+		return reply.code(201).send(serializeAnimal(animal, request?.language || "en"));
 	} catch (error) {
 		console.error(error);
 		return reply.code(500).send({ message: "Internal server error", error: error });
@@ -69,11 +69,14 @@ export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, r
 
 export const listAnimalsByFarm = async (request: FastifyRequest<AnimalListByFarmRoute>, reply: FastifyReply) => {
 	const { farmId } = request.params;
+
 	if (!farmId) {
 		return reply.code(400).send({ message: "farmId is required" });
 	}
 	const animals = await findAnimalsByFarmId(farmId);
-	reply.send(animals.map(serializeAnimal));
+
+	// Map each animal through serializeAnimal with await using Promise.all
+	reply.send(animals.map((animal) => serializeAnimal(animal, request?.language || "en")));
 };
 
 export const getAnimalById = async (request: FastifyRequest<AnimalGetRoute>, reply: FastifyReply) => {
@@ -82,7 +85,7 @@ export const getAnimalById = async (request: FastifyRequest<AnimalGetRoute>, rep
 	if (!animal) {
 		return reply.code(404).send({ message: "Animal not found" });
 	}
-	reply.send(serializeAnimal(animal));
+	reply.send(serializeAnimal(animal, request?.language || "en"));
 };
 
 export const updateAnimal = async (request: FastifyRequest<AnimalUpdateRoute>, reply: FastifyReply) => {
@@ -130,7 +133,7 @@ export const updateAnimal = async (request: FastifyRequest<AnimalUpdateRoute>, r
 
 	await animal.save();
 
-	reply.send(serializeAnimal(animal));
+	reply.send(serializeAnimal(animal, request?.language || "en"));
 };
 
 export const deleteAnimal = async (request: FastifyRequest<AnimalDeleteRoute>, reply: FastifyReply) => {
