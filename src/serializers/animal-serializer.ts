@@ -1,13 +1,30 @@
 import { Animal } from "../models/animal-model";
 import { encodeId } from "../utils/id-hash-util";
+import { Species } from "../models/species-model";
+import { Breed } from "../models/breed-model";
+import { SpeciesTranslation } from "../models/species-translation-model";
 
 export const animalResponseSchema = {
 	type: "object",
 	properties: {
 		id: { type: "string" },
 		farmId: { type: "string" },
-		speciesId: { type: "string" },
-		breedId: { type: ["string", "null"] },
+		species: {
+			type: "object",
+			properties: {
+				id: { type: "string" },
+				name: { type: "string" },
+			},
+			required: ["id", "name"],
+		},
+		breed: {
+			type: ["object", "null"],
+			properties: {
+				id: { type: "string" },
+				name: { type: "string" },
+			},
+			required: ["id", "name"],
+		},
 		name: { type: "string" },
 		tagNumber: { type: ["string", "null"] },
 		sex: { type: "string" },
@@ -22,16 +39,35 @@ export const animalResponseSchema = {
 		createdAt: { type: "string", format: "date-time" },
 		updatedAt: { type: "string", format: "date-time" },
 	},
-	required: ["id", "farmId", "speciesId", "name", "sex", "birthDate", "status", "reproductiveStatus", "acquisitionType", "acquisitionDate", "createdAt", "updatedAt"],
+	required: ["id", "farmId", "species", "name", "sex", "birthDate", "status", "reproductiveStatus", "acquisitionType", "acquisitionDate", "createdAt", "updatedAt"],
 	additionalProperties: false,
 };
 
-export function serializeAnimal(animal: Animal) {
+export function serializeAnimal(animal: Animal, language: string) {
+	const animalWithAssociations = animal as Animal & {
+		species?: Species & { translations?: SpeciesTranslation[] };
+		breed?: Breed | null;
+	};
+
+	const species = animalWithAssociations.species;
+	const breed = animalWithAssociations.breed;
+
+	// Get species name from translations or use a default
+	const speciesName = species?.translations && species.translations.length > 0 ? species.translations.find((translation) => translation.languageCode === language)?.name : "Unknown Species";
+
 	return {
 		id: encodeId(animal.id),
 		farmId: encodeId(animal.farmId),
-		speciesId: encodeId(animal.speciesId),
-		breedId: animal.breedId ? encodeId(animal.breedId) : null,
+		species: {
+			id: encodeId(animal.speciesId),
+			name: speciesName,
+		},
+		breed: breed
+			? {
+					id: encodeId(breed.id),
+					name: breed.name,
+			  }
+			: null,
 		name: animal.name,
 		tagNumber: animal.tagNumber ?? null,
 		sex: animal.sex,

@@ -1,15 +1,57 @@
 import { Op } from "sequelize";
 import { Animal } from "../models/animal-model";
 import { decodeId } from "../utils/id-hash-util";
+import { Species } from "../models/species-model";
+import { Breed } from "../models/breed-model";
+import { SpeciesTranslation } from "../models/species-translation-model";
 
 export async function findAnimalById(animalId: string) {
     const id = decodeId(animalId);
-    return await Animal.findByPk(id);
+    return await Animal.findByPk(id, {
+        include: [
+            {
+                model: Species,
+                as: "species",
+                include: [
+                    {
+                        model: SpeciesTranslation,
+                        as: "translations",
+                        required: false,
+                    },
+                ],
+            },
+            {
+                model: Breed,
+                as: "breed",
+                required: false,
+            },
+        ],
+    });
 }
 
 export async function findAnimalsByFarmId(farmId: string) {
     const id = decodeId(farmId);
-    return await Animal.findAll({ where: { farmId: id } });
+    return await Animal.findAll({
+        where: { farmId: id },
+        include: [
+            {
+                model: Species,
+                as: "species",
+                include: [
+                    {
+                        model: SpeciesTranslation,
+                        as: "translations",
+                        required: false,
+                    },
+                ],
+            },
+            {
+                model: Breed,
+                as: "breed",
+                required: false,
+            },
+        ],
+    });
 }
 
 export async function isTagNumberUniqueForFarm(tagNumber: string, farmId: number, speciesId: number, excludeId?: number) {

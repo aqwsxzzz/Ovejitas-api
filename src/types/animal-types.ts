@@ -1,4 +1,7 @@
 import { RouteGenericInterface } from "fastify";
+import { Species } from "../models/species-model";
+import { Breed } from "../models/breed-model";
+import { SpeciesTranslation } from "../models/species-translation-model";
 
 export interface AnimalAttributes {
 	id: number;
@@ -18,9 +21,13 @@ export interface AnimalAttributes {
 	acquisitionDate: Date;
 	createdAt?: Date;
 	updatedAt?: Date;
+
+	// Associations
+	species?: Species & { translations?: SpeciesTranslation[] };
+	breed?: Breed | null;
 }
 
-export type AnimalCreationAttributes = Omit<AnimalAttributes, "id" | "createdAt" | "updatedAt">;
+export type AnimalCreationAttributes = Omit<AnimalAttributes, "id" | "createdAt" | "updatedAt" | "species" | "breed">;
 
 export interface IAnimalCreateBody {
 	speciesId: string;

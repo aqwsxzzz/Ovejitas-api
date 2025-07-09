@@ -8,6 +8,7 @@ export default async function animalRoute(fastify: FastifyInstance) {
 	fastify.get<AnimalGetRoute>(
 		"/farms/:farmId/animals/:id",
 		{
+			preHandler: [fastify.authenticate],
 			schema: {
 				params: animalIdParamSchema,
 				response: {
@@ -22,6 +23,7 @@ export default async function animalRoute(fastify: FastifyInstance) {
 	fastify.get(
 		"/farms/:farmId/animals",
 		{
+			preHandler: [fastify.authenticate],
 			schema: {
 				params: animalListParamSchema,
 				response: {
@@ -35,6 +37,7 @@ export default async function animalRoute(fastify: FastifyInstance) {
 	fastify.post<AnimalCreateRoute>(
 		"/farms/:farmId/animals",
 		{
+			preHandler: [fastify.authenticate],
 			schema: {
 				body: animalCreateSchema,
 				response: {
@@ -49,6 +52,7 @@ export default async function animalRoute(fastify: FastifyInstance) {
 	fastify.put<AnimalUpdateRoute>(
 		"/farms/:farmId/animals/:id",
 		{
+			preHandler: [fastify.authenticate],
 			schema: {
 				params: animalIdParamSchema,
 				body: animalUpdateSchema,
@@ -65,6 +69,7 @@ export default async function animalRoute(fastify: FastifyInstance) {
 	fastify.delete<AnimalDeleteRoute>(
 		"/farms/:farmId/animals/:id",
 		{
+			preHandler: [fastify.authenticate],
 			schema: {
 				params: animalIdParamSchema,
 				response: {

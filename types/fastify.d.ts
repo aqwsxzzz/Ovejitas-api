@@ -14,5 +14,6 @@ declare module "fastify" {
 			role: string;
 		} | null;
 		lastVisitedFarmId: number;
+		language: string;
 	}
 }
