@@ -18,12 +18,13 @@ import breedRoutes from "./routes/v1/breed-route";
 import animalRoutes from "./routes/v1/animal-route";
 
 const server: FastifyInstance = Fastify({
-	logger: true,
+    logger: true,
 });
 
 server.register(fastifyCors, {
-	origin: ["http://localhost:5173"],
-	credentials: true,
+    origin: ["http://localhost:5173"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 });
 
 server.register(sequelizePlugin);
@@ -41,13 +42,13 @@ server.register(breedRoutes, { prefix: "/v1" });
 server.register(animalRoutes, { prefix: "/v1" });
 
 const start = async () => {
-	try {
-		await server.listen({ port: 8080, host: "0.0.0.0" });
-		console.log(`Server is running at ${server.server.address()}`);
-	} catch (err) {
-		server.log.error(err);
-		process.exit(1);
-	}
+    try {
+        await server.listen({ port: 8080, host: "0.0.0.0" });
+        console.log(`Server is running at ${server.server.address()}`);
+    } catch (err) {
+        server.log.error(err);
+        process.exit(1);
+    }
 };
 
 start();
