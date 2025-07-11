@@ -16,6 +16,7 @@ import farmMembersRoutes from "./routes/v1/farm-members-route";
 import farmInvitationRoutes from "./routes/v1/farm-invitation-route";
 import breedRoutes from "./routes/v1/breed-route";
 import animalRoutes from "./routes/v1/animal-route";
+import animalMeasurementRoutes from "./routes/v1/animal-measurement-routes";
 
 const server: FastifyInstance = Fastify({
     logger: true,
@@ -40,6 +41,7 @@ server.register(farmMembersRoutes, { prefix: "/v1" });
 server.register(farmInvitationRoutes, { prefix: "/v1" });
 server.register(breedRoutes, { prefix: "/v1" });
 server.register(animalRoutes, { prefix: "/v1" });
+server.register(animalMeasurementRoutes, { prefix: "/v1" });
 
 const start = async () => {
     try {

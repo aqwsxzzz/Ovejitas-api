@@ -1,0 +1,18 @@
+meta {
+  name: List Measurements with Date Range
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://localhost:8080/v1/farms/AdWNDqgV/animals/AdWNDqgV/measurements?measurementType=weight&startDate=2024-01-01&endDate=2024-12-31&limit=50
+  body: none
+  auth: none
+}
+
+query {
+  measurementType: weight
+  startDate: 2024-01-01
+  endDate: 2024-12-31
+  limit: 50
+}

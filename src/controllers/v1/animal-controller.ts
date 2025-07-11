@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { Animal } from "../../models/animal-model";
+import { AnimalMeasurement } from "../../models/animal-measurement-model";
 import { serializeAnimal } from "../../serializers/animal-serializer";
 import { decodeId, encodeId } from "../../utils/id-hash-util";
 import { findAnimalById, findAnimalsByFarmId, isTagNumberUniqueForFarm, validateParentSex } from "../../utils/animal-util";
@@ -62,6 +63,20 @@ export const createAnimal = async (request: FastifyRequest<AnimalCreateRoute>, r
 			acquisitionType,
 			acquisitionDate: new Date(acquisitionDate),
 		});
+		
+		// Create initial weight measurement if weight is provided
+		if (weight) {
+			await AnimalMeasurement.create({
+				animalId: animal.id,
+				measurementType: 'weight',
+				value: weight,
+				unit: 'kg',
+				measuredAt: new Date(),
+				measuredBy: request.user?.id || null,
+				method: 'initial',
+				notes: 'Initial weight measurement'
+			});
+		}
 		
 		// Reload the animal with associations
 		const animalWithAssociations = await findAnimalById(encodeId(animal.id));
@@ -147,6 +162,20 @@ export const updateAnimal = async (request: FastifyRequest<AnimalUpdateRoute>, r
 	}
 
 	await animal.save();
+	
+	// Create or update weight measurement if weight is provided
+	if (weight !== undefined && weight !== null) {
+		await AnimalMeasurement.create({
+			animalId: animal.id,
+			measurementType: 'weight',
+			value: weight,
+			unit: 'kg',
+			measuredAt: new Date(),
+			measuredBy: request.user?.id || null,
+			method: 'update',
+			notes: 'Weight updated'
+		});
+	}
 
 	// Reload the animal with associations
 	const animalWithAssociations = await findAnimalById(id);
