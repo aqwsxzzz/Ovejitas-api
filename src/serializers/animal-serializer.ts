@@ -18,7 +18,7 @@ export const animalResponseSchema = {
 			required: ["id", "name"],
 		},
 		breed: {
-			type: ["object", "null"],
+			type: "object",
 			properties: {
 				id: { type: "string" },
 				name: { type: "string" },
@@ -26,7 +26,7 @@ export const animalResponseSchema = {
 			required: ["id", "name"],
 		},
 		name: { type: "string" },
-		tagNumber: { type: ["string", "null"] },
+		tagNumber: { type: "string" },
 		sex: { type: "string" },
 		birthDate: { type: "string", format: "date" },
 		weight: { type: ["number", "null"] },
@@ -39,14 +39,14 @@ export const animalResponseSchema = {
 		createdAt: { type: "string", format: "date-time" },
 		updatedAt: { type: "string", format: "date-time" },
 	},
-	required: ["id", "farmId", "species", "name", "sex", "birthDate", "status", "reproductiveStatus", "acquisitionType", "acquisitionDate", "createdAt", "updatedAt"],
+	required: ["id", "farmId", "species", "breed", "name", "tagNumber", "sex", "birthDate", "status", "reproductiveStatus", "acquisitionType", "acquisitionDate", "createdAt", "updatedAt"],
 	additionalProperties: false,
 };
 
 export function serializeAnimal(animal: Animal, language: string) {
 	const animalWithAssociations = animal as Animal & {
 		species?: Species & { translations?: SpeciesTranslation[] };
-		breed?: Breed | null;
+		breed?: Breed;
 	};
 
 	const species = animalWithAssociations.species;
@@ -67,9 +67,12 @@ export function serializeAnimal(animal: Animal, language: string) {
 					id: encodeId(breed.id),
 					name: breed.name,
 			  }
-			: null,
+			: {
+					id: encodeId(animal.breedId),
+					name: "Unknown Breed",
+			  },
 		name: animal.name,
-		tagNumber: animal.tagNumber ?? null,
+		tagNumber: animal.tagNumber,
 		sex: animal.sex,
 		birthDate: animal.birthDate?.toISOString().split("T")[0],
 		weight: animal.weight ?? null,

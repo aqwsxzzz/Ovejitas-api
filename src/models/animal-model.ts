@@ -16,13 +16,13 @@ export class Animal extends Model<AnimalAttributes, AnimalCreationAttributes> {
 	get speciesId(): number {
 		return this.getDataValue("speciesId");
 	}
-	get breedId(): number | null | undefined {
+	get breedId(): number {
 		return this.getDataValue("breedId");
 	}
 	get name(): string {
 		return this.getDataValue("name");
 	}
-	get tagNumber(): string | null | undefined {
+	get tagNumber(): string {
 		return this.getDataValue("tagNumber");
 	}
 	get sex(): string {
@@ -97,7 +97,7 @@ Animal.init(
 		},
 		tagNumber: {
 			type: DataTypes.STRING,
-			allowNull: true,
+			allowNull: false,
 			field: "tag_number",
 		},
 		sex: {

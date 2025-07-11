@@ -7,9 +7,9 @@ export interface AnimalAttributes {
 	id: number;
 	farmId: number;
 	speciesId: number;
-	breedId?: number | null;
+	breedId: number;
 	name: string;
-	tagNumber?: string | null;
+	tagNumber: string;
 	sex: "male" | "female" | "unknown";
 	birthDate: Date;
 	weight?: number | null;
@@ -24,16 +24,16 @@ export interface AnimalAttributes {
 
 	// Associations
 	species?: Species & { translations?: SpeciesTranslation[] };
-	breed?: Breed | null;
+	breed?: Breed;
 }
 
 export type AnimalCreationAttributes = Omit<AnimalAttributes, "id" | "createdAt" | "updatedAt" | "species" | "breed">;
 
 export interface IAnimalCreateBody {
 	speciesId: string;
-	breedId?: string | null;
+	breedId: string;
 	name: string;
-	tagNumber?: string | null;
+	tagNumber: string;
 	sex: "male" | "female" | "unknown";
 	birthDate: string;
 	weight?: number | null;
