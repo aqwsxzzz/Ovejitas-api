@@ -1,74 +1,79 @@
-# Create Document from Template Task
+# Create Document from Template (YAML Driven)
 
-## Purpose
+## CRITICAL: Mandatory Elicitation Format
 
-- Generate documents from any specified template following embedded instructions from the perspective of the selected agent persona
+**When `elicit: true`, ALWAYS use this exact format:**
 
-## Instructions
+1. Present section content
+2. Provide detailed rationale (explain trade-offs, assumptions, decisions made)
+3. Present numbered options 1-9:
+   - **Option 1:** Always "Proceed to next section"
+   - **Options 2-9:** Select 8 methods from data/elicitation-methods
+   - End with: "Select 1-9 or just type your question/feedback:"
 
-### 1. Identify Template and Context
+**NEVER ask yes/no questions or use any other format.**
 
-- Determine which template to use (user-provided or list available for selection to user)
+## Processing Flow
 
-  - Agent-specific templates are listed in the agent's dependencies under `templates`. For each template listed, consider it a document the agent can create. So if an agent has:
+1. **Parse YAML template** - Load template metadata and sections
+2. **Set preferences** - Show current mode (Interactive), confirm output file
+3. **Process each section:**
+   - Skip if condition unmet
+   - Check agent permissions (owner/editors) - note if section is restricted to specific agents
+   - Draft content using section instruction
+   - Present content + detailed rationale
+   - **IF elicit: true** → MANDATORY 1-9 options format
+   - Save to file if possible
+4. **Continue until complete**
 
-    @{example}
-    dependencies:
-    templates: - prd-tmpl - architecture-tmpl
-    @{/example}
+## Detailed Rationale Requirements
 
-    You would offer to create "PRD" and "Architecture" documents when the user asks what you can help with.
+When presenting section content, ALWAYS include rationale that explains:
 
-- Gather all relevant inputs, or ask for them, or else rely on user providing necessary details to complete the document
-- Understand the document purpose and target audience
+- Trade-offs and choices made (what was chosen over alternatives and why)
+- Key assumptions made during drafting
+- Interesting or questionable decisions that need user attention
+- Areas that might need validation
 
-### 2. Determine Interaction Mode
+## Elicitation Results Flow
 
-Confirm with the user their preferred interaction style:
+After user selects elicitation method (2-9):
 
-- **Incremental:** Work through chunks of the document.
-- **YOLO Mode:** Draft complete document making reasonable assumptions in one shot. (Can be entered also after starting incremental by just typing /yolo)
+1. Execute method from data/elicitation-methods
+2. Present results with insights
+3. Offer options:
+   - **1. Apply changes and update section**
+   - **2. Return to elicitation menu**
+   - **3. Ask any questions or engage further with this elicitation**
 
-### 3. Execute Template
+## Agent Permissions
 
-- Load specified template from `templates#*` or the `.bmad-core/templates directory`
-- Follow ALL embedded LLM instructions within the template
-- Process template markup according to `utils#template-format` or `.bmad-core/utils/template-format` conventions
+When processing sections with agent permission fields:
 
-### 4. Template Processing Rules
+- **owner**: Note which agent role initially creates/populates the section
+- **editors**: List agent roles allowed to modify the section
+- **readonly**: Mark sections that cannot be modified after creation
 
-#### CRITICAL: Never display template markup, LLM instructions, or examples to users
+**For sections with restricted access:**
 
-- Replace all {{placeholders}} with actual content
-- Execute all [[LLM: instructions]] internally
-- Process `<<REPEAT>>` sections as needed
-- Evaluate ^^CONDITION^^ blocks and include only if applicable
-- Use @{examples} for guidance but never output them
+- Include a note in the generated document indicating the responsible agent
+- Example: "_(This section is owned by dev-agent and can only be modified by dev-agent)_"
 
-### 5. Content Generation
+## YOLO Mode
 
-- **Incremental Mode**: Present each major section for review before proceeding
-- **YOLO Mode**: Generate all sections, then review complete document with user
-- Apply any elicitation protocols specified in template
-- Incorporate user feedback and iterate as needed
+User can type `#yolo` to toggle to YOLO mode (process all sections at once).
 
-### 6. Validation
+## CRITICAL REMINDERS
 
-If template specifies a checklist:
+**❌ NEVER:**
 
-- Run the appropriate checklist against completed document
-- Document completion status for each item
-- Address any deficiencies found
-- Present validation summary to user
+- Ask yes/no questions for elicitation
+- Use any format other than 1-9 numbered options
+- Create new elicitation methods
 
-### 7. Final Presentation
+**✅ ALWAYS:**
 
-- Present clean, formatted content only
-- Ensure all sections are complete
-- DO NOT truncate or summarize content
-- Begin directly with document content (no preamble)
-- Include any handoff prompts specified in template
-
-## Important Notes
-
-- Template markup is for AI processing only - never expose to users
+- Use exact 1-9 format when elicit: true
+- Select options 2-9 from data/elicitation-methods only
+- Provide detailed rationale explaining decisions
+- End with "Select 1-9 or just type your question/feedback:"
