@@ -25,14 +25,8 @@ export default async function animalMeasurementRoutes(
         ...animalMeasurementListSchema,
         response: {
           200: {
-            type: "object",
-            properties: {
-              data: {
-                type: "array",
-                items: animalMeasurementResponseSchema,
-              },
-            },
-            required: ["data"],
+            type: "array",
+            items: animalMeasurementResponseSchema,
           },
           404: {
             type: "object",
@@ -55,13 +49,7 @@ export default async function animalMeasurementRoutes(
       schema: {
         ...animalMeasurementCreateSchema,
         response: {
-          201: {
-            type: "object",
-            properties: {
-              data: animalMeasurementResponseSchema,
-            },
-            required: ["data"],
-          },
+          201: animalMeasurementResponseSchema,
           400: {
             type: "object",
             properties: {
@@ -90,13 +78,7 @@ export default async function animalMeasurementRoutes(
       schema: {
         ...animalMeasurementGetSchema,
         response: {
-          200: {
-            type: "object",
-            properties: {
-              data: animalMeasurementResponseSchema,
-            },
-            required: ["data"],
-          },
+          200: animalMeasurementResponseSchema,
           404: {
             type: "object",
             properties: {
@@ -118,13 +100,7 @@ export default async function animalMeasurementRoutes(
       schema: {
         ...animalMeasurementUpdateSchema,
         response: {
-          200: {
-            type: "object",
-            properties: {
-              data: animalMeasurementResponseSchema,
-            },
-            required: ["data"],
-          },
+          200: animalMeasurementResponseSchema,
           400: {
             type: "object",
             properties: {

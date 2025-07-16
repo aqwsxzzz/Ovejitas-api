@@ -56,9 +56,7 @@ export async function createAnimalMeasurement(
     notes,
   });
   
-  return reply.status(201).send({
-    data: serializeAnimalMeasurement(measurement, request.server),
-  });
+  return reply.status(201).send( serializeAnimalMeasurement(measurement, request.server));
 }
 
 export async function listAnimalMeasurements(
@@ -104,9 +102,7 @@ export async function listAnimalMeasurements(
     limit: Math.min(limit, 1000),
   });
   
-  return reply.send({
-    data: measurements.map(m => serializeAnimalMeasurement(m, request.server)),
-  });
+  return reply.send( measurements.map(m => serializeAnimalMeasurement(m, request.server)));
 }
 
 export async function getAnimalMeasurement(
@@ -147,9 +143,7 @@ export async function getAnimalMeasurement(
     });
   }
   
-  return reply.send({
-    data: serializeAnimalMeasurement(measurement, request.server),
-  });
+  return reply.send( serializeAnimalMeasurement(measurement, request.server));
 }
 
 export async function updateAnimalMeasurement(
@@ -210,7 +204,5 @@ export async function updateAnimalMeasurement(
   
   await measurement.save();
   
-  return reply.send({
-    data: serializeAnimalMeasurement(measurement, request.server),
-  });
+  return reply.send(serializeAnimalMeasurement(measurement, request.server));
 }
