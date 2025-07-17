@@ -1,30 +1,30 @@
-import { DataTypes, Model } from "sequelize";
-import { Sequelize } from "sequelize";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_ENV || "development"];
+import { DataTypes, Model } from 'sequelize';
+import { Sequelize } from 'sequelize';
 
-import { FarmMembersAttributes, FarmMembersCreationAttributes, FarmMemberRole } from "../types/farm-members-types";
+const sequelizeConfig = require('../database/sequelize-config')[process.env.NODE_ENV || 'development'];
+
+import { FarmMembersAttributes, FarmMembersCreationAttributes, FarmMemberRole } from '../types/farm-members-types';
 
 const sequelize = new Sequelize(sequelizeConfig);
 
 export class FarmMembers extends Model<FarmMembersAttributes, FarmMembersCreationAttributes> {
 	get id(): number {
-		return this.getDataValue("id");
+		return this.getDataValue('id');
 	}
 	get farmId(): number {
-		return this.getDataValue("farmId");
+		return this.getDataValue('farmId');
 	}
 	get userId(): number {
-		return this.getDataValue("userId");
+		return this.getDataValue('userId');
 	}
 	get role(): FarmMemberRole {
-		return this.getDataValue("role");
+		return this.getDataValue('role');
 	}
 	get createdAt(): Date | undefined {
-		return this.getDataValue("createdAt");
+		return this.getDataValue('createdAt');
 	}
 	get updatedAt(): Date | undefined {
-		return this.getDataValue("updatedAt");
+		return this.getDataValue('updatedAt');
 	}
 }
 
@@ -34,41 +34,41 @@ FarmMembers.init(
 			type: DataTypes.INTEGER.UNSIGNED,
 			autoIncrement: true,
 			primaryKey: true,
-			field: "id",
+			field: 'id',
 		},
 		farmId: {
 			type: DataTypes.INTEGER.UNSIGNED,
 			allowNull: false,
-			field: "farm_id",
+			field: 'farm_id',
 		},
 		userId: {
 			type: DataTypes.INTEGER.UNSIGNED,
 			allowNull: false,
-			field: "user_id",
+			field: 'user_id',
 		},
 		role: {
-			type: DataTypes.ENUM("owner", "member"),
+			type: DataTypes.ENUM('owner', 'member'),
 			allowNull: false,
-			defaultValue: "member",
-			field: "role",
+			defaultValue: 'member',
+			field: 'role',
 		},
 		createdAt: {
 			type: DataTypes.DATE,
 			allowNull: false,
 			defaultValue: DataTypes.NOW,
-			field: "created_at",
+			field: 'created_at',
 		},
 		updatedAt: {
 			type: DataTypes.DATE,
 			allowNull: false,
 			defaultValue: DataTypes.NOW,
-			field: "updated_at",
+			field: 'updated_at',
 		},
 	},
 	{
 		sequelize,
-		tableName: "farm_members",
-		modelName: "FarmMembers",
+		tableName: 'farm_members',
+		modelName: 'FarmMembers',
 		timestamps: true,
-	}
+	},
 );

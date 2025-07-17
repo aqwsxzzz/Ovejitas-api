@@ -1,56 +1,21 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import { Sequelize } from 'sequelize';
-
-const sequelizeConfig = require('../database/sequelize-config')[process.env.NODE_ENV || 'development'];
-import { UserAttributes, UserCreationAttributes } from '../types/user-types';
-import { Farm } from './farm-model';
-
-const sequelize = new Sequelize(sequelizeConfig);
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
+import { User } from './user.schema';
 
 export enum UserRole {
-	USER = 'user',
-	ADMIN = 'admin',
+    USER = 'user',
+    ADMIN = 'admin',
 }
 
 export enum UserLanguage {
-	EN = 'en',
-	ES = 'es',
+    EN = 'en',
+    ES = 'es',
 }
 
-export class User extends Model<UserAttributes, UserCreationAttributes> {
-	get id(): number {
-		return this.getDataValue('id');
-	}
-	get displayName(): string {
-		return this.getDataValue('displayName');
-	}
-	get email(): string {
-		return this.getDataValue('email');
-	}
-	get password(): string {
-		return this.getDataValue('password');
-	}
-	get isActive(): boolean {
-		return this.getDataValue('isActive');
-	}
-	get role(): UserRole {
-		return this.getDataValue('role');
-	}
-	get language(): UserLanguage {
-		return this.getDataValue('language');
-	}
-	get createdAt(): Date | undefined {
-		return this.getDataValue('createdAt');
-	}
-	get updatedAt(): Date | undefined {
-		return this.getDataValue('updatedAt');
-	}
-	get lastVisitedFarmId(): number | undefined {
-		return this.getDataValue('lastVisitedFarmId');
-	}
-}
+type UserCreationAttributes = Optional<User, 'id' | 'createdAt' | 'updatedAt' | 'lastVisitedFarmId' | 'isActive' | 'role' | 'language'>;
 
-User.init(
+export class UserModel extends Model<User, UserCreationAttributes> {}
+
+export const initUserModel = (sequelize: Sequelize ) => UserModel.init(
 	{
 		id: {
 			type: DataTypes.INTEGER.UNSIGNED,

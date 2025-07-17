@@ -1,56 +1,60 @@
-/// <reference path="../types/fastify.d.ts" />
 
-import Fastify, { FastifyInstance } from "fastify";
-import sequelizePlugin from "./plugins/sequelize-plugin";
-import responseWrapperPlugin from "./plugins/response-wrapper-plugin";
-import userRoutes from "./routes/v1/user-route";
-import authRoutes from "./routes/v1/auth-route";
-import fastifyCookie from "@fastify/cookie";
-import authPlugin from "./plugins/auth-plugin";
-import fastifyCors from "@fastify/cors";
-import speciesRoutes from "./routes/v1/species-route";
-import speciesTranslationRoutes from "./routes/v1/species-translation-routes";
-import "./models/associations";
-import farmRoutes from "./routes/v1/farm-route";
-import farmMembersRoutes from "./routes/v1/farm-members-route";
-import farmInvitationRoutes from "./routes/v1/farm-invitation-route";
-import breedRoutes from "./routes/v1/breed-route";
-import animalRoutes from "./routes/v1/animal-route";
-import animalMeasurementRoutes from "./routes/v1/animal-measurement-routes";
+import Fastify, { FastifyInstance } from 'fastify';
+import fastifyCookie from '@fastify/cookie';
+import fastifyCors from '@fastify/cors';
+import './models/associations';
+import customReplyPlugin from './plugins/custom-reply.plugin';
+import errorHandler from './plugins/error-handler';
+import databasePlugin from './database/database.plugin';
+import userPlugin from './resources/user/user.plugin';
 
 const server: FastifyInstance = Fastify({
-    logger: true,
+	logger: true,
 });
 
 server.register(fastifyCors, {
-    origin: ["http://localhost:5173"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+	origin: ['http://localhost:5173'],
+	credentials: true,
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
 
-server.register(sequelizePlugin);
-server.register(authPlugin);
-server.register(responseWrapperPlugin);
+server.register(databasePlugin);
 server.register(fastifyCookie);
-server.register(userRoutes, { prefix: "/v1" });
-server.register(speciesRoutes, { prefix: "/v1" });
-server.register(speciesTranslationRoutes, { prefix: "/v1" });
-server.register(authRoutes, { prefix: "/v1" });
-server.register(farmRoutes, { prefix: "/v1" });
-server.register(farmMembersRoutes, { prefix: "/v1" });
-server.register(farmInvitationRoutes, { prefix: "/v1" });
-server.register(breedRoutes, { prefix: "/v1" });
-server.register(animalRoutes, { prefix: "/v1" });
-server.register(animalMeasurementRoutes, { prefix: "/v1" });
+server.register(customReplyPlugin);
+server.register(errorHandler);
+
+server.register(userPlugin, { prefix: '/v1' });
+
+//Error handler for validation errors
+server.setErrorHandler((error, request, reply) => {
+	server.log.error(error);
+
+	if (error.validation) {
+		reply.status(400).send({
+			error: 'Validation Error',
+			message: error.message,
+			details: error.validation,
+		});
+		return;
+	}
+
+	reply.status(500).send({
+		error: 'Internal Server Error',
+		message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+	});
+});
 
 const start = async () => {
-    try {
-        await server.listen({ port: 8080, host: "0.0.0.0" });
-        console.log(`Server is running at ${server.server.address()}`);
-    } catch (err) {
-        server.log.error(err);
-        process.exit(1);
-    }
+	try {
+		await server.listen({ port: 8080, host: '0.0.0.0' });
+		console.log(`Server is running at ${server.server.address()}`);
+
+		console.log('📋 Registered routes:');
+		console.log(server.printRoutes());
+	} catch (err) {
+		server.log.error(err);
+		process.exit(1);
+	}
 };
 
 start();

@@ -1,30 +1,30 @@
-import { DataTypes, Model } from "sequelize";
-import { Sequelize } from "sequelize";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const sequelizeConfig = require("../config/sequelize-config")[process.env.NODE_ENV || "development"];
+import { DataTypes, Model } from 'sequelize';
+import { Sequelize } from 'sequelize';
+
+const sequelizeConfig = require('../database/sequelize-config')[process.env.NODE_ENV || 'development'];
 
 const sequelize = new Sequelize(sequelizeConfig);
-import { SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes } from "../types/species-translation-types";
-import { UserLanguage } from "./user-model";
+import { SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes } from '../types/species-translation-types';
+import { UserLanguage } from './user-model';
 
 export class SpeciesTranslation extends Model<SpeciesTranslationAttributes, SpeciesTranslationCreationAttributes> {
 	get id(): number {
-		return this.getDataValue("id");
+		return this.getDataValue('id');
 	}
 	get speciesId(): number {
-		return this.getDataValue("speciesId");
+		return this.getDataValue('speciesId');
 	}
 	get languageCode(): string {
-		return this.getDataValue("languageCode");
+		return this.getDataValue('languageCode');
 	}
 	get name(): string {
-		return this.getDataValue("name");
+		return this.getDataValue('name');
 	}
 	get createdAt(): Date | undefined {
-		return this.getDataValue("createdAt");
+		return this.getDataValue('createdAt');
 	}
 	get updatedAt(): Date | undefined {
-		return this.getDataValue("updatedAt");
+		return this.getDataValue('updatedAt');
 	}
 }
 
@@ -34,55 +34,55 @@ SpeciesTranslation.init(
 			type: DataTypes.INTEGER.UNSIGNED,
 			autoIncrement: true,
 			primaryKey: true,
-			field: "id",
+			field: 'id',
 		},
 		speciesId: {
 			type: DataTypes.INTEGER.UNSIGNED,
 			allowNull: false,
-			field: "species_id",
+			field: 'species_id',
 			references: {
-				model: "species",
-				key: "id",
+				model: 'species',
+				key: 'id',
 			},
-			onDelete: "CASCADE",
+			onDelete: 'CASCADE',
 		},
 		languageCode: {
 			type: DataTypes.ENUM(...Object.values(UserLanguage)),
 			allowNull: false,
-			field: "language_code",
+			field: 'language_code',
 		},
 		name: {
 			type: DataTypes.STRING,
 			allowNull: false,
-			field: "name",
+			field: 'name',
 		},
 		createdAt: {
 			type: DataTypes.DATE,
 			allowNull: false,
 			defaultValue: DataTypes.NOW,
-			field: "created_at",
+			field: 'created_at',
 		},
 		updatedAt: {
 			type: DataTypes.DATE,
 			allowNull: false,
 			defaultValue: DataTypes.NOW,
-			field: "updated_at",
+			field: 'updated_at',
 		},
 	},
 	{
 		sequelize,
-		tableName: "species_translation",
-		modelName: "SpeciesTranslation",
+		tableName: 'species_translation',
+		modelName: 'SpeciesTranslation',
 		timestamps: true,
 		indexes: [
 			{
 				unique: true,
-				fields: ["speciesId", "name"],
+				fields: ['speciesId', 'name'],
 			},
 			{
 				unique: true,
-				fields: ["name", "languageCode"],
+				fields: ['name', 'languageCode'],
 			},
 		],
-	}
+	},
 );
