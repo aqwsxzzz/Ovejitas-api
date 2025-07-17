@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { Farm } from "../../models/farm-model";
+import { FarmMembers } from "../../models/farm-members-model";
 import { FarmCreateRoute, FarmUpdateRoute, IFarmIdParam, FarmDeleteRoute } from "../../types/farm-types";
 import { serializeFarm } from "../../serializers/farm-serializer";
 import { decodeId } from "../../utils/id-hash-util";
@@ -14,8 +15,21 @@ export const createFarm = async (request: FastifyRequest<FarmCreateRoute>, reply
 	}
 };
 
-export const getFarms = async (_request: FastifyRequest, reply: FastifyReply) => {
-	const farms = await Farm.findAll();
+export const getFarms = async (request: FastifyRequest, reply: FastifyReply) => {
+	if (!request.user) {
+		return reply.code(401).send({ message: "Unauthorized" });
+	}
+
+	const farms = await Farm.findAll({
+		include: [{
+			model: FarmMembers,
+			as: "members",
+			where: {
+				userId: request.user.id
+			},
+			required: true
+		}]
+	});
 	reply.send(farms.map(serializeFarm));
 };
 
