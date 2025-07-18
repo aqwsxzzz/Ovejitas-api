@@ -2,6 +2,7 @@ import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '../resources/user/user.model';
+import {  UserRole } from '../models/user-model';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
@@ -14,17 +15,17 @@ export default fp(async function authenticationPlugin(fastify: FastifyInstance) 
 		}
 
 		try {
-			const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; role: string };
+			const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; role: UserRole };
 			request.user = decoded;
 
 			// Fetch user from DB to get lastVisitedFarmId and language
 			const user = await UserModel.findByPk(decoded.id);
-			if (!user || typeof user.get('lastVisitedFarmId') !== 'number') {
+			if (!user || typeof user.dataValues.lastVisitedFarmId !== 'number') {
 				reply.error('Access denied', 401);
 				return;
 			}
-			request.lastVisitedFarmId = user.get('lastVisitedFarmId') as number;
-			request.language = user.get('language') as 'en' | 'es' || 'en';
+			request.lastVisitedFarmId = user.dataValues.lastVisitedFarmId;
+			request.language = user.dataValues.language || 'en';
 		} catch (err) {
 			console.error('Authentication error:', err);
 			reply.error('Access denied', 401);

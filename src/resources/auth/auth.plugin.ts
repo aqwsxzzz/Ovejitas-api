@@ -29,7 +29,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 		}
 	});
 
-	fastify.post('/auth/logout', async (request, reply) => {
+	fastify.post('/auth/logout', { preHandler: fastify.authenticate }, async (request, reply) => {
 		try {
 			await fastify.authService.logout(request, reply);
 		} catch (error) {

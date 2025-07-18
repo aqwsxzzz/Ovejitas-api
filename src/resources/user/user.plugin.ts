@@ -12,7 +12,7 @@ const userPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
 	fastify.decorate('userService', userSerivce);
 
-	fastify.put('/users/:id', { schema: updateUserSchema }, async (request, reply) => {
+	fastify.put('/users/:id', { schema: updateUserSchema, preHandler: fastify.authenticate }, async (request, reply) => {
 		try {
 			const userId = request.params as UserParamsSchema;
 			const userData = request.body as UserUpdateInput;
@@ -28,7 +28,7 @@ const userPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 		}
 	});
 
-	fastify.delete('/users/:id', async (request, reply) => {
+	fastify.delete('/users/:id', { preHandler: fastify.authenticate }, async (request, reply) => {
 		try {
 			const userId = request.params as UserParamsSchema;
 			await fastify.userService.deleteUser(decodeId(userId!.id!)!);

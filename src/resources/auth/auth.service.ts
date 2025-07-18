@@ -23,13 +23,13 @@ export class AuthService {
 			throw new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND);
 		}
 
-		const isPasswordValid = await comparePassword(data.password, user.get('password') as string);
+		const isPasswordValid = await comparePassword(data.password, user.dataValues.password);
 		if (!isPasswordValid) {
 			throw new BadRequestError(ERROR_MESSAGES.INVALID_CREDENTIALS);
 		}
 
 		const token = createJwtToken(
-			{ id: user.get('id'), email: user.get('email'), role: user.get('role') },
+			{ id: user.dataValues.id, email: user.dataValues.email, role: user.dataValues.role },
 			JWT_SECRET,
 			{ expiresIn: '1d' },
 		);
