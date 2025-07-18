@@ -1,31 +1,29 @@
 // plugins/errorHandler.ts
 import fp from 'fastify-plugin';
-import { FastifyInstance, FastifyReply } from 'fastify';
-import { handleAllErrors } from '../utils/handle-sequelize-errors';
-import { ErrorMessage } from '../consts/error-messages';
+import { FastifyReply } from 'fastify';
+import { handleSequelizeError } from '../utils/handle-sequelize-errors';
 
-export default fp(async function errorHandlingPlugin(fastify: FastifyInstance) {
-	// Register the error handler
-	fastify.decorate('handleDbError', function(error: unknown, reply: FastifyReply) {
-		const errorResponse = handleAllErrors(error);
+export default fp(async function (fastify) {
+	fastify.decorate('handleDbError', (error: unknown, reply: FastifyReply) => {
+		const sequelizeError = handleSequelizeError(error);
 
-		// Log error for debugging (you might want to use a proper logger)
-		if (errorResponse.status >= 500) {
-			console.error('Server error:', error);
+		if (sequelizeError) {
+			return reply.code(sequelizeError.status).send({
+				message: sequelizeError.message,
+				status: 'error',
+			});
 		}
 
-		return reply.error(errorResponse.message as ErrorMessage, errorResponse.status);
-	});
-
-	// Optional: Global error handler for unhandled errors
-	fastify.setErrorHandler((error, request, reply) => {
-		const errorResponse = handleAllErrors(error);
-
-		// Log error for debugging
-		if (errorResponse.status >= 500) {
-			console.error('Unhandled error:', error);
+		if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+			return reply.code(500).send({
+				error: 'Internal server error',
+				message: error.message,
+			});
 		}
 
-		return reply.error(errorResponse.message as ErrorMessage, errorResponse.status);
+		return reply.code(500).send({
+			error: 'Internal server error',
+			message: 'An unexpected error occurred',
+		});
 	});
 });

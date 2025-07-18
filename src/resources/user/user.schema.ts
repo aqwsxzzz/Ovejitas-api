@@ -17,16 +17,21 @@ export const UserSchema = Type.Object({
 	lastVisitedFarmId: Type.Optional(Type.String()),
 }, {
 	$id: 'user',
+	additionalProperties: false,
 });
-const UserParamsSchema = Type.Pick(UserSchema, ['id'], { $id: 'userParams',
+const UserParamsSchema = Type.Pick(UserSchema, ['id'], {
+	$id: 'userParams',
+	additionalProperties: false,
 });
 
 const UserCreateSchema = Type.Omit(UserSchema, ['id', 'createdAt', 'updatedAt', 'lastVisitedFarmId', 'role', 'language', 'isActive'], {
 	$id: 'userCreate',
+	additionalProperties: false,
 });
 
 const UserUpdateSchema = Type.Pick(UserSchema, ['displayName'], {
 	$id: 'userUpdate',
+	additionalProperties: false,
 });
 const UserResponseSchema = Type.Omit(UserSchema, ['password'], { $id: 'userResponse' });
 

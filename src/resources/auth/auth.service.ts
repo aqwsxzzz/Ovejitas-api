@@ -1,4 +1,3 @@
-import { BadRequestError, ERROR_MESSAGES, NotFoundError } from '../../consts/error-messages';
 import { Database } from '../../database';
 import { comparePassword } from '../../utils/password-util';
 import { createJwtToken } from '../../utils/token-util';
@@ -20,12 +19,12 @@ export class AuthService {
 		});
 
 		if (!user) {
-			throw new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND);
+			throw new Error('User not found');
 		}
 
 		const isPasswordValid = await comparePassword(data.password, user.dataValues.password);
 		if (!isPasswordValid) {
-			throw new BadRequestError(ERROR_MESSAGES.INVALID_CREDENTIALS);
+			throw new Error('Invalid credentials');
 		}
 
 		const token = createJwtToken(
@@ -47,7 +46,7 @@ export class AuthService {
 		const user = await this.db.models.User.findByPk(request.user!.id);
 
 		if (!user) {
-			throw new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND);
+			throw new Error('User not found');
 		}
 
 		return user;

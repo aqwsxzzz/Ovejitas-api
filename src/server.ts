@@ -12,6 +12,17 @@ import authenticationPlugin from './plugins/authentication-plugin';
 
 const server: FastifyInstance = Fastify({
 	logger: true,
+	ajv: {
+		customOptions: {
+			// Don't remove additional properties - instead throw validation errors
+			removeAdditional: false,
+			useDefaults: true,
+			coerceTypes: true,
+			strictTypes: false,
+			// Ensure we validate additional properties
+			allErrors: true,
+		},
+	},
 });
 
 server.register(fastifyCors, {
@@ -34,10 +45,38 @@ server.setErrorHandler((error, request, reply) => {
 	server.log.error(error);
 
 	if (error.validation) {
+		console.log('🚀 ~ server.setErrorHandler ~ error.validation:', error.validation);
+
+		// Check for additional properties errors
+		const additionalPropsErrors = error.validation.filter(
+			(err: {keyword: string}) => err.keyword === 'additionalProperties',
+		);
+
+		if (additionalPropsErrors.length > 0) {
+			// Extract all additional property names
+			const additionalProps = additionalPropsErrors.map(
+				(err: {params?: {additionalProperty?: string}}) => err.params?.additionalProperty,
+			).filter(Boolean);
+
+			const message = additionalProps.length === 1
+				? `Additional property '${additionalProps[0]}' is not allowed`
+				: `Additional properties not allowed: ${additionalProps.join(', ')}`;
+
+			reply.status(400).send({
+				error: 'Validation Error',
+				message: message,
+				details: error.validation,
+				status: 'error',
+			});
+			return;
+		}
+
+		// Handle other validation errors
 		reply.status(400).send({
 			error: 'Validation Error',
 			message: error.message,
 			details: error.validation,
+			status: 'error',
 		});
 		return;
 	}

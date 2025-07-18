@@ -4,10 +4,12 @@ import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/s
 
 const UserLoginSchema = Type.Pick(UserSchema, ['email', 'password'], {
 	$id: 'userLogin',
+	additionalProperties: false,
 });
 
 const UserResponseSchema = Type.Omit(UserSchema, ['password'], {
 	$id: 'userResponse',
+	additionalProperties: false,
 });
 
 export type UserLoginInput = Static<typeof UserLoginSchema>;
