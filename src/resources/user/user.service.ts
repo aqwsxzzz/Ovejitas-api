@@ -1,3 +1,4 @@
+import { ERROR_MESSAGES, NotFoundError } from '../../consts/error-messages';
 import { Database } from '../../database';
 import { UserModel } from './user.model';
 import {  UserUpdateInput } from './user.schema';
@@ -18,8 +19,9 @@ export class UserService {
 	}
 	async deleteUser(id: number): Promise<void> {
 		const user = await this.db.models.User.findByPk(id);
-		if (!user) throw new Error('User not found');
+		if (!user) throw new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND);
 
 		await user.destroy();
 	}
+
 }

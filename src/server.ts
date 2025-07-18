@@ -7,6 +7,7 @@ import customReplyPlugin from './plugins/custom-reply.plugin';
 import errorHandler from './plugins/error-handler';
 import databasePlugin from './database/database.plugin';
 import userPlugin from './resources/user/user.plugin';
+import authPlugin from './resources/auth/auth.plugin';
 
 const server: FastifyInstance = Fastify({
 	logger: true,
@@ -23,7 +24,8 @@ server.register(fastifyCookie);
 server.register(customReplyPlugin);
 server.register(errorHandler);
 
-server.register(userPlugin, { prefix: '/v1' });
+server.register(userPlugin, { prefix: '/api/v1' });
+server.register(authPlugin, { prefix: '/api/v1' });
 
 //Error handler for validation errors
 server.setErrorHandler((error, request, reply) => {

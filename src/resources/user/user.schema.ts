@@ -18,12 +18,13 @@ export const UserSchema = Type.Object({
 }, {
 	$id: 'user',
 });
-const UserParamsSchema = Type.Object({
-	id: Type.String(),
-}, { $id: 'userParams' });
+const UserParamsSchema = Type.Pick(UserSchema, ['id'], { $id: 'userParams',
+});
 
 const UserCreateSchema = Type.Omit(UserSchema, ['id', 'createdAt', 'updatedAt', 'lastVisitedFarmId', 'role', 'language', 'isActive'], {
-	$id: 'userCreate' });
+	$id: 'userCreate',
+});
+
 const UserUpdateSchema = Type.Pick(UserSchema, ['displayName'], {
 	$id: 'userUpdate',
 });

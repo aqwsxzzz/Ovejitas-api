@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import {  updateUserSchema,  UserParamsSchema, userSchemas, UserUpdateInput } from './user.schema';
+import { updateUserSchema, UserParamsSchema, userSchemas, UserUpdateInput } from './user.schema';
 import { UserSerializer } from './user.serializer';
 import { UserService } from './user.service';
 import { decodeId } from '../../utils/id-hash-util';
@@ -16,7 +16,7 @@ const userPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 		try {
 			const userId = request.params as UserParamsSchema;
 			const userData = request.body as UserUpdateInput;
-			const updatedUser = await fastify.userService.updateUser(decodeId(userId!.id!)! , userData);
+			const updatedUser = await fastify.userService.updateUser(decodeId(userId!.id!)!, userData);
 			if (!updatedUser) {
 				return reply.error('User not found', 404);
 			}
@@ -35,8 +35,11 @@ const userPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 			reply.success(null, 'User deleted successfully');
 		} catch (error) {
 			console.log('🚀 ~ fastify.delete ~ error:', error);
+			fastify.handleDbError(error, reply);
 		}
+
 	});
+
 };
 
 export default userPlugin;
