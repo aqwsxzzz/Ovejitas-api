@@ -4,7 +4,7 @@ import { comparePassword } from '../../utils/password-util';
 import { createJwtToken } from '../../utils/token-util';
 import { UserModel } from '../user/user.model';
 import { UserLoginInput, UserSignupInput } from './auth.schema';
-import { handleDefaultSignUp, handleInvitationSignUp } from './auth-helpers';
+import { handleDefaultSignUp } from './auth-helpers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
@@ -58,13 +58,16 @@ export class AuthService {
 			let user: UserModel;
 			let message: string;
 
-			if (invitationToken) {
-				user = await handleInvitationSignUp(data, this.db, transaction);
-				message = 'User created and added to farm via invitation';
-			} else {
-				user = await handleDefaultSignUp(data, this.db, transaction);
-				message = 'User created';
-			}
+			// if (invitationToken) {
+			// 	user = await handleInvitationSignUp(data, this.db, transaction);
+			// 	message = 'User created and added to farm via invitation';
+			// } else {
+			// 	user = await handleDefaultSignUp(data, this.db, transaction);
+			// 	message = 'User created';
+			// }
+
+			user = await handleDefaultSignUp(data, this.db, transaction);
+			message = 'User created';
 
 			await transaction.commit();
 			return { user, message };
@@ -75,7 +78,7 @@ export class AuthService {
 		}
 	}
 
-	async getCurrentUser(userId: string): Promise<UserModel> {
+	async getCurrentUser(userId: number): Promise<UserModel> {
 		const user = await this.db.models.User.findByPk(userId);
 
 		if (!user) {
@@ -83,5 +86,9 @@ export class AuthService {
 		}
 
 		return user;
+	}
+
+	async logout() {
+
 	}
 }

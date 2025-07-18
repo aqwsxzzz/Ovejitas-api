@@ -1,7 +1,10 @@
+
 import { FastifyPluginAsync } from 'fastify';
-import { authSchemas, loginUserSchema, UserLoginInput } from './auth.schema';
+import { authSchemas, loginUserSchema, signupUserSchema, UserLoginInput, UserSignupInput } from './auth.schema';
 import { UserSerializer } from '../user/user.serializer';
 import { AuthService } from './auth.service';
+import { User, UserParamsSchema } from '../user/user.schema';
+import { decodeId } from '../../utils/id-hash-util';
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
 	authSchemas.forEach(schema => fastify.addSchema(schema));
@@ -29,9 +32,21 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 		}
 	});
 
+	fastify.post('/auth/signup', { schema: signupUserSchema }, async (request, reply) => {
+		try {
+			const { email, password, displayName, invitationToken, language } = request.body as UserSignupInput;
+			const { user, message } = await fastify.authService.signup({ email, password, displayName, invitationToken, language });
+			reply.success(UserSerializer.serialize(user), message);
+		} catch (error) {
+			console.log('🚀 ~ fastify.post ~ error:', error);
+			fastify.handleDbError(error, reply);
+		}
+	});
+
 	fastify.post('/auth/logout', { preHandler: fastify.authenticate }, async (request, reply) => {
 		try {
-			await fastify.authService.logout(request, reply);
+			reply.clearCookie('jwt', { path: '/' });
+			reply.success('Logged out');
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}
@@ -39,10 +54,10 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
 	fastify.get('/auth/me', { preHandler: fastify.authenticate }, async (request, reply) => {
 		try {
-			const user = await fastify.authService.currentUser(request);
+			const { id } = request.user as User;
+			const user = await fastify.authService.getCurrentUser(id);
 			reply.success(UserSerializer.serialize(user));
 		} catch (error) {
-			console.log('🚀 ~ fastify.get ~ error:', error);
 			fastify.handleDbError(error, reply);
 		}
 	});

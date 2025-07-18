@@ -1,5 +1,5 @@
-import { RouteGenericInterface } from "fastify";
-import { UserLanguage } from "../models/user-model";
+import { RouteGenericInterface } from 'fastify';
+import { UserLanguage } from '../models/user-model';
 
 interface ISpecieTranslationBody {
 	speciesId: string;
@@ -24,4 +24,4 @@ export interface SpeciesTranslationAttributes {
 	updatedAt?: Date;
 }
 
-export type SpeciesTranslationCreationAttributes = Omit<SpeciesTranslationAttributes, "id" | "createdAt" | "updatedAt">;
+export type SpeciesTranslationCreationAttributes = Omit<SpeciesTranslationAttributes, 'id' | 'createdAt' | 'updatedAt'>;

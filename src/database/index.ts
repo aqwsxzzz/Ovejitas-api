@@ -1,10 +1,14 @@
 import { Sequelize } from 'sequelize';
 import { initUserModel, UserModel } from '../resources/user/user.model';
+import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
+import { FarmMemberModel, initFarmMemberModel } from '../resources/farm-member/farm-member.model';
 
 export interface Database {
     sequelize: Sequelize;
     models: {
-        User: typeof UserModel
+		User: typeof UserModel
+		Farm: typeof FarmModel
+		FarmMember: typeof FarmMemberModel
     }
 }
 
@@ -19,6 +23,8 @@ export const initDatabase = async (): Promise<Database> => {
 	});
 
 	const User = initUserModel(sequelize);
+	const Farm = initFarmModel(sequelize);
+	const FarmMember = initFarmMemberModel(sequelize);
 
 	// assosiactions
 
@@ -26,6 +32,8 @@ export const initDatabase = async (): Promise<Database> => {
 		sequelize,
 		models: {
 			User,
+			Farm,
+			FarmMember,
 		},
 	};
 

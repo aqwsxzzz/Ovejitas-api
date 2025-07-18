@@ -12,7 +12,7 @@ const UserSignupSchema = Type.Object({
 	email: Type.String({ format: 'email' }),
 	password: Type.String({ minLength: 6 }),
 	displayName: Type.String({ minLength: 2, maxLength: 100 }),
-	language: Type.Optional(Type.String({ enum: UserLanguage })),
+	language: Type.Optional(Type.Enum(UserLanguage)),
 	invitationToken: Type.Optional(Type.String()),
 }, {
 	$id: 'userSignup',

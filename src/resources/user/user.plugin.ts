@@ -23,7 +23,6 @@ const userPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 			const serializedUser = UserSerializer.serialize(updatedUser);
 			reply.success(serializedUser);
 		} catch (error) {
-			console.log('🚀 ~ fastify.put ~ error:', error);
 			fastify.handleDbError(error, reply);
 		}
 	});
