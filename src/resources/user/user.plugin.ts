@@ -8,15 +8,13 @@ const userPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
 	userSchemas.forEach(schema => fastify.addSchema(schema));
 
-	const userSerivce = new UserService(fastify.db);
-
-	fastify.decorate('userService', userSerivce);
+	const userService = new UserService(fastify.db);
 
 	fastify.put('/users/:id', { schema: updateUserSchema, preHandler: fastify.authenticate }, async (request, reply) => {
 		try {
 			const userId = request.params as UserParamsSchema;
 			const userData = request.body as UserUpdateInput;
-			const updatedUser = await fastify.userService.updateUser(decodeId(userId!.id!)!, userData);
+			const updatedUser = await userService.updateUser(decodeId(userId!.id!)!, userData);
 			if (!updatedUser) {
 				return reply.error('User not found', 404);
 			}
@@ -30,7 +28,7 @@ const userPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	fastify.delete('/users/:id', { preHandler: fastify.authenticate }, async (request, reply) => {
 		try {
 			const userId = request.params as UserParamsSchema;
-			await fastify.userService.deleteUser(decodeId(userId!.id!)!);
+			await userService.deleteUser(decodeId(userId!.id!)!);
 			reply.success(null, 'User deleted successfully');
 		} catch (error) {
 			console.log('🚀 ~ fastify.delete ~ error:', error);

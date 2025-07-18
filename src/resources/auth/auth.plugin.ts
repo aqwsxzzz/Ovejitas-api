@@ -3,20 +3,17 @@ import { FastifyPluginAsync } from 'fastify';
 import { authSchemas, loginUserSchema, signupUserSchema, UserLoginInput, UserSignupInput } from './auth.schema';
 import { UserSerializer } from '../user/user.serializer';
 import { AuthService } from './auth.service';
-import { User, UserParamsSchema } from '../user/user.schema';
-import { decodeId } from '../../utils/id-hash-util';
+import { User } from '../user/user.schema';
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
 	authSchemas.forEach(schema => fastify.addSchema(schema));
 
 	const authService = new AuthService(fastify.db);
 
-	fastify.decorate('authService', authService);
-
 	fastify.post('/auth/login', { schema: loginUserSchema }, async (request, reply) => {
 		try {
 			const { email, password } = request.body as UserLoginInput;
-			const { user, token } = await fastify.authService.login({ email, password });
+			const { user, token } = await authService.login({ email, password });
 
 			reply.setCookie('jwt', token, {
 				httpOnly: true,
@@ -35,7 +32,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 	fastify.post('/auth/signup', { schema: signupUserSchema }, async (request, reply) => {
 		try {
 			const { email, password, displayName, invitationToken, language } = request.body as UserSignupInput;
-			const { user, message } = await fastify.authService.signup({ email, password, displayName, invitationToken, language });
+			const { user, message } = await authService.signup({ email, password, displayName, invitationToken, language });
 			reply.success(UserSerializer.serialize(user), message);
 		} catch (error) {
 			console.log('🚀 ~ fastify.post ~ error:', error);

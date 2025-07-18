@@ -1,4 +1,5 @@
 import { Database } from '../../database';
+import { FarmMemberModel } from '../farm-member/farm-member.model';
 import { FarmModel } from './farm.model';
 import { FarmCreateInput } from './farm.schema';
 
@@ -14,8 +15,18 @@ export class FarmService {
 		return farm;
 	}
 
-	async getFarms(): Promise<FarmModel[]> {
-		const farms = await this.db.models.Farm.findAll();
+	async getFarms(userId: number): Promise<FarmModel[]> {
+		const farms = await this.db.models.Farm.findAll({
+			include: [{
+				model: FarmMemberModel,
+				as: 'members',
+				where: {
+					userId,
+				},
+				required: true,
+			}],
+		});
 		return farms;
 	}
+
 }

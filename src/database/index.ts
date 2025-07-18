@@ -27,6 +27,11 @@ export const initDatabase = async (): Promise<Database> => {
 	const FarmMember = initFarmMemberModel(sequelize);
 
 	// assosiactions
+	// Farm & FarmMembers
+	FarmMemberModel.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FarmMemberModel.belongsTo(UserModel, { foreignKey: 'userId', as: 'user' });
+	FarmModel.hasMany(FarmMemberModel, { foreignKey: 'farmId', as: 'members' });
+	UserModel.hasMany(FarmMemberModel, { foreignKey: 'userId', as: 'farmMemberships' });
 
 	const db: Database = {
 		sequelize,

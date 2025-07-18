@@ -2,7 +2,6 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
-import './models/associations';
 import customReplyPlugin from './plugins/custom-reply.plugin';
 import errorHandler from './plugins/error-handler';
 import databasePlugin from './database/database.plugin';
