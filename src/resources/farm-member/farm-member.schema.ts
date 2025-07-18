@@ -1,6 +1,7 @@
 import { Static, Type } from '@sinclair/typebox';
-import { FarmMemberRole } from './farm-member.model';
+import { FarmMemberModel, FarmMemberRole } from './farm-member.model';
 import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { FarmModel } from '../farm/farm.model';
 
 export const FarmMemberSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
@@ -42,6 +43,10 @@ export type FarmMemberCreateInput = Static<typeof FarmMemberCreateSchema>;
 export type FarmMemberUpdateInput = Static<typeof FarmMemberUpdateSchema>;
 export type FarmMemberResponse = Static<typeof FarmMemberResponseSchema>;
 export type FarmMemberParamsSchema = Static<typeof FarmMemberParamsSchema>;
+
+export interface FarmMemberWithFarm extends FarmMemberModel {
+	farm: FarmModel;
+}
 
 export const farmMemberSchemas = [FarmMemberCreateSchema, FarmMemberUpdateSchema, FarmMemberResponseSchema];
 

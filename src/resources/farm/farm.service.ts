@@ -1,5 +1,5 @@
 import { Database } from '../../database';
-import { FarmMemberModel } from '../farm-member/farm-member.model';
+import { FarmMemberWithFarm } from '../farm-member/farm-member.schema';
 import { FarmModel } from './farm.model';
 import { FarmCreateInput } from './farm.schema';
 
@@ -16,17 +16,21 @@ export class FarmService {
 	}
 
 	async getFarms(userId: number): Promise<FarmModel[]> {
-		const farms = await this.db.models.Farm.findAll({
-			include: [{
-				model: FarmMemberModel,
-				as: 'members',
-				where: {
-					userId,
-				},
-				required: true,
-			}],
-		});
-		return farms;
+		try {
+			const farmMembers = await this.db.models.FarmMember.findAll({
+				where: { userId },
+				include: [{
+					model: FarmModel,
+					as: 'farm',
+					required: true,
+				}],
+			}) as FarmMemberWithFarm[];
+
+			return farmMembers.map(member => member.farm);
+		} catch (error) {
+			console.error('Error fetching farms for user:', userId, error);
+			throw new Error('Failed to fetch farms');
+		}
 	}
 
 }
