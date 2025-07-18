@@ -1,14 +1,16 @@
+// auth.service.ts
 import { Database } from '../../database';
 import { comparePassword } from '../../utils/password-util';
 import { createJwtToken } from '../../utils/token-util';
 import { UserModel } from '../user/user.model';
-import { UserLoginInput } from './auth.schema';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { UserLoginInput, UserSignupInput } from './auth.schema';
+import { handleDefaultSignUp, handleInvitationSignUp } from './auth-helpers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 export class AuthService {
 	private db: Database;
+
 	constructor(db: Database) {
 		this.db = db;
 	}
@@ -36,14 +38,45 @@ export class AuthService {
 		return { user, token };
 	}
 
-	async logout(request: FastifyRequest, reply: FastifyReply) {
-		reply.clearCookie('jwt', { path: '/' });
-		reply.success('Logged out successfully');
+	async signup(data: UserSignupInput): Promise<{ user: UserModel, message: string }> {
+		// Start transaction
+		const transaction = await this.db.sequelize.transaction();
+
+		try {
+			const { email, invitationToken } = data;
+
+			// Check if user already exists
+			const existingUser = await this.db.models.User.findOne({
+				where: { email },
+				transaction,
+			});
+
+			if (existingUser) {
+				throw new Error('Email already in use');
+			}
+
+			let user: UserModel;
+			let message: string;
+
+			if (invitationToken) {
+				user = await handleInvitationSignUp(data, this.db, transaction);
+				message = 'User created and added to farm via invitation';
+			} else {
+				user = await handleDefaultSignUp(data, this.db, transaction);
+				message = 'User created';
+			}
+
+			await transaction.commit();
+			return { user, message };
+
+		} catch (error) {
+			await transaction.rollback();
+			throw error; // Re-throw to be handled by the plugin
+		}
 	}
 
-	async currentUser(request: FastifyRequest) {
-		// At this point, request.user is guaranteed to exist because of the preHandler
-		const user = await this.db.models.User.findByPk(request.user!.id);
+	async getCurrentUser(userId: string): Promise<UserModel> {
+		const user = await this.db.models.User.findByPk(userId);
 
 		if (!user) {
 			throw new Error('User not found');
