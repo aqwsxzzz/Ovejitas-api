@@ -43,11 +43,11 @@ export class AuthService {
 	}
 
 	async currentUser(request: FastifyRequest) {
-	// At this point, request.user is guaranteed to exist because of the preHandler
+		// At this point, request.user is guaranteed to exist because of the preHandler
 		const user = await this.db.models.User.findByPk(request.user!.id);
 
 		if (!user) {
-			throw new  NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND);
+			throw new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND);
 		}
 
 		return user;
