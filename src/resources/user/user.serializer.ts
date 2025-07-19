@@ -1,6 +1,6 @@
 import { encodeId } from '../../utils/id-hash-util';
-import {  UserModel, UserRole } from './user.model';
-import {  UserResponse } from './user.schema';
+import { UserModel } from './user.model';
+import {  UserResponse, UserRole } from './user.schema';
 
 export class UserSerializer {
 	static serialize(user: UserModel): UserResponse {

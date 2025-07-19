@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '../resources/user/user.model';
-import {  UserRole } from '../models/user-model';
+import { UserRole } from '../resources/user/user.schema';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 

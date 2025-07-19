@@ -3,32 +3,30 @@ import { Transaction } from 'sequelize';
 import { UserSignupInput } from './auth.schema';
 import { Database } from '../../database';
 import { hashPassword } from '../../utils/password-util';
-import { UserLanguage } from '../user/user.model';
 import { FarmMemberRole } from '../farm-member/farm-member.model';
-import { FarmInvitationStatus } from '../invitation/invitation.model';
+import { UserLanguage } from '../user/user.schema';
+import {  InvitationStatus } from '../invitation/invitation.schema';
 
 export async function handleInvitationSignUp(body: UserSignupInput, db: Database, transaction: Transaction) {
 	const { displayName, email, password, language = 'es', invitationToken } = body;
-	const invitation = await db.models.FarmInvitation.findOne({ where: { token: invitationToken, status: 'pending' }, transaction });
+	const invitation = await db.models.Invitation.findOne({ where: { token: invitationToken, status: 'pending' }, transaction });
 
 	if (!invitation) {
 		throw new Error('Invalid or expired invitation token');
 	}
 
 	if (!invitation.dataValues.expiresAt || new Date(invitation.dataValues.expiresAt).getTime() < Date.now()) {
-		invitation.setDataValue('status', 'expired' as FarmInvitationStatus);
+		invitation.setDataValue('status', InvitationStatus.EXPIRED);
 		await invitation.save({ transaction });
 		throw new Error('Invitation has expired');
 	}
 	const hashedPassword = await hashPassword(password);
-	console.log('🚀 ~ handleInvitationSignUp ~ hashedPassword:', hashedPassword);
 	const user = await db.models.User.create({ displayName, email: email.toLowerCase(), password: hashedPassword, language: language as UserLanguage }, { transaction });
 
-	console.log('🚀 ~ handleInvitationSignUp ~ user:', user);
 	await db.models.FarmMember.create({ farmId: (invitation.dataValues.farmId)!, userId: user.dataValues.id, role: invitation.dataValues.role }, { transaction });
 	user.set('lastVisitedFarmId', (invitation.dataValues.farmId));
 	await user.save({ transaction });
-	invitation.setDataValue('status', 'accepted' as FarmInvitationStatus);
+	invitation.setDataValue('status', InvitationStatus.ACCEPTED);
 	await invitation.save({ transaction });
 	return user;
 }

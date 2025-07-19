@@ -1,7 +1,6 @@
 import { Static, Type } from '@sinclair/typebox';
-import { UserSchema } from '../user/user.schema';
+import { UserLanguage, UserSchema } from '../user/user.schema';
 import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
-import { UserLanguage } from '../../models/user-model';
 
 const UserLoginSchema = Type.Pick(UserSchema, ['email', 'password'], {
 	$id: 'userLogin',

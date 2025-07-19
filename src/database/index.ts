@@ -2,7 +2,7 @@ import { Sequelize } from 'sequelize';
 import { initUserModel, UserModel } from '../resources/user/user.model';
 import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
 import { FarmMemberModel, initFarmMemberModel } from '../resources/farm-member/farm-member.model';
-import { FarmInvitationModel, initFarmInvitationModel } from '../resources/invitation/invitation.model';
+import { InvitationModel, initInvitationModel } from '../resources/invitation/invitation.model';
 
 export interface Database {
     sequelize: Sequelize;
@@ -10,7 +10,7 @@ export interface Database {
 		User: typeof UserModel
 		Farm: typeof FarmModel
 		FarmMember: typeof FarmMemberModel
-		FarmInvitation: typeof FarmInvitationModel
+		Invitation: typeof InvitationModel
     }
 }
 
@@ -27,7 +27,7 @@ export const initDatabase = async (): Promise<Database> => {
 	const User = initUserModel(sequelize);
 	const Farm = initFarmModel(sequelize);
 	const FarmMember = initFarmMemberModel(sequelize);
-	const FarmInvitation = initFarmInvitationModel(sequelize);
+	const Invitation = initInvitationModel(sequelize);
 
 	// assosiactions
 	// Farm & FarmMembers
@@ -42,7 +42,7 @@ export const initDatabase = async (): Promise<Database> => {
 			User,
 			Farm,
 			FarmMember,
-			FarmInvitation,
+			Invitation: Invitation,
 		},
 	};
 

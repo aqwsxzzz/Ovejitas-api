@@ -50,7 +50,6 @@ server.setErrorHandler((error, request, reply) => {
 	server.log.error(error);
 
 	if (error.validation) {
-		console.log('🚀 ~ server.setErrorHandler ~ error.validation:', error.validation);
 
 		// Check for additional properties errors
 		const additionalPropsErrors = error.validation.filter(

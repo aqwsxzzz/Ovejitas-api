@@ -14,7 +14,7 @@ declare module 'fastify' {
 		authService: AuthService;
 		farmService: FarmService;
 		farmMemberService: FarmMemberService
-		farmInvitationService: InvitationService
+		InvitationService: InvitationService
 		handleDbError: (error: unknown, reply: FastifyReply) => void;
 		authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void>;
 	}

@@ -1,9 +1,9 @@
 import { encodeId } from '../../utils/id-hash-util';
-import { FarmInvitationModel } from './invitation.model';
+import { InvitationModel } from './invitation.model';
 import { InvitationResponse } from './invitation.schema';
 
 export class InvitationSerializer {
-	static serialize(invitation: FarmInvitationModel): InvitationResponse {
+	static serialize(invitation: InvitationModel): InvitationResponse {
 		return {
 			id: encodeId(invitation.dataValues.id!),
 			email: invitation.dataValues.email,
@@ -15,5 +15,9 @@ export class InvitationSerializer {
 			expiresAt: invitation.dataValues.expiresAt,
 			updatedAt: invitation.dataValues.updatedAt,
 		};
+	}
+
+	static serializeMany(invitations: InvitationModel[]): InvitationResponse[] {
+		return invitations.map(invitation => this.serialize(invitation));
 	}
 }

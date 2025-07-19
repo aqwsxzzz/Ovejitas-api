@@ -1,15 +1,5 @@
 import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
-import { User } from './user.schema';
-
-export enum UserRole {
-    USER = 'user',
-    ADMIN = 'admin',
-}
-
-export enum UserLanguage {
-    EN = 'en',
-    ES = 'es',
-}
+import { User, UserLanguage, UserRole } from './user.schema';
 
 type UserCreationAttributes = Optional<User, 'id' | 'createdAt' | 'updatedAt' | 'lastVisitedFarmId' | 'isActive' | 'role' | 'language'>;
 

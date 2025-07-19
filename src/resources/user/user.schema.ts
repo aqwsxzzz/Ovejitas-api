@@ -1,8 +1,16 @@
 
 import { Static, Type } from '@sinclair/typebox';
-import { UserRole } from './user.model';
-import { UserLanguage } from '../../models/user-model';
 import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+
+export enum UserRole {
+	USER = 'user',
+	ADMIN = 'admin',
+}
+
+export enum UserLanguage {
+	EN = 'en',
+	ES = 'es',
+}
 
 export const UserSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),

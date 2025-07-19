@@ -1,20 +1,13 @@
 import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
-import { Invitation } from './invitation.schema';
+import { InvitationStatus, Invitation } from './invitation.schema';
 import { FarmModel } from '../farm/farm.model';
 import { FarmMemberRole } from '../farm-member/farm-member.model';
 
-export enum FarmInvitationStatus {
-	PENDING = 'pending',
-	ACCEPTED = 'accepted',
-	EXPIRED = 'expired',
-	CANCELLED = 'cancelled',
-}
+type InvitationCreationAttributes = Optional<Invitation, 'id' | 'createdAt' | 'updatedAt' | 'expiresAt'>;
 
-type FarmInvitationCreationAttributes = Optional<Invitation, 'id' | 'createdAt' | 'updatedAt' | 'expiresAt'>;
+export class InvitationModel extends Model<Invitation, InvitationCreationAttributes> { }
 
-export class FarmInvitationModel extends Model<Invitation, FarmInvitationCreationAttributes> { }
-
-export const initFarmInvitationModel = (sequelize: Sequelize) => FarmInvitationModel.init({
+export const initInvitationModel = (sequelize: Sequelize) => InvitationModel.init({
 	id: {
 		type: DataTypes.INTEGER,
 		autoIncrement: true,
@@ -50,9 +43,9 @@ export const initFarmInvitationModel = (sequelize: Sequelize) => FarmInvitationM
 		unique: true,
 	},
 	status: {
-		type: DataTypes.ENUM(...Object.values(FarmInvitationStatus)),
+		type: DataTypes.ENUM(...Object.values(InvitationStatus)),
 		allowNull: false,
-		defaultValue: FarmInvitationStatus.PENDING,
+		defaultValue: InvitationStatus.PENDING,
 		field: 'status',
 	},
 	createdAt: {
@@ -75,6 +68,6 @@ export const initFarmInvitationModel = (sequelize: Sequelize) => FarmInvitationM
 }, {
 	sequelize,
 	tableName: 'farm_invitations',
-	modelName: 'FarmInvitation',
+	modelName: 'Invitation',
 	timestamps: true,
 });

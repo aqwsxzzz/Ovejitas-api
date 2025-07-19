@@ -11,10 +11,13 @@ export const FarmSchema = Type.Object({
 	additionalProperties: false,
 });
 
-const FarmParamsSchema = Type.Pick(FarmSchema, ['id'], {
+const FarmParamsSchema = Type.Object({
+	farmId: Type.Integer({ minimum: 1 }),
+}, {
 	$id: 'farmParams',
 	additionalProperties: false,
 });
+
 const FarmCreateSchema = Type.Pick(FarmSchema, ['name'], {
 	$id: 'farmCreate',
 	additionalProperties: false,
@@ -37,7 +40,7 @@ export type Farm = Static<typeof FarmSchema>;
 export type FarmCreateInput = Static<typeof FarmCreateSchema>;
 export type FarmUpdateInput = Static<typeof FarmUpdateSchema>;
 export type FarmResponse = Static<typeof FarmResponseSchema>;
-export type FarmParamsSchema = Static<typeof FarmParamsSchema>;
+export type FarmParams = Static<typeof FarmParamsSchema>;
 
 export const farmSchemas = [FarmCreateSchema, FarmUpdateSchema, FarmResponseSchema];
 
