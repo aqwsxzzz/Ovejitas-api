@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { createFarmMemberSchema, FarmMemberCreateInput, farmMemberSchemas  } from './farm-member.schema';
 import { FarmMemberService } from './farm-member.service';
 
@@ -9,8 +9,8 @@ const farmMemberPlugin: FastifyPluginAsync = async (fastify) => {
 
 	fastify.decorate('farmMemberService', farmMemberService);
 
-	fastify.post('/farm-members', { schema: createFarmMemberSchema, preHandler: fastify.authenticate }, async (request, reply) => {
-		const { role, farmId, userId } = request.body as FarmMemberCreateInput;
+	fastify.post('/farm-members', { schema: createFarmMemberSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{ Body: FarmMemberCreateInput }>, reply) => {
+		const { role, farmId, userId } = request.body;
 		const farmMember = await fastify.farmMemberService.createFarmMember({ role, farmId, userId });
 		reply.status(201).send(farmMember);
 	});

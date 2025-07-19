@@ -1,5 +1,5 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { createFarmSchema, FarmCreateInput, FarmParams, farmSchemas, FarmUpdateInput, getFarmSchema, updateFarmSchema } from './farm.schema';
+import { createFarmSchema, deleteFarmSchema, FarmCreateInput, FarmParams, farmSchemas, FarmUpdateInput, getFarmSchema, updateFarmSchema } from './farm.schema';
 import { FarmService } from './farm.service';
 import { FarmSerializer } from './farm.serializer';
 
@@ -61,7 +61,7 @@ const farmPlugin: FastifyPluginAsync = async (fastify) => {
 	});
 
 	// Delete Farm
-	fastify.delete('/farms/:farmId', { schema: updateFarmSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{ Params: FarmParams }>, reply) => {
+	fastify.delete('/farms/:farmId', { schema: deleteFarmSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{ Params: FarmParams }>, reply) => {
 		try {
 			const { farmId } = request.params;
 			await farmService.deleteFarm(farmId);

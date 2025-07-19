@@ -1,5 +1,5 @@
 import { Static, Type } from '@sinclair/typebox';
-import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createDeleteEndpointSchema, createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 
 export const FarmSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
@@ -60,5 +60,10 @@ export const updateFarmSchema = createPostEndpointSchema({
 export const getFarmSchema = createGetEndpointSchema({
 	params: FarmParamsSchema,
 	dataSchema: FarmResponseSchema,
+	errorCodes: [404],
+});
+
+export const deleteFarmSchema = createDeleteEndpointSchema({
+	params: FarmParamsSchema,
 	errorCodes: [404],
 });
