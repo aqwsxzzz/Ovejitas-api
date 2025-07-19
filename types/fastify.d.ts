@@ -4,6 +4,7 @@ import { Database } from '../src/database';
 import { UserService } from '../src/resources/user/user.service';
 import { AuthService } from '../src/resources/auth/auth.service';
 import { FarmMemberService } from '../src/resources/farm-member/farm-member.service';
+import { InvitationService } from '../src/resources/invitation/invitation.service';
 
 declare module 'fastify' {
 	interface FastifyInstance {
@@ -13,6 +14,7 @@ declare module 'fastify' {
 		authService: AuthService;
 		farmService: FarmService;
 		farmMemberService: FarmMemberService
+		farmInvitationService: InvitationService
 		handleDbError: (error: unknown, reply: FastifyReply) => void;
 		authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void>;
 	}

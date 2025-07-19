@@ -2,31 +2,36 @@
 import { Transaction } from 'sequelize';
 import { UserSignupInput } from './auth.schema';
 import { Database } from '../../database';
-import { AuthSignUpBody } from '../../types/auth-types';
 import { hashPassword } from '../../utils/password-util';
 import { UserLanguage } from '../user/user.model';
 import { FarmMemberRole } from '../farm-member/farm-member.model';
+import { FarmInvitationStatus } from '../invitation/invitation.model';
 
-// export async function handleInvitationSignUp(body: UserSignupInput, db: Database, transaction: Transaction) {
-// 	const { displayName, email, password, language = 'es', invitationToken } = body;
-// 	const invitation = await FarmInvitation.findOne({ where: { token: invitationToken, status: 'pending' }, transaction });
-// 	if (!invitation) {
-// 		throw new Error('Invalid or expired invitation token');
-// 	}
-// 	if (!invitation.expiresAt || invitation.expiresAt.getTime() < Date.now()) {
-// 		invitation.setDataValue('status', 'expired');
-// 		await invitation.save({ transaction });
-// 		throw new Error('Invitation has expired');
-// 	}
-// 	const hashedPassword = await hashPassword(password);
-// 	const user = await User.create({ displayName, email: toLowerCase(), password: hashedPassword, language: language as UserLanguage }, { transaction });
-// 	await FarmMembers.create({ farmId: decodeId(invitation.farmId)!, userId: user.id, role: invitation.role }, { transaction });
-// 	user.set('lastVisitedFarmId', decodeId(invitation.farmId));
-// 	await user.save({ transaction });
-// 	invitation.setDataValue('status', 'accepted');
-// 	await invitation.save({ transaction });
-// 	return user;
-// }
+export async function handleInvitationSignUp(body: UserSignupInput, db: Database, transaction: Transaction) {
+	const { displayName, email, password, language = 'es', invitationToken } = body;
+	const invitation = await db.models.FarmInvitation.findOne({ where: { token: invitationToken, status: 'pending' }, transaction });
+
+	if (!invitation) {
+		throw new Error('Invalid or expired invitation token');
+	}
+
+	if (!invitation.dataValues.expiresAt || new Date(invitation.dataValues.expiresAt).getTime() < Date.now()) {
+		invitation.setDataValue('status', 'expired' as FarmInvitationStatus);
+		await invitation.save({ transaction });
+		throw new Error('Invitation has expired');
+	}
+	const hashedPassword = await hashPassword(password);
+	console.log('🚀 ~ handleInvitationSignUp ~ hashedPassword:', hashedPassword);
+	const user = await db.models.User.create({ displayName, email: email.toLowerCase(), password: hashedPassword, language: language as UserLanguage }, { transaction });
+
+	console.log('🚀 ~ handleInvitationSignUp ~ user:', user);
+	await db.models.FarmMember.create({ farmId: (invitation.dataValues.farmId)!, userId: user.dataValues.id, role: invitation.dataValues.role }, { transaction });
+	user.set('lastVisitedFarmId', (invitation.dataValues.farmId));
+	await user.save({ transaction });
+	invitation.setDataValue('status', 'accepted' as FarmInvitationStatus);
+	await invitation.save({ transaction });
+	return user;
+}
 
 export async function handleDefaultSignUp(body: UserSignupInput, db:Database, transaction: Transaction) {
 	const { displayName, email, password, language = 'es' } = body;

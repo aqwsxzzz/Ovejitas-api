@@ -4,7 +4,7 @@ import { comparePassword } from '../../utils/password-util';
 import { createJwtToken } from '../../utils/token-util';
 import { UserModel } from '../user/user.model';
 import { UserLoginInput, UserSignupInput } from './auth.schema';
-import { handleDefaultSignUp } from './auth-helpers';
+import { handleDefaultSignUp, handleInvitationSignUp } from './auth-helpers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
@@ -44,12 +44,15 @@ export class AuthService {
 
 		try {
 			const { email, invitationToken } = data;
+			console.log('🚀 ~ AuthService ~ signup ~ invitationToken:', invitationToken);
+			console.log('🚀 ~ AuthService ~ signup ~ email:', email);
 
 			// Check if user already exists
 			const existingUser = await this.db.models.User.findOne({
 				where: { email },
 				transaction,
 			});
+			console.log('🚀 ~ AuthService ~ signup ~ existingUser:', existingUser);
 
 			if (existingUser) {
 				throw new Error('Email already in use');
@@ -58,16 +61,13 @@ export class AuthService {
 			let user: UserModel;
 			let message: string;
 
-			// if (invitationToken) {
-			// 	user = await handleInvitationSignUp(data, this.db, transaction);
-			// 	message = 'User created and added to farm via invitation';
-			// } else {
-			// 	user = await handleDefaultSignUp(data, this.db, transaction);
-			// 	message = 'User created';
-			// }
-
-			user = await handleDefaultSignUp(data, this.db, transaction);
-			message = 'User created';
+			if (invitationToken) {
+				user = await handleInvitationSignUp(data, this.db, transaction);
+				message = 'User created and added to farm via invitation';
+			} else {
+				user = await handleDefaultSignUp(data, this.db, transaction);
+				message = 'User created';
+			}
 
 			await transaction.commit();
 			return { user, message };
