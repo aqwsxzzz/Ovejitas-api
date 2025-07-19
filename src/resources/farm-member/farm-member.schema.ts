@@ -1,7 +1,12 @@
 import { Static, Type } from '@sinclair/typebox';
-import { FarmMemberModel, FarmMemberRole } from './farm-member.model';
+import { FarmMemberModel  } from './farm-member.model';
 import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 import { FarmModel } from '../farm/farm.model';
+
+export enum FarmMemberRole {
+	OWNER = 'owner',
+	MEMBER = 'member',
+}
 
 export const FarmMemberSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),

@@ -1,10 +1,5 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
-import { FarmMember } from './farm-member.schema';
-
-export enum FarmMemberRole {
-    OWNER = 'owner',
-    MEMBER = 'member',
-}
+import { FarmMember, FarmMemberRole } from './farm-member.schema';
 
 type FarmMemberCreationAttributes = Pick<FarmMember, 'farmId' | 'userId' | 'role'>;
 
