@@ -11,6 +11,7 @@ import authenticationPlugin from './plugins/authentication-plugin';
 import farmPlugin from './resources/farm/farm.plugin';
 import farmMemberPlugin from './resources/farm-member/farm-member.plugin';
 import invitationPlugin from './resources/invitation/invitation.plugin';
+import speciesPlugin from './resources/species/species.plugin';
 
 const server: FastifyInstance = Fastify({
 	logger: true,
@@ -44,6 +45,7 @@ server.register(authPlugin, { prefix: '/api/v1' });
 server.register(farmPlugin, { prefix: '/api/v1' });
 server.register(farmMemberPlugin, { prefix: '/api/v1' });
 server.register(invitationPlugin, { prefix: '/api/v1' });
+server.register(speciesPlugin, { prefix: '/api/v1' });
 
 //Error handler for validation errors
 server.setErrorHandler((error, request, reply) => {

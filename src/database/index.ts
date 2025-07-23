@@ -3,6 +3,8 @@ import { initUserModel, UserModel } from '../resources/user/user.model';
 import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
 import { FarmMemberModel, initFarmMemberModel } from '../resources/farm-member/farm-member.model';
 import { InvitationModel, initInvitationModel } from '../resources/invitation/invitation.model';
+import { initSpeciesModel, SpeciesModel } from '../resources/species/species.model';
+import { initSpeciesTranslationModel, SpeciesTranslationModel } from '../resources/species-translation/species-translation.model';
 
 export interface Database {
     sequelize: Sequelize;
@@ -11,6 +13,8 @@ export interface Database {
 		Farm: typeof FarmModel
 		FarmMember: typeof FarmMemberModel
 		Invitation: typeof InvitationModel
+		Species: typeof SpeciesModel
+		SpeciesTranslation: typeof SpeciesTranslationModel
     }
 }
 
@@ -28,13 +32,19 @@ export const initDatabase = async (): Promise<Database> => {
 	const Farm = initFarmModel(sequelize);
 	const FarmMember = initFarmMemberModel(sequelize);
 	const Invitation = initInvitationModel(sequelize);
+	const SpeciesTranslation = initSpeciesTranslationModel(sequelize);
+	const Species = initSpeciesModel(sequelize);
 
-	// assosiactions
+	// associations
 	// Farm & FarmMembers
 	FarmMemberModel.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
 	FarmMemberModel.belongsTo(UserModel, { foreignKey: 'userId', as: 'user' });
 	FarmModel.hasMany(FarmMemberModel, { foreignKey: 'farmId', as: 'members' });
 	UserModel.hasMany(FarmMemberModel, { foreignKey: 'userId', as: 'farmMemberships' });
+
+	// Species & SpeciesTranslation
+	Species.hasMany(SpeciesTranslation, { foreignKey: 'speciesId', as: 'translations' });
+	SpeciesTranslation.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
 
 	const db: Database = {
 		sequelize,
@@ -42,7 +52,9 @@ export const initDatabase = async (): Promise<Database> => {
 			User,
 			Farm,
 			FarmMember,
-			Invitation: Invitation,
+			Invitation,
+			Species,
+			SpeciesTranslation,
 		},
 	};
 

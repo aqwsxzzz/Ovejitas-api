@@ -2,7 +2,7 @@ import { Database } from '../../database';
 import { decodeId } from '../../utils/id-hash-util';
 import { hashPassword } from '../../utils/password-util';
 import { createInvitationToken } from '../../utils/token-util';
-import { FarmMemberRole } from '../farm-member/farm-member.model';
+import { FarmMemberRole } from '../farm-member/farm-member.schema';
 import { UserLanguage } from '../user/user.schema';
 import { getUserFarmCount, isAlreadyMemberOrInvited } from './invitation.helper';
 import { InvitationStatus, InvitationAcceptInput, InvitationCreateInput, ListInvitationParams } from './invitation.schema';
@@ -42,7 +42,7 @@ export class InvitationService {
 		const expiresAt = new Date(Date.now() + INVITATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
 		const invitation = await this.db.models.Invitation.create({
-			email, farmId: decodedFarmId!, token, role: 'member' as FarmMemberRole, status: InvitationStatus.PENDING, expiresAt: expiresAt.toDateString(),
+			email, farmId: decodedFarmId!, token, role: FarmMemberRole.MEMBER, status: InvitationStatus.PENDING, expiresAt: expiresAt.toDateString(),
 		});
 
 		return invitation;

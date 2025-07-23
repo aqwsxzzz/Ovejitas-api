@@ -6,9 +6,6 @@ import { Breed } from './breed-model';
 import { Animal } from './animal-model';
 import { AnimalMeasurement } from './animal-measurement-model';
 
-// Species & SpeciesTranslation
-Species.hasMany(SpeciesTranslation, { foreignKey: 'speciesId', as: 'translations' });
-SpeciesTranslation.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
 
 // Species & Breed
 Species.hasMany(Breed, { foreignKey: 'speciesId', as: 'breeds' });

@@ -3,9 +3,9 @@ import { Transaction } from 'sequelize';
 import { UserSignupInput } from './auth.schema';
 import { Database } from '../../database';
 import { hashPassword } from '../../utils/password-util';
-import { FarmMemberRole } from '../farm-member/farm-member.model';
 import { UserLanguage } from '../user/user.schema';
 import {  InvitationStatus } from '../invitation/invitation.schema';
+import { FarmMemberRole } from '../farm-member/farm-member.schema';
 
 export async function handleInvitationSignUp(body: UserSignupInput, db: Database, transaction: Transaction) {
 	const { displayName, email, password, language = 'es', invitationToken } = body;
@@ -42,7 +42,7 @@ export async function handleDefaultSignUp(body: UserSignupInput, db:Database, tr
 
 	const farm = await db.models.Farm.create({ name: farmName }, { transaction });
 
-	await db.models.FarmMember.create({ farmId: farm.dataValues.id, userId: user.dataValues.id, role: 'owner' as FarmMemberRole }, { transaction });
+	await db.models.FarmMember.create({ farmId: farm.dataValues.id, userId: user.dataValues.id, role: FarmMemberRole.OWNER }, { transaction });
 
 	user.setDataValue('lastVisitedFarmId', farm.dataValues.id);
 

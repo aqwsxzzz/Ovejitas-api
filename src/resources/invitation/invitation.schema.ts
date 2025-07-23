@@ -1,7 +1,7 @@
 import { Static, Type } from '@sinclair/typebox';
-import { FarmMemberRole } from '../farm-member/farm-member.model';
 import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 import { UserLanguage } from '../user/user.schema';
+import { FarmMemberRole } from '../farm-member/farm-member.schema';
 
 export enum InvitationStatus {
 	PENDING = 'pending',

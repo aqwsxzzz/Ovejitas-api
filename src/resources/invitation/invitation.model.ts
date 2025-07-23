@@ -1,7 +1,7 @@
 import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 import { InvitationStatus, Invitation } from './invitation.schema';
 import { FarmModel } from '../farm/farm.model';
-import { FarmMemberRole } from '../farm-member/farm-member.model';
+import { FarmMemberRole } from '../farm-member/farm-member.schema';
 
 type InvitationCreationAttributes = Optional<Invitation, 'id' | 'createdAt' | 'updatedAt' | 'expiresAt'>;
 

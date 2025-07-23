@@ -8,7 +8,7 @@ export enum FarmMemberRole {
 	MEMBER = 'member',
 }
 
-export const FarmMemberSchema = Type.Object({
+const FarmMemberSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
 	farmId: Type.Integer({ minimum: 1 }),
 	userId: Type.Integer({ minimum: 1 }),

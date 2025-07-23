@@ -1,10 +1,10 @@
-import { FastifyReply, FastifyRequest } from "fastify";
-import { Species } from "../../models/species-model";
-import { IGetSpeciesByIdQuery, ISpeciesIdParam, SpeciesCreateRoute, SpeciesListParams } from "../../types/species-types";
-import { serializeSpecies } from "../../serializers/species-serializer";
-import { decodeId } from "../../utils/id-hash-util";
-import { SpeciesTranslation } from "../../models/species-translation-model";
-import { findAllSpeciesWithTranslation, findSpeciesWithTranslationById } from "../../utils/species-util";
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { Species } from '../../models/species-model';
+import { IGetSpeciesByIdQuery, ISpeciesIdParam, SpeciesCreateRoute, SpeciesListParams } from '../../types/species-types';
+import { serializeSpecies } from '../../serializers/species-serializer';
+import { decodeId } from '../../utils/id-hash-util';
+import { SpeciesTranslation } from '../../models/species-translation-model';
+import { findAllSpeciesWithTranslation, findSpeciesWithTranslationById } from '../../utils/species-util';
 
 export const createSpecies = async (request: FastifyRequest<SpeciesCreateRoute>, reply: FastifyReply) => {
 	const { name, languageCode } = request.body;
@@ -22,25 +22,25 @@ export const createSpecies = async (request: FastifyRequest<SpeciesCreateRoute>,
 					languageCode,
 					name,
 				},
-				{ transaction: t }
+				{ transaction: t },
 			);
 
 			speciesWithTranslation = (await Species.findByPk(species.id, {
-				include: [{ model: SpeciesTranslation, where: { languageCode }, as: "translations" }],
+				include: [{ model: SpeciesTranslation, where: { languageCode }, as: 'translations' }],
 				transaction: t,
 			})) as (Species & { translations: SpeciesTranslation[] }) | null;
 
 			if (!speciesWithTranslation || !speciesWithTranslation.translations || speciesWithTranslation.translations.length === 0) {
-				throw new Error("Failed to create species with translation");
+				throw new Error('Failed to create species with translation');
 			}
 			translation = speciesWithTranslation.translations[0];
 		});
 	} catch (error) {
-		return reply.code(500).send({ message: "Failed to create species and translation", error: error instanceof Error ? error.message : error });
+		return reply.code(500).send({ message: 'Failed to create species and translation', error: error instanceof Error ? error.message : error });
 	}
 
 	if (!speciesWithTranslation || !translation) {
-		return reply.code(500).send({ message: "Failed to create species and translation" });
+		return reply.code(500).send({ message: 'Failed to create species and translation' });
 	}
 
 	reply.code(201).send(serializeSpecies(speciesWithTranslation, translation));
@@ -49,7 +49,7 @@ export const createSpecies = async (request: FastifyRequest<SpeciesCreateRoute>,
 export const getSpecies = async (request: FastifyRequest<{ Querystring: SpeciesListParams }>, reply: FastifyReply) => {
 	const languageCode = request.query.language;
 	if (!languageCode) {
-		return reply.code(400).send({ message: "Language not specified" });
+		return reply.code(400).send({ message: 'Language not specified' });
 	}
 	const speciesList = await findAllSpeciesWithTranslation(languageCode);
 
@@ -61,7 +61,7 @@ export const getSpecies = async (request: FastifyRequest<{ Querystring: SpeciesL
 		.filter(Boolean);
 
 	if (!speciesListWithTranslation || speciesListWithTranslation.length === 0) {
-		return reply.code(404).send({ message: "No species found in the requested language" });
+		return reply.code(404).send({ message: 'No species found in the requested language' });
 	}
 
 	reply.send(speciesListWithTranslation);
@@ -70,12 +70,12 @@ export const getSpecies = async (request: FastifyRequest<{ Querystring: SpeciesL
 export const getSpeciesById = async (request: FastifyRequest<{ Params: ISpeciesIdParam; Querystring: IGetSpeciesByIdQuery }>, reply: FastifyReply) => {
 	const languageCode = request.query.language;
 	if (!languageCode) {
-		return reply.code(400).send({ message: "Language not specified" });
+		return reply.code(400).send({ message: 'Language not specified' });
 	}
 	const { id } = request.params;
 	const species = await findSpeciesWithTranslationById(id, languageCode);
 	if (!species) {
-		return reply.code(404).send({ message: "Species not found" });
+		return reply.code(404).send({ message: 'Species not found' });
 	}
 	const translation = (species as Species & { translations: SpeciesTranslation[] }).translations?.[0];
 	if (!translation) {
@@ -88,8 +88,8 @@ export const deleteSpecies = async (request: FastifyRequest<{ Params: ISpeciesId
 	const { id } = request.params;
 	const species = await Species.findByPk(decodeId(id));
 	if (!species) {
-		return reply.code(404).send({ message: "Species not found" });
+		return reply.code(404).send({ message: 'Species not found' });
 	}
 	await species.destroy();
-	reply.send({ message: "Species deleted" });
+	reply.send({ message: 'Species deleted' });
 };
