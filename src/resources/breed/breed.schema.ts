@@ -1,5 +1,5 @@
 import { Type, Static } from '@sinclair/typebox';
-import { createPostEndpointSchema } from '../../utils/schema-builder';
+import { createPostEndpointSchema, createUpdateEndpointSchema } from '../../utils/schema-builder';
 
 const BreedSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
@@ -20,6 +20,13 @@ const BreedCreateSchema = Type.Object({
 	additionalProperties: false,
 });
 
+const BreedUpdateSchema = Type.Object({
+	name: Type.String(),
+}, {
+	$id: 'breedUpdate',
+	additionalProperties: false,
+});
+
 const BreedResponseSchema = Type.Object({
 	...BreedSchema.properties,
 	id: Type.String(),
@@ -30,14 +37,26 @@ const BreedResponseSchema = Type.Object({
 	additionalProperties: false,
 });
 
+const BreedParamsSchema = Type.Object({
+	id: Type.String(),
+});
+
 export type Breed = Static<typeof BreedSchema>;
 export type BreedCreate = Static<typeof BreedCreateSchema>;
 export type BreedResponse = Static<typeof BreedResponseSchema>;
+export type BreedUpdate = Static<typeof BreedUpdateSchema>;
+export type BreedParams = Static<typeof BreedParamsSchema>;
 
-export const breedSchemas = [BreedSchema, BreedCreateSchema];
+export const breedSchemas = [BreedSchema, BreedCreateSchema, BreedUpdateSchema, BreedResponseSchema];
 
 export const createBreedSchema = createPostEndpointSchema({
 	body: BreedCreateSchema,
 	dataSchema: BreedResponseSchema,
 	errorCodes: [400, 409],
+});
+
+export const updateBreedSchema = createUpdateEndpointSchema({
+	body: BreedUpdateSchema,
+	dataSchema: BreedResponseSchema,
+	params: BreedParamsSchema,
 });

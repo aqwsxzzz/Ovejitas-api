@@ -1,16 +1,29 @@
+import { BreedUpdate } from './breed.schema';
 import { BaseService } from '../../services/base.service';
-import { isBreedNameUniqueForSpecies } from './breed.helper';
 import { BreedModel } from './breed.model';
 
 export class BreedService extends BaseService {
 
 	async createBreed({ name, speciesId }:{ name: string, speciesId: number }): Promise<BreedModel> {
-		const isUnique = await isBreedNameUniqueForSpecies(name, speciesId, this.db);
+		return await this.db.models.Breed.create({ name, speciesId });
+	}
 
-		if (!isUnique) {
-			throw new Error('Breed name must be unique per species.');
+	async updateBreed(id: number, data: BreedUpdate): Promise<BreedModel> {
+
+		const [affectedCount] = await this.db.models.Breed.update(data, {
+			where: { id },
+		});
+
+		if (affectedCount === 0) {
+			throw new Error('Breed not found');
 		}
 
-		return await this.db.models.Breed.create({ name, speciesId });
+		const updatedBreed = await this.db.models.Breed.findByPk(id);
+		if (!updatedBreed) {
+			throw new Error('Breed not found after update');
+		}
+
+		return updatedBreed;
+
 	}
 }

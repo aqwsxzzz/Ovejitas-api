@@ -49,6 +49,7 @@ export const initDatabase = async (): Promise<Database> => {
 	Species.hasMany(SpeciesTranslation, { foreignKey: 'speciesId', as: 'translations' });
 	SpeciesTranslation.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
 
+	// Breed & Species
 	Species.hasMany(Breed, { foreignKey: 'speciesId', as: 'breeds' });
 	Breed.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
 
