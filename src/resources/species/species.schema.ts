@@ -37,16 +37,17 @@ const SpeciesParamsSchema = Type.Object({
 	additionalProperties: false,
 });
 
-const SpeciesIncludeSchema = Type.Object({
+const SpeciesQuerystringSchema = Type.Object({
 	include: Type.Optional(Type.String()),
+	order: Type.Optional(Type.String()),
 }, {
-	$id: 'speciesInclude',
+	$id: 'speciesQuerystring',
 	additionalProperties: false,
 });
 
 export type Species = Static<typeof SpeciesSchema>;
 export type SpeciesCreateInput = Static<typeof SpeciesCreateSchema>;
-export type SpeciesInclude = Static<typeof SpeciesIncludeSchema>;
+export type SpeciesQueryString = Static<typeof SpeciesQuerystringSchema>;
 export type SpeciesResponse = Static<typeof SpeciesResponseSchema>;
 export type SpeciesParams = Static<typeof SpeciesParamsSchema>;
 
@@ -59,13 +60,13 @@ export const createSpeciesSchema = createPostEndpointSchema({
 });
 
 export const getSpeciesSchema = createGetEndpointSchema({
-	querystring: SpeciesIncludeSchema,
+	querystring: SpeciesQuerystringSchema,
 	dataSchema: SpeciesResponseSchema,
 	errorCodes: [404],
 });
 
 export const listSpeciesSchema = createGetEndpointSchema({
-	querystring: SpeciesIncludeSchema,
+	querystring: SpeciesQuerystringSchema,
 	dataSchema: Type.Array(SpeciesResponseSchema),
 	errorCodes: [404],
 });

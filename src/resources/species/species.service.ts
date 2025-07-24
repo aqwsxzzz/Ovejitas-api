@@ -4,8 +4,16 @@ import { SpeciesTranslationModel } from '../species-translation/species-translat
 import { SpeciesCreateInput } from './species.schema';
 import { FindOptions } from 'sequelize';
 import { BaseService } from '../../services/base.service';
+import { OrderParser, TypedOrderConfig } from '../../utils/order-parser';
 
 export class SpeciesService extends BaseService {
+
+	private static readonly ALLOWED_ORDERS = OrderParser.createConfig({
+		id: {
+			attribute: 'id',
+		},
+
+	} satisfies TypedOrderConfig);
 
 	private static readonly ALLOWED_INCLUDES = IncludeParser.createConfig({
 		translations: {
@@ -40,13 +48,19 @@ export class SpeciesService extends BaseService {
    * @returns Promise<SpeciesModel[]>
    * @throws Error if invalid includes are requested
    */
-	async getAllSpecies(includeParam?: string): Promise<SpeciesModel[]> {
+	async getAllSpecies(includeParam?: string, order?: string): Promise<SpeciesModel[]> {
 		const findOptions: FindOptions = {};
 
 		if (includeParam) {
 			// Validate includes before parsing
 			this.validateIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
 			findOptions.include = this.parseIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
+		}
+
+		if (order) {
+			// Validate orders before parsing
+			this.validateOrder(order, SpeciesService.ALLOWED_ORDERS);
+			findOptions.order = this.parseOrder(order, SpeciesService.ALLOWED_ORDERS);
 		}
 
 		return await this.db.models.Species.findAll(findOptions);
