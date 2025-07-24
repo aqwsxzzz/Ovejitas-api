@@ -20,13 +20,20 @@ const SpeciesCreateSchema = Type.Object({
 	additionalProperties: false,
 });
 
-const SpeciesResponseSchema = Type.Object({
+export const SpeciesResponseSchema = Type.Object({
 	...SpeciesSchema.properties,
 	id: Type.String(),
 	translationId: Type.Optional(Type.String()),
 	translations: Type.Optional(Type.Array(SpeciesTranslationResponseSchema)),
 }, {
 	$id: 'speciesResponse',
+	additionalProperties: false,
+});
+
+const SpeciesParamsSchema = Type.Object({
+	id: Type.String(),
+}, {
+	$id: 'speciesParams',
 	additionalProperties: false,
 });
 
@@ -41,8 +48,9 @@ export type Species = Static<typeof SpeciesSchema>;
 export type SpeciesCreateInput = Static<typeof SpeciesCreateSchema>;
 export type SpeciesInclude = Static<typeof SpeciesIncludeSchema>;
 export type SpeciesResponse = Static<typeof SpeciesResponseSchema>;
+export type SpeciesParams = Static<typeof SpeciesParamsSchema>;
 
-export const speciesSchemas = [SpeciesCreateSchema, SpeciesResponseSchema];
+export const speciesSchemas = [SpeciesCreateSchema, SpeciesResponseSchema, SpeciesParamsSchema];
 
 export const createSpeciesSchema = createPostEndpointSchema({
 	body: SpeciesCreateSchema,

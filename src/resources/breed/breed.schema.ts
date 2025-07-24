@@ -27,7 +27,7 @@ const BreedUpdateSchema = Type.Object({
 	additionalProperties: false,
 });
 
-const BreedResponseSchema = Type.Object({
+export const BreedResponseSchema = Type.Object({
 	...BreedSchema.properties,
 	id: Type.String(),
 	speciesId: Type.String(),

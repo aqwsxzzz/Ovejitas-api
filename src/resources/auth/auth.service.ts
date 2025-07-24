@@ -1,19 +1,14 @@
 // auth.service.ts
-import { Database } from '../../database';
 import { comparePassword } from '../../utils/password-util';
 import { createJwtToken } from '../../utils/token-util';
 import { UserModel } from '../user/user.model';
 import { UserLoginInput, UserSignupInput } from './auth.schema';
 import { handleDefaultSignUp, handleInvitationSignUp } from './auth-helpers';
+import { BaseService } from '../../services/base.service';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
-export class AuthService {
-	private db: Database;
-
-	constructor(db: Database) {
-		this.db = db;
-	}
+export class AuthService extends BaseService {
 
 	async login(data: UserLoginInput): Promise<{ user: UserModel, token: string }> {
 		const user = await this.db.models.User.findOne({
@@ -44,15 +39,12 @@ export class AuthService {
 
 		try {
 			const { email, invitationToken } = data;
-			console.log('🚀 ~ AuthService ~ signup ~ invitationToken:', invitationToken);
-			console.log('🚀 ~ AuthService ~ signup ~ email:', email);
 
 			// Check if user already exists
 			const existingUser = await this.db.models.User.findOne({
 				where: { email },
 				transaction,
 			});
-			console.log('🚀 ~ AuthService ~ signup ~ existingUser:', existingUser);
 
 			if (existingUser) {
 				throw new Error('Email already in use');

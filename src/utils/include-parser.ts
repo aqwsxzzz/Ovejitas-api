@@ -33,19 +33,12 @@ function isValidModelName(
 }
 
 export class IncludeParser {
-	/**
-   * Parses include parameter string into Sequelize include objects
-   * @param includeParam - Comma-separated string of includes (e.g., "translations,category")
-   * @param allowedIncludes - Configuration object defining allowed includes
-   * @param db - Database instance containing models
-   * @returns Array of Sequelize include objects
-   * @throws Error if include is not allowed or model doesn't exist
-   */
 	static parseIncludes(
 		includeParam: string,
 		allowedIncludes: IncludeConfig,
 		db: Database,
 	): SequelizeIncludeObject[] {
+
 		if (!includeParam) return [];
 
 		const requestedIncludes = includeParam.split(',').map(i => i.trim());

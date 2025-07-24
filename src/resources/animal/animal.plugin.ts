@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import {  AnimalCreate, AnimalResponseSchema, animalSchemas, createAnimalSchema } from './animal.schema';
+import {  AnimalCreate,  AnimalInclude,  animalSchemas, createAnimalSchema, listAnimalSchema } from './animal.schema';
 import { AnimalService } from './animal.service';
 import { AnimalSerializer } from './animal.serializer';
 
@@ -11,12 +11,15 @@ const animalPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
 	const animalService = new AnimalService(fastify.db);
 
-	fastify.get('/animals', { schema:AnimalResponseSchema , preHandler: fastify.authenticate }, async (request: FastifyRequest, reply) => {
+	fastify.get('/animals', { schema: listAnimalSchema , preHandler: fastify.authenticate }, async (request: FastifyRequest<{Querystring: AnimalInclude}>, reply) => {
 		try {
 
+			const { include } = request.query;
 			const farmId = request.lastVisitedFarmId;
-			const animals = await animalService.getAnimals(farmId);
+			const animals = await animalService.getAnimals(farmId, include);
+
 			const serializedAnimals = AnimalSerializer.serializeMany(animals!);
+
 			reply.success(serializedAnimals);
 		} catch (error) {
 			fastify.handleDbError(error, reply);

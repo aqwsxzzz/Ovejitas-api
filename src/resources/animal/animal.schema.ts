@@ -1,5 +1,11 @@
+import { SpeciesResponse, SpeciesResponseSchema } from './../species/species.schema';
 import { Static, Type } from '@sinclair/typebox';
-import { createPostEndpointSchema } from '../../utils/schema-builder';
+import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { BreedResponse, BreedResponseSchema } from '../breed/breed.schema';
+import { AnimalModel } from './animal.model';
+import { SpeciesModel } from '../species/species.model';
+import { SpeciesTranslationModel } from '../species-translation/species-translation.model';
+import { BreedModel } from '../breed/breed.model';
 
 export enum AnimalSex {
 	Male = 'male',
@@ -25,6 +31,22 @@ export enum AnimalAcquisitionType {
 	Purchased = 'purchased',
 	Other = 'other',
 }
+
+export type AnimalWithPossibleIncludes = AnimalModel & {
+	species?: SpeciesModel & {
+		translations?: SpeciesTranslationModel[];
+	};
+	breed?: BreedModel;
+	father?: AnimalModel;
+	mother?: AnimalModel;
+};
+
+export type AnimalWithIncludes = AnimalResponse & {
+    species?: SpeciesResponse;
+    breed?: BreedResponse;
+    father?: Partial<AnimalResponse>;
+    mother?: Partial<AnimalResponse>;
+};
 
 const AnimalSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
@@ -87,6 +109,16 @@ export const AnimalUpdateSchema = Type.Object({
 	additionalProperties: false,
 });
 
+const ParentAnimalSchema = Type.Object({
+	id: Type.String(),
+	name: Type.String(),
+	tagNumber: Type.String(),
+	createdAt: Type.String(),
+	updatedAt: Type.String(),
+}, {
+	additionalProperties: false,
+});
+
 export const AnimalResponseSchema = Type.Object({
 	...AnimalSchema.properties,
 	id: Type.String(),
@@ -95,12 +127,19 @@ export const AnimalResponseSchema = Type.Object({
 	weight: Type.Optional(Type.Number()),
 	fatherId: Type.Optional(Type.String()),
 	motherId: Type.Optional(Type.String()),
-
+	species: Type.Optional(SpeciesResponseSchema),
+	breed: Type.Optional(BreedResponseSchema),
+	father: Type.Optional(ParentAnimalSchema),
+	mother: Type.Optional(ParentAnimalSchema),
 }, {
 	$id: 'animalResponse',
 	additionalProperties: false,
 },
 );
+
+export const AnimalIncludeSchema = Type.Object({
+	include: Type.Optional(Type.String()),
+});
 
 export const AnimalParamsSchema = Type.Object({
 	id: Type.String(),
@@ -111,6 +150,7 @@ export type AnimalCreate = Static<typeof AnimalCreateSchema>;
 export type AnimalResponse = Static<typeof AnimalResponseSchema>;
 export type AnimalUpdate = Static<typeof AnimalUpdateSchema>;
 export type AnimalParams = Static<typeof AnimalParamsSchema>;
+export type AnimalInclude = Static<typeof AnimalIncludeSchema>;
 
 export const animalSchemas = [AnimalSchema, AnimalCreateSchema, AnimalUpdateSchema, AnimalResponseSchema];
 
@@ -118,4 +158,10 @@ export const createAnimalSchema = createPostEndpointSchema({
 	body: AnimalCreateSchema,
 	dataSchema: AnimalResponseSchema,
 	errorCodes: [400, 409],
+});
+
+export const listAnimalSchema = createGetEndpointSchema({
+	querystring: AnimalIncludeSchema,
+	dataSchema: Type.Array(AnimalResponseSchema),
+	errorCodes: [404],
 });

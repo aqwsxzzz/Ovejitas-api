@@ -23,7 +23,6 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 			}).success(UserSerializer.serialize(user), 'Login successful');
 
 		} catch (error) {
-			console.log('🚀 ~ fastify.post ~ error:', error);
 			fastify.handleDbError(error, reply);
 		}
 	});
@@ -34,7 +33,6 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 			const { user, message } = await authService.signup({ email, password, displayName, invitationToken, language });
 			reply.success(UserSerializer.serialize(user), message);
 		} catch (error) {
-			console.log('🚀 ~ fastify.post ~ error:', error);
 			fastify.handleDbError(error, reply);
 		}
 	});

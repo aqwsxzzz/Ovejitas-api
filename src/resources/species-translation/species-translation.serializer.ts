@@ -4,7 +4,6 @@ import { SpeciesTranslationResponse } from './species-translation.schema';
 
 export class SpeciesTranslationSerializer {
 	static serialize(speciesTranslation: SpeciesTranslationModel): SpeciesTranslationResponse {
-		console.log(speciesTranslation);
 		return {
 			id: encodeId(speciesTranslation.id),
 			speciesId: encodeId(speciesTranslation.speciesId),

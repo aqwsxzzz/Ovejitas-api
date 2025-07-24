@@ -1,10 +1,9 @@
 import { encodeId } from '../../utils/id-hash-util';
-import { AnimalModel } from './animal.model';
-import { AnimalResponse } from './animal.schema';
+import { AnimalResponse,   AnimalWithIncludes,   AnimalWithPossibleIncludes } from './animal.schema';
 
 export class AnimalSerializer {
-	static serialize(animal: AnimalModel): AnimalResponse {
-		return {
+	static serialize(animal: AnimalWithPossibleIncludes): AnimalResponse {
+		const base = {
 			id: encodeId(animal.id),
 			farmId: animal.farmId,
 			speciesId: encodeId(animal.speciesId),
@@ -23,9 +22,62 @@ export class AnimalSerializer {
 			createdAt: animal.createdAt,
 			updatedAt: animal.updatedAt,
 		};
+
+		const result: AnimalWithIncludes = { ...base };
+
+		if (animal.species) {
+			result.species = {
+				id: encodeId(animal.species.id),
+				createdAt: animal.species.createdAt,
+				updatedAt: animal.species.updatedAt,
+				...(animal.species.translations && {
+					translations: animal.species.translations.map(t => ({
+						id: encodeId(t.id),
+						language: t.language,
+						name: t.name,
+						createdAt: t.createdAt,
+						updatedAt: t.updatedAt,
+						speciesId: encodeId(t.speciesId),
+					})),
+				}),
+			};
+		}
+
+		if (animal.breed) {
+			result.breed = {
+				id: encodeId(animal.breed.id),
+				name: animal.breed.name,
+				createdAt: animal.breed.createdAt,
+				updatedAt: animal.breed.updatedAt,
+				speciesId: encodeId(animal.breed.speciesId),
+			};
+		}
+
+		if (animal.father) {
+			result.father = {
+				id: encodeId(animal.father.id),
+				name: animal.father.name,
+				createdAt: animal.father.createdAt,
+				updatedAt: animal.father.updatedAt,
+				tagNumber: animal.father.tagNumber,
+			};
+		}
+
+		if (animal.mother) {
+			result.mother = {
+				id: encodeId(animal.mother.id),
+				name: animal.mother.name,
+				createdAt: animal.mother.createdAt,
+				updatedAt: animal.mother.updatedAt,
+				tagNumber: animal.mother.tagNumber,
+
+			};
+		}
+
+		return result;
 	}
 
-	static serializeMany(animals: AnimalModel[]): AnimalResponse[] {
+	static serializeMany(animals: AnimalWithPossibleIncludes[]): AnimalResponse[] {
 		return animals.map(a => this.serialize(a));
 	}
 }
