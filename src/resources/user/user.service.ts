@@ -16,6 +16,7 @@ export class UserService {
 		await user.update(userData);
 		return user;
 	}
+
 	async deleteUser(id: number): Promise<void> {
 		const user = await this.db.models.User.findByPk(id);
 		if (!user) throw new Error('User not found');
