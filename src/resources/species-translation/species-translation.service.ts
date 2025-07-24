@@ -1,13 +1,9 @@
-import { Database } from '../../database';
+
+import { BaseService } from '../../services/base.service';
 import { SpeciesTranslationModel } from './species-translation.model';
 import { CreateSpeciesTranslation } from './species-translation.schema';
 
-export class SpeciesTranslationService {
-	private db: Database;
-
-	constructor(db: Database) {
-		this.db = db;
-	}
+export class SpeciesTranslationService extends BaseService {
 
 	async createSpeciesTranslation(speciesTranslationData: CreateSpeciesTranslation): Promise<SpeciesTranslationModel> {
 		const speciesTranslation = await this.db.models.SpeciesTranslation.create(speciesTranslationData);

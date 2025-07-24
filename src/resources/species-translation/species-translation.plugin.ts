@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { createSpeciesTranslationSchema, CreateSpeciesTranslation, speciesTranslationSchema } from './species-translation.schema';
 import { SpeciesTranslationService } from './species-translation.service';
-import { SpeciesSerializer } from './species-translation.serializer';
+import { SpeciesTranslationSerializer } from './species-translation.serializer';
 
 const speciesTranslationPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	speciesTranslationSchema.forEach(schema => fastify.addSchema(schema));
@@ -12,7 +12,7 @@ const speciesTranslationPlugin: FastifyPluginAsync = async (fastify: FastifyInst
 		try {
 			const speciesTranslationData = request.body;
 			const speciesTranslation = await speciesTranslationService.createSpeciesTranslation(speciesTranslationData);
-			const serializedSpeciesTranslation = SpeciesSerializer.serialize(speciesTranslation);
+			const serializedSpeciesTranslation = SpeciesTranslationSerializer.serialize(speciesTranslation);
 			reply.success(serializedSpeciesTranslation);
 		} catch (error) {
 			fastify.handleDbError(error, reply);

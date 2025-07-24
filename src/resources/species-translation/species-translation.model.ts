@@ -7,10 +7,10 @@ type SpeciesTranslationCreationAttributes = Pick<SpeciesTranslation, 'speciesId'
 export class SpeciesTranslationModel extends Model<SpeciesTranslation, SpeciesTranslationCreationAttributes> {
 	declare id: number;
 	declare speciesId: number;
-	declare languageCode: UserLanguage;
+	declare language: UserLanguage;
 	declare name: string;
-	declare createdAt: Date;
-	declare updatedAt: Date;
+	declare createdAt: string;
+	declare updatedAt: string;
 }
 
 export const initSpeciesTranslationModel = (sequelize: Sequelize) => SpeciesTranslationModel.init({
