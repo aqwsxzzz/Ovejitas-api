@@ -47,6 +47,8 @@ server.register(fastifyAutoload, {
 	options: { prefix: '/api/v1' },
 	// Only load directories that have an index.ts file
 	matchFilter: (path) => path.endsWith('index.ts') || path.endsWith('index.js'),
+	// @ts-expect-error this will work and skip directories without index.ts
+	dirNameRoutePrefix: false,
 });
 
 //Error handler for validation errors
