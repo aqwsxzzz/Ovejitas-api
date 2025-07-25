@@ -2,6 +2,7 @@ import { FindOptions } from 'sequelize';
 import { BaseService } from '../../services/base.service';
 import { OrderParser, TypedOrderConfig } from '../../utils/order-parser';
 import { AnimalMeasurementModel } from './animal-measurement.model';
+import { AnimalMeasurementCreate } from './animal-measurement.schema';
 
 export class AnimalMeasurementService extends BaseService {
 	private static readonly ALLOWED_ORDERS = OrderParser.createConfig({
@@ -19,5 +20,32 @@ export class AnimalMeasurementService extends BaseService {
 			findOptions.order = this.parseOrder(order, AnimalMeasurementService.ALLOWED_ORDERS);
 		}
 		return await this.db.models.AnimalMeasurement.findAll(findOptions);
+	}
+
+	async createAnimalMeasurement({ animalId, data, userId }: {
+		animalId: number;
+		data: AnimalMeasurementCreate;
+		userId: number;
+	}): Promise<AnimalMeasurementModel> {
+		return this.db.sequelize.transaction(async (transaction) => {
+			// Validate that the animal exists
+			const animal = await this.db.models.Animal.findByPk(animalId, { transaction });
+			if (!animal) {
+				throw new Error('Animal not found');
+			}
+
+			// Create the measurement
+			const measurementData = {
+				animalId,
+				measurementType: data.measurementType,
+				value: data.value,
+				unit: data.unit,
+				measuredAt: data.measuredAt || new Date().toISOString(),
+				measuredBy: userId,
+				notes: data.notes,
+			};
+
+			return this.db.models.AnimalMeasurement.create(measurementData, { transaction });
+		});
 	}
 }

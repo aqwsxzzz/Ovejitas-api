@@ -6,11 +6,11 @@ type AnimalMeasurementCreationAttributes = Pick<AnimalMeasurement, 'animalId' | 
 export class AnimalMeasurementModel extends Model<AnimalMeasurement, AnimalMeasurementCreationAttributes> {
 	declare id: number;
 	declare animalId: number;
-	declare measurementType: string;
+	declare measurementType: AnimalMeasurementType;
 	declare value: number;
-	declare unit: string;
+	declare unit: AnimalMeasurementUnit;
 	declare measuredAt: string;
-	declare measuredBy: string;
+	declare measuredBy: number;
 	declare notes: string;
 	declare createdAt: string;
 	declare updatedAt: string;

@@ -1,5 +1,5 @@
 import { Static, Type } from '@sinclair/typebox';
-import { createGetEndpointSchema } from '../../utils/schema-builder';
+import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 
 export enum AnimalMeasurementType {
 	Weight = 'weight',
@@ -20,8 +20,8 @@ const AnimalMeasurementSchema = Type.Object({
 	value: Type.Number(),
 	unit: Type.Enum(AnimalMeasurementUnit),
 	measuredAt: Type.String(),
-	measuredBy: Type.String(),
-	notes: Type.String(),
+	measuredBy: Type.Integer(),
+	notes: Type.Optional(Type.String()),
 	createdAt: Type.String(),
 	updatedAt: Type.String(),
 },
@@ -34,6 +34,7 @@ const AnimalMeasurementResponseSchema = Type.Object({
 	...AnimalMeasurementSchema.properties,
 	animalId: Type.String(),
 	measuredBy: Type.String(),
+	id: Type.String(),
 },
 {
 	$id: 'animalMeasurementResponse',
@@ -47,9 +48,28 @@ const AnimalMeasurementParamsSchema = Type.Object({
 export type AnimalMeasurement = Static<typeof AnimalMeasurementSchema>;
 export type AnimalMeasurementResponse = Static<typeof AnimalMeasurementResponseSchema>;
 export type AnimalMeasurementParams = Static<typeof AnimalMeasurementParamsSchema>;
+export type AnimalMeasurementCreate = Static<typeof AnimalMeasurementCreateSchema>;
+
+const AnimalMeasurementCreateSchema = Type.Object({
+	measurementType: Type.Enum(AnimalMeasurementType),
+	value: Type.Number({ minimum: 0 }),
+	unit: Type.Enum(AnimalMeasurementUnit),
+	measuredAt: Type.Optional(Type.String()),
+	notes: Type.Optional(Type.String()),
+}, {
+	$id: 'animalMeasurementCreate',
+	additionalProperties: false,
+});
 
 export const listAnimalMeasurementsSchema = createGetEndpointSchema({
 	querystring: AnimalMeasurementParamsSchema,
 	dataSchema: Type.Array(AnimalMeasurementResponseSchema),
 	errorCodes: [404],
+});
+
+export const createAnimalMeasurementSchema = createPostEndpointSchema({
+	params: AnimalMeasurementParamsSchema,
+	body: AnimalMeasurementCreateSchema,
+	dataSchema: AnimalMeasurementResponseSchema,
+	errorCodes: [400, 404],
 });
