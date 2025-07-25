@@ -1,17 +1,16 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { createInvitationSchema, InvitationAcceptInput, InvitationCreateInput, invitationSchemas, ListInvitationParams, listInvitationsSchema } from './invitation.schema';
+import { createInvitationSchema, InvitationAcceptInput, InvitationCreateInput,  ListInvitationParams, listInvitationsSchema } from './invitation.schema';
 import { InvitationService } from './invitation.service';
 import { InvitationSerializer } from './invitation.serializer';
 
 const invitationPlugin: FastifyPluginAsync = async (fastify) => {
-	invitationSchemas.forEach(schema => fastify.addSchema(schema));
 
 	const invitationService = new InvitationService(fastify.db);
 
 	// Create Invitation
-	fastify.post('/invitations', { schema: createInvitationSchema }, async (request, reply) => {
+	fastify.post('/invitations', { schema: createInvitationSchema }, async (request: FastifyRequest<{ Body: InvitationCreateInput }>, reply) => {
 		try {
-			const data = request.body as InvitationCreateInput;
+			const data = request.body;
 			const invitation = await invitationService.createInvitation(data);
 			const serializedInvitation = InvitationSerializer.serialize(invitation);
 			reply.success(serializedInvitation);

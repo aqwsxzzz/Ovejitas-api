@@ -1,12 +1,10 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { deleteUserSchema, updateUserSchema, UserParams,  userSchemas, UserUpdateInput } from './user.schema';
+import { deleteUserSchema, updateUserSchema, UserParams,   UserUpdateInput } from './user.schema';
 import { UserSerializer } from './user.serializer';
 import { UserService } from './user.service';
 import { decodeId } from '../../utils/id-hash-util';
 
 const userPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-
-	userSchemas.forEach(schema => fastify.addSchema(schema));
 
 	const userService = new UserService(fastify.db);
 

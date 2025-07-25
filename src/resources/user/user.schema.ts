@@ -59,8 +59,6 @@ export type UserUpdateInput = Static<typeof UserUpdateSchema>;
 export type UserResponse = Static<typeof UserResponseSchema>;
 export type UserParams = Static<typeof UserParamsSchema>;
 
-export const userSchemas = [UserCreateSchema, UserUpdateSchema,  UserResponseSchema];
-
 export const createUserSchema = createPostEndpointSchema({
 	body: UserCreateSchema,
 	dataSchema: UserResponseSchema,

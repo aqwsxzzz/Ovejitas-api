@@ -59,8 +59,6 @@ export type InvitationAcceptInput = Static<typeof InvitationAcceptSchema>;
 export type InvitationResponse = Static<typeof InvitationResponseSchema>;
 export type ListInvitationParams = Static<typeof ListInvitationParamsSchema>;
 
-export const invitationSchemas = [InvitationCreateSchema, InvitationAcceptSchema];
-
 export const createInvitationSchema = createPostEndpointSchema({
 	body: InvitationCreateSchema,
 	dataSchema: InvitationResponseSchema,

@@ -1,11 +1,10 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { createSpeciesSchema,  getSpeciesSchema,  listSpeciesSchema, SpeciesCreateInput, SpeciesQueryString, SpeciesParams, speciesSchemas } from './species.schema';
+import { createSpeciesSchema,  getSpeciesSchema,  listSpeciesSchema, SpeciesCreateInput, SpeciesQueryString, SpeciesParams } from './species.schema';
 import { SpeciesService } from './species.service';
 import { SpeciesSerializer } from './species.serializer';
 import { decodeId } from '../../utils/id-hash-util';
 
 const speciesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-	speciesSchemas.forEach(schema => fastify.addSchema(schema));
 
 	const speciesService = new SpeciesService(fastify.db);
 

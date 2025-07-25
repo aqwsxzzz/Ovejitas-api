@@ -1,10 +1,9 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { createSpeciesTranslationSchema, CreateSpeciesTranslation, speciesTranslationSchema } from './species-translation.schema';
+import { createSpeciesTranslationSchema, CreateSpeciesTranslation } from './species-translation.schema';
 import { SpeciesTranslationService } from './species-translation.service';
 import { SpeciesTranslationSerializer } from './species-translation.serializer';
 
 const speciesTranslationPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-	speciesTranslationSchema.forEach(schema => fastify.addSchema(schema));
 
 	const speciesTranslationService = new SpeciesTranslationService(fastify.db);
 

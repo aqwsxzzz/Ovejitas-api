@@ -1,10 +1,9 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { createFarmSchema, deleteFarmSchema, FarmCreateInput, FarmParams, farmSchemas, FarmUpdateInput, getFarmSchema, updateFarmSchema } from './farm.schema';
+import { createFarmSchema, deleteFarmSchema, FarmCreateInput, FarmParams,  FarmUpdateInput, getFarmSchema, updateFarmSchema } from './farm.schema';
 import { FarmService } from './farm.service';
 import { FarmSerializer } from './farm.serializer';
 
 const farmPlugin: FastifyPluginAsync = async (fastify) => {
-	farmSchemas.forEach(schema => fastify.addSchema(schema));
 
 	const farmService = new FarmService(fastify.db);
 
@@ -16,7 +15,6 @@ const farmPlugin: FastifyPluginAsync = async (fastify) => {
 			const serializedFarm = FarmSerializer.serialize(newFarm);
 			reply.success(serializedFarm, 'Farm created successfully');
 		} catch (error) {
-			console.error('Error creating farm:', error);
 			fastify.handleDbError(error, reply);
 		}
 	});
@@ -28,7 +26,6 @@ const farmPlugin: FastifyPluginAsync = async (fastify) => {
 			const serializedFarms = farms.map(FarmSerializer.serialize);
 			reply.success(serializedFarms, 'Farms retrieved successfully');
 		} catch (error) {
-			console.error('Error retrieving farms:', error);
 			fastify.handleDbError(error, reply);
 		}
 	});
@@ -41,7 +38,6 @@ const farmPlugin: FastifyPluginAsync = async (fastify) => {
 			const serializedFarm = FarmSerializer.serialize(farm);
 			reply.success(serializedFarm, 'Farm retrieved successfully');
 		} catch (error) {
-			console.error('Error retrieving farm:', error);
 			fastify.handleDbError(error, reply);
 		}
 	});
@@ -55,7 +51,6 @@ const farmPlugin: FastifyPluginAsync = async (fastify) => {
 			const serializedFarm = FarmSerializer.serialize(farm);
 			reply.success(serializedFarm, 'Farm updated successfully');
 		} catch (error) {
-			console.error('Error updating farm:', error);
 			fastify.handleDbError(error, reply);
 		}
 	});

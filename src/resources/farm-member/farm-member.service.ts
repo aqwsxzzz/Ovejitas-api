@@ -1,13 +1,8 @@
-import { Database } from '../../database';
+import { BaseService } from '../../services/base.service';
 import { FarmMemberModel } from './farm-member.model';
 import { FarmMemberCreateInput } from './farm-member.schema';
 
-export class FarmMemberService {
-	private db: Database;
-
-	constructor(db: Database) {
-		this.db = db;
-	}
+export class FarmMemberService extends BaseService {
 
 	async createFarmMember(data: FarmMemberCreateInput): Promise<FarmMemberModel> {
 		const farmMember = await this.db.models.FarmMember.create(data);

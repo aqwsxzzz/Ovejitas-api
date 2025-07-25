@@ -26,8 +26,6 @@ const UserResponseSchema = Type.Omit(UserSchema, ['password'], {
 export type UserLoginInput = Static<typeof UserLoginSchema>;
 export type UserSignupInput = Static<typeof UserSignupSchema>;
 
-export const authSchemas = [UserLoginSchema, UserSignupSchema];
-
 export const loginUserSchema = createPostEndpointSchema({
 	body: UserLoginSchema,
 	dataSchema: UserResponseSchema,

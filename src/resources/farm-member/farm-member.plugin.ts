@@ -1,9 +1,8 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { createFarmMemberSchema, FarmMemberCreateInput, farmMemberSchemas  } from './farm-member.schema';
+import { createFarmMemberSchema, FarmMemberCreateInput  } from './farm-member.schema';
 import { FarmMemberService } from './farm-member.service';
 
 const farmMemberPlugin: FastifyPluginAsync = async (fastify) => {
-	farmMemberSchemas.forEach(schema => fastify.addSchema(schema));
 
 	const farmMemberService = new FarmMemberService(fastify.db);
 

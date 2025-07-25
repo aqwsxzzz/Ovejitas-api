@@ -30,6 +30,7 @@ export const SpeciesResponseSchema = Type.Object({
 	additionalProperties: false,
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SpeciesParamsSchema = Type.Object({
 	id: Type.String(),
 }, {
@@ -50,8 +51,6 @@ export type SpeciesCreateInput = Static<typeof SpeciesCreateSchema>;
 export type SpeciesQueryString = Static<typeof SpeciesQuerystringSchema>;
 export type SpeciesResponse = Static<typeof SpeciesResponseSchema>;
 export type SpeciesParams = Static<typeof SpeciesParamsSchema>;
-
-export const speciesSchemas = [SpeciesCreateSchema, SpeciesResponseSchema, SpeciesParamsSchema];
 
 export const createSpeciesSchema = createPostEndpointSchema({
 	body: SpeciesCreateSchema,

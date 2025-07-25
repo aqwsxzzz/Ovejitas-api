@@ -53,8 +53,6 @@ export interface FarmMemberWithFarm extends FarmMemberModel {
 	farm: FarmModel;
 }
 
-export const farmMemberSchemas = [FarmMemberCreateSchema, FarmMemberUpdateSchema, FarmMemberResponseSchema];
-
 export const createFarmMemberSchema = createPostEndpointSchema({
 	body: FarmMemberCreateSchema,
 	dataSchema: FarmMemberResponseSchema,

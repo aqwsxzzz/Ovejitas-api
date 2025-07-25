@@ -42,8 +42,6 @@ export type FarmUpdateInput = Static<typeof FarmUpdateSchema>;
 export type FarmResponse = Static<typeof FarmResponseSchema>;
 export type FarmParams = Static<typeof FarmParamsSchema>;
 
-export const farmSchemas = [FarmCreateSchema, FarmUpdateSchema, FarmResponseSchema];
-
 export const createFarmSchema = createPostEndpointSchema({
 	body: FarmCreateSchema,
 	dataSchema: FarmResponseSchema,

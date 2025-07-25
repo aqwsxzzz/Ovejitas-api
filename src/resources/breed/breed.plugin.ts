@@ -1,13 +1,10 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { BreedCreate, breedSchemas, createBreedSchema } from './breed.schema';
+import { BreedCreate,  createBreedSchema } from './breed.schema';
 import { BreedService } from './breed.service';
 import { decodeId } from '../../utils/id-hash-util';
 import { BreedSerializer } from './breed.serializer';
 
 const breedPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-	breedSchemas.forEach((schema) => {
-		fastify.addSchema(schema);
-	});
 
 	const breedService = new BreedService(fastify.db);
 

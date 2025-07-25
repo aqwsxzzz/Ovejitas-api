@@ -35,8 +35,6 @@ export type SpeciesTranslation = Static<typeof SpeciesTranslationSchema>;
 export type CreateSpeciesTranslation = Static<typeof SpeciesTranslationCreateSchema>;
 export type SpeciesTranslationResponse = Static<typeof SpeciesTranslationResponseSchema>;
 
-export const speciesTranslationSchema = [SpeciesTranslationSchema];
-
 export const createSpeciesTranslationSchema = createPostEndpointSchema({
 	body: SpeciesTranslationCreateSchema,
 	dataSchema: SpeciesTranslationSchema,

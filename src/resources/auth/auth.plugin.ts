@@ -1,11 +1,10 @@
 
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { authSchemas, loginUserSchema, signupUserSchema, UserLoginInput, UserSignupInput } from './auth.schema';
+import {  loginUserSchema, signupUserSchema, UserLoginInput, UserSignupInput } from './auth.schema';
 import { UserSerializer } from '../user/user.serializer';
 import { AuthService } from './auth.service';
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
-	authSchemas.forEach(schema => fastify.addSchema(schema));
 
 	const authService = new AuthService(fastify.db);
 

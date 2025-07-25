@@ -1,13 +1,8 @@
-import { Database } from '../../database';
+import { BaseService } from '../../services/base.service';
 import { UserModel } from './user.model';
 import {  UserUpdateInput } from './user.schema';
 
-export class UserService {
-	private db: Database;
-
-	constructor(db: Database) {
-		this.db = db;
-	}
+export class UserService extends BaseService {
 
 	async updateUser(id: number, userData: UserUpdateInput): Promise<UserModel | null> {
 		const user = await this.db.models.User.findByPk(id);

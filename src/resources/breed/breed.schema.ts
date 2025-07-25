@@ -47,8 +47,6 @@ export type BreedResponse = Static<typeof BreedResponseSchema>;
 export type BreedUpdate = Static<typeof BreedUpdateSchema>;
 export type BreedParams = Static<typeof BreedParamsSchema>;
 
-export const breedSchemas = [BreedSchema, BreedCreateSchema, BreedUpdateSchema, BreedResponseSchema];
-
 export const createBreedSchema = createPostEndpointSchema({
 	body: BreedCreateSchema,
 	dataSchema: BreedResponseSchema,
