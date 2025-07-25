@@ -1,5 +1,6 @@
 import { encodeId } from '../../utils/id-hash-util';
 import { AnimalResponse, AnimalWithIncludes, AnimalWithPossibleIncludes } from './animal.schema';
+import { AnimalMeasurementResponse } from '../animal-measurement/animal-measurement.schema';
 
 export class AnimalSerializer {
 	static serialize(animal: AnimalWithPossibleIncludes): AnimalResponse {
@@ -72,6 +73,22 @@ export class AnimalSerializer {
 				tagNumber: animal.mother.tagNumber,
 
 			};
+		}
+
+		if (animal.measurements && animal.measurements.length > 0) {
+			const lastMeasurement = animal.measurements[0]; // Since we ordered by measuredAt DESC with limit 1
+			result.lastMeasurement = {
+				id: encodeId(lastMeasurement.id),
+				animalId: encodeId(lastMeasurement.animalId),
+				measurementType: lastMeasurement.measurementType,
+				value: lastMeasurement.value,
+				unit: lastMeasurement.unit,
+				measuredAt: lastMeasurement.measuredAt,
+				measuredBy: encodeId(lastMeasurement.measuredBy),
+				notes: lastMeasurement.notes,
+				createdAt: lastMeasurement.createdAt,
+				updatedAt: lastMeasurement.updatedAt,
+			} as AnimalMeasurementResponse;
 		}
 
 		return result;

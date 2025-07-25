@@ -2,10 +2,12 @@ import { SpeciesResponse, SpeciesResponseSchema } from './../species/species.sch
 import { Static, Type } from '@sinclair/typebox';
 import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 import { BreedResponse, BreedResponseSchema } from '../breed/breed.schema';
+import { AnimalMeasurementResponse, AnimalMeasurementResponseSchema } from '../animal-measurement/animal-measurement.schema';
 import { AnimalModel } from './animal.model';
 import { SpeciesModel } from '../species/species.model';
 import { SpeciesTranslationModel } from '../species-translation/species-translation.model';
 import { BreedModel } from '../breed/breed.model';
+import { AnimalMeasurementModel } from '../animal-measurement/animal-measurement.model';
 
 export enum AnimalSex {
 	Male = 'male',
@@ -39,6 +41,7 @@ export type AnimalWithPossibleIncludes = AnimalModel & {
 	breed?: BreedModel;
 	father?: AnimalModel;
 	mother?: AnimalModel;
+	measurements?: AnimalMeasurementModel[];
 };
 
 export type AnimalWithIncludes = AnimalResponse & {
@@ -46,6 +49,7 @@ export type AnimalWithIncludes = AnimalResponse & {
     breed?: BreedResponse;
     father?: Partial<AnimalResponse>;
     mother?: Partial<AnimalResponse>;
+    lastMeasurement?: AnimalMeasurementResponse;
 };
 
 const AnimalSchema = Type.Object({
@@ -129,6 +133,7 @@ export const AnimalResponseSchema = Type.Object({
 	breed: Type.Optional(BreedResponseSchema),
 	father: Type.Optional(ParentAnimalSchema),
 	mother: Type.Optional(ParentAnimalSchema),
+	lastMeasurement: Type.Optional(AnimalMeasurementResponseSchema),
 	farmId: Type.String(),
 }, {
 	$id: 'animalResponse',

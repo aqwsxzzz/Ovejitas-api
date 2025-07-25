@@ -35,6 +35,13 @@ export class AnimalService extends BaseService {
 			as: 'mother',
 			attributes: ['id', 'name', 'createdAt', 'updatedAt', 'tagNumber'],
 		},
+		lastMeasurement: {
+			model: 'AnimalMeasurement' as const,
+			as: 'measurements',
+			attributes: ['id', 'measurementType', 'value', 'unit', 'measuredAt', 'measuredBy', 'notes', 'createdAt', 'updatedAt', 'animalId'],
+			limit: 1,
+			order: [['measuredAt', 'DESC']],
+		},
 	} satisfies TypedIncludeConfig);
 
 	async getAnimals(farmId: number, includeParam?: string): Promise<AnimalModel[] | null> {

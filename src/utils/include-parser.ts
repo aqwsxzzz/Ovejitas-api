@@ -8,6 +8,8 @@ export interface IncludeConfigItem {
   required?: boolean;
   attributes?: string[];
   nested?: IncludeConfig;
+  limit?: number;
+  order?: [string, 'ASC' | 'DESC'][];
 }
 
 // The main include configuration interface
@@ -22,6 +24,8 @@ export interface SequelizeIncludeObject {
   required: boolean;
   attributes?: string[];
   include?: SequelizeIncludeObject[];
+  limit?: number;
+  order?: [string, 'ASC' | 'DESC'][];
 }
 
 // Type guard to ensure model exists in database
@@ -69,6 +73,16 @@ export class IncludeParser {
 			// Add attributes if specified
 			if (config.attributes && config.attributes.length > 0) {
 				includeObj.attributes = [...config.attributes]; // Create a copy to avoid mutations
+			}
+
+			// Add limit if specified
+			if (config.limit !== undefined) {
+				includeObj.limit = config.limit;
+			}
+
+			// Add order if specified
+			if (config.order && config.order.length > 0) {
+				includeObj.order = [...config.order]; // Create a copy to avoid mutations
 			}
 
 			// Handle nested includes (e.g., "translations.language")

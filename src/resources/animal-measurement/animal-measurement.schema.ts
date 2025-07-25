@@ -30,7 +30,7 @@ const AnimalMeasurementSchema = Type.Object({
 	additionalProperties: false,
 });
 
-const AnimalMeasurementResponseSchema = Type.Object({
+export const AnimalMeasurementResponseSchema = Type.Object({
 	...AnimalMeasurementSchema.properties,
 	animalId: Type.String(),
 	measuredBy: Type.String(),
