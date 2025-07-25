@@ -10,6 +10,99 @@ get {
   auth: none
 }
 
+headers {
+  Content-Type: application/json
+}
+
 params:query {
   include: translations
+}
+
+docs {
+  # Get Species By ID
+  
+  Retrieves a specific animal species by its encoded ID with optional related data.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Path Parameters
+  
+  - `id` (string, required): Encoded ID of the species to retrieve
+  
+  ## Query Parameters
+  
+  ### Include Options
+  - `include` (string, optional): Comma-separated list of related data to include
+    - Available includes:
+      - `translations` - Include all species translations
+      - `translations.language` - Include translations with language details (nested)
+    - Example: `translations` or `translations.language`
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_species_id",
+      "translationId": "encoded_translation_id",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "translations": [
+        {
+          "id": "encoded_translation_id_1",
+          "language": "en",
+          "name": "Bovine",
+          "createdAt": "2024-01-01T00:00:00.000Z",
+          "updatedAt": "2024-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "encoded_translation_id_2",
+          "language": "es", 
+          "name": "Bovino",
+          "createdAt": "2024-01-02T00:00:00.000Z",
+          "updatedAt": "2024-01-02T00:00:00.000Z"
+        }
+      ]
+    },
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `404`: Species not found with the specified ID
+  - `400`: Invalid include parameters
+  
+  ## Query Examples
+  
+  ### Basic Species Data
+  ```
+  GET /api/v1/species/AdWNDqgV
+  ```
+  
+  ### With All Translations
+  ```
+  GET /api/v1/species/AdWNDqgV?include=translations
+  ```
+  
+  ### With Translations and Language Details
+  ```
+  GET /api/v1/species/AdWNDqgV?include=translations.language
+  ```
+  
+  ## Notes
+  
+  - The species ID must be a valid encoded species ID
+  - Include relationships are dynamically loaded based on query parameter
+  - Invalid include parameters will return validation errors
+  - All IDs in response are encoded using hashids for security
+  - Translations show all available language versions of the species name
+  - Requires authentication to access species data
+  - Useful for getting detailed information about a specific species
 }

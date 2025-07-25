@@ -10,9 +10,59 @@ post {
   auth: none
 }
 
+headers {
+  Content-Type: application/json
+}
+
 body:json {
   {
     "speciesId": "NArJeWyE",
-    "name": "Maca"
+    "name": "Holstein"
   }
+}
+
+docs {
+  # Create Breed
+  
+  Creates a new breed for a specific animal species.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Request Body
+  
+  - `name` (string, required): Name of the breed
+  - `speciesId` (string, required): Encoded ID of the species this breed belongs to
+  
+  ## Response
+  
+  **Success (201)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_breed_id",
+      "speciesId": "encoded_species_id", 
+      "name": "Holstein",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid request body (missing name or speciesId)
+  - `409`: Breed name already exists for this species
+  
+  ## Notes
+  
+  - Breed names must be unique within each species
+  - The speciesId must be a valid encoded species ID
+  - All IDs in response are encoded using hashids for security
+  - Requires authentication to create breeds
 }

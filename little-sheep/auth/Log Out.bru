@@ -1,7 +1,7 @@
 meta {
   name: Log Out
   type: http
-  seq: 3
+  seq: 4
 }
 
 post {
@@ -10,6 +10,52 @@ post {
   auth: none
 }
 
+headers {
+  Content-Type: application/json
+}
+
 body:json {
   {}
+}
+
+docs {
+  # User Logout
+  
+  Logs out the currently authenticated user by clearing the JWT cookie.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Request Body
+  
+  Empty JSON object `{}` is required for POST request.
+  
+  ## Response
+  
+  **Success (201)**:
+  ```json
+  {
+    "status": "success", 
+    "message": "Logged out",
+    "data": null,
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid or missing JWT token
+  
+  ## Cookies
+  
+  Clears the `jwt` HTTP-only cookie by setting it to expire immediately.
+  
+  ## Notes
+  
+  - Requires valid JWT cookie from login
+  - After logout, the JWT cookie is cleared and user must login again
+  - The endpoint will succeed even if called multiple times
+  - Client should redirect to login page after successful logout
 }

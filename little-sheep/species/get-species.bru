@@ -10,7 +10,114 @@ get {
   auth: none
 }
 
+headers {
+  Content-Type: application/json
+}
+
 params:query {
   include: translations
   order: id:asc
+}
+
+docs {
+  # Get Species
+  
+  Retrieves all animal species with optional related data and sorting.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Query Parameters
+  
+  ### Include Options
+  - `include` (string, optional): Comma-separated list of related data to include
+    - Available includes:
+      - `translations` - Include all species translations
+      - `translations.language` - Include translations with language details (nested)
+    - Example: `translations` or `translations.language`
+  
+  ### Ordering Options  
+  - `order` (string, optional): Comma-separated list of sorting criteria
+    - Available order fields:
+      - `id` - Sort by species ID
+    - Sort directions: `:asc` (ascending) or `:desc` (descending)
+    - Example: `id:asc` or `id:desc`
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": [
+      {
+        "id": "encoded_species_id_1",
+        "translationId": "encoded_translation_id",
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z",
+        "translations": [
+          {
+            "id": "encoded_translation_id_1",
+            "language": "en",
+            "name": "Bovine",
+            "createdAt": "2024-01-01T00:00:00.000Z",
+            "updatedAt": "2024-01-01T00:00:00.000Z"
+          },
+          {
+            "id": "encoded_translation_id_2", 
+            "language": "es",
+            "name": "Bovino",
+            "createdAt": "2024-01-02T00:00:00.000Z",
+            "updatedAt": "2024-01-02T00:00:00.000Z"
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `404`: No species found
+  - `400`: Invalid include or order parameters
+  
+  ## Advanced Query Examples
+  
+  ### Basic List
+  ```
+  GET /api/v1/species
+  ```
+  
+  ### With Translations
+  ```
+  GET /api/v1/species?include=translations
+  ```
+  
+  ### With Translations and Language Details
+  ```
+  GET /api/v1/species?include=translations.language
+  ```
+  
+  ### Sorted by ID (Descending)
+  ```
+  GET /api/v1/species?order=id:desc
+  ```
+  
+  ### Combined: Translations + Sorting
+  ```
+  GET /api/v1/species?include=translations&order=id:asc
+  ```
+  
+  ## Notes
+  
+  - Results are dynamically loaded based on include parameters
+  - Invalid include/order parameters will return validation errors
+  - All IDs are encoded using hashids for security
+  - Empty array returned if no species exist
+  - Translations include all language versions of species names
+  - Requires authentication to access species data
 }

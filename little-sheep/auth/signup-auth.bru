@@ -10,12 +10,72 @@ post {
   auth: none
 }
 
+headers {
+  Content-Type: application/json
+}
+
 body:json {
   {
     "displayName": "Chester Doe",
     "email": "Chester2332@example.com",
     "password": "Password1",
+    "language": "en",
     "invitationToken": "dc7a465788b96e7a293eed45297dcdfd9c8f2926b0c1215f0a37d95c4afc34b1"
-  
   }
+}
+
+docs {
+  # User Sign Up
+  
+  Creates a new user account in the system.
+  
+  ## Request Body
+  
+  - `email` (string, required): User email address (must be valid email format)
+  - `password` (string, required): User password (minimum 6 characters)
+  - `displayName` (string, required): User's display name (2-100 characters)
+  - `language` (string, optional): User's preferred language (defaults to system default)
+    - Allowed values: `en`, `es`, `fr`, etc. (based on UserLanguage enum)
+  - `invitationToken` (string, optional): Token from farm invitation (if signing up via invitation)
+  
+  ## Response
+  
+  **Success (201)**:
+  ```json
+  {
+    "status": "success",
+    "message": "User created successfully" | "User created and added to farm",
+    "data": {
+      "id": "encoded_user_id",
+      "email": "user@example.com",
+      "displayName": "User Name",
+      "language": "en",
+      "lastVisitedFarmId": "encoded_farm_id",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid email format, password too short, or displayName invalid
+  - `409`: Email already exists in the system
+  
+  ## Invitation Flow
+  
+  When an `invitationToken` is provided:
+  1. User is created
+  2. User is automatically added to the inviting farm
+  3. The invitation is consumed and no longer valid
+  4. `lastVisitedFarmId` is set to the farm from the invitation
+  
+  ## Notes
+  
+  - No authentication required for this endpoint
+  - Email addresses must be unique across the system
+  - The message varies based on whether an invitation was used
+  - User IDs and farm IDs are encoded using hashids for security
 }

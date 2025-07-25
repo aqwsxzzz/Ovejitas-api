@@ -5,7 +5,56 @@ meta {
 }
 
 delete {
-  url: http://localhost:8080/v1/farms/1
+  url: http://localhost:8080/api/v1/farms/AdWNDqgV
   body: none
   auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Delete Farm
+  
+  Permanently deletes a farm and all its associated data from the system.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Path Parameters
+  
+  - `farmId` (string, required): Encoded ID of the farm to delete
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Farm deleted successfully",
+    "data": null,
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `404`: Farm not found or user doesn't have permission to delete
+  
+  ## Notes
+  
+  - **⚠️ WARNING**: This action is permanent and cannot be undone
+  - **⚠️ CASCADING DELETE**: Deletes all associated data including:
+    - All animals in the farm
+    - All animal measurements 
+    - All farm members and invitations
+    - All farm-related data
+  - User must be the farm owner to delete the farm
+  - The farm ID must be a valid encoded farm ID
+  - Requires authentication to delete farm data
+  - Consider backing up important data before deletion
+  - This operation may take time for farms with large amounts of data
 } 

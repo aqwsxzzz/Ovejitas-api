@@ -1,11 +1,62 @@
 meta {
   name: Get Current User
   type: http
-  seq: 2
+  seq: 3
 }
 
 get {
   url: http://localhost:8080/api/v1/auth/me
   body: none
   auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Get Current User
+  
+  Retrieves the currently authenticated user's information.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Request
+  
+  No request body required. Authentication is handled via HTTP-only JWT cookie.
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_user_id", 
+      "email": "user@example.com",
+      "displayName": "User Name",
+      "language": "en",
+      "lastVisitedFarmId": "encoded_farm_id",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid or malformed JWT token
+  - `404`: User not found (user may have been deleted)
+  
+  ## Notes
+  
+  - Requires valid JWT cookie from login
+  - Returns user information without sensitive data (password excluded)
+  - User ID and farm ID are encoded using hashids for security
+  - Useful for verifying authentication status and getting user context
 }
