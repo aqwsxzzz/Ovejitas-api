@@ -2,9 +2,9 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
-    // Create function to sync weight to animals table
-    await queryInterface.sequelize.query(`
+	async up(queryInterface) {
+		// Create function to sync weight to animals table
+		await queryInterface.sequelize.query(`
       CREATE OR REPLACE FUNCTION sync_animal_weight()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -22,36 +22,36 @@ module.exports = {
       $$ LANGUAGE plpgsql;
     `);
 
-    // Create trigger that fires after insert on animal_measurements
-    await queryInterface.sequelize.query(`
+		// Create trigger that fires after insert on animal_measurements
+		await queryInterface.sequelize.query(`
       CREATE TRIGGER trigger_sync_animal_weight
       AFTER INSERT ON animal_measurements
       FOR EACH ROW
       EXECUTE FUNCTION sync_animal_weight();
     `);
 
-    // Create trigger that fires after update on animal_measurements
-    await queryInterface.sequelize.query(`
+		// Create trigger that fires after update on animal_measurements
+		await queryInterface.sequelize.query(`
       CREATE TRIGGER trigger_sync_animal_weight_update
       AFTER UPDATE ON animal_measurements
       FOR EACH ROW
       EXECUTE FUNCTION sync_animal_weight();
     `);
-  },
+	},
 
-  async down(queryInterface, Sequelize) {
-    // Drop triggers
-    await queryInterface.sequelize.query(`
+	async down(queryInterface) {
+		// Drop triggers
+		await queryInterface.sequelize.query(`
       DROP TRIGGER IF EXISTS trigger_sync_animal_weight ON animal_measurements;
     `);
-    
-    await queryInterface.sequelize.query(`
+
+		await queryInterface.sequelize.query(`
       DROP TRIGGER IF EXISTS trigger_sync_animal_weight_update ON animal_measurements;
     `);
 
-    // Drop function
-    await queryInterface.sequelize.query(`
+		// Drop function
+		await queryInterface.sequelize.query(`
       DROP FUNCTION IF EXISTS sync_animal_weight();
     `);
-  }
+	},
 };
