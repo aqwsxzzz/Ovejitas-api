@@ -1,20 +1,15 @@
-
 import Fastify, { FastifyInstance } from 'fastify';
+import fastifyAutoload from '@fastify/autoload';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
+import path from 'path';
+
+// Core plugins
 import customReplyPlugin from './plugins/custom-reply.plugin';
 import errorHandler from './plugins/error-handler';
 import databasePlugin from './database/database.plugin';
-import userPlugin from './resources/user/user.plugin';
-import authPlugin from './resources/auth/auth.plugin';
+import servicesPlugin from './plugins/services.plugin';
 import authenticationPlugin from './plugins/authentication-plugin';
-import farmPlugin from './resources/farm/farm.plugin';
-import farmMemberPlugin from './resources/farm-member/farm-member.plugin';
-import invitationPlugin from './resources/invitation/invitation.plugin';
-import speciesPlugin from './resources/species/species.plugin';
-import breedPlugin from './resources/breed/breed.plugin';
-import animalPlugin from './resources/animal/animal.plugin';
-import animalMeasurementPlugin from './resources/animal-measurement/animal-measurement.plugin';
 
 const server: FastifyInstance = Fastify({
 	logger: true,
@@ -31,30 +26,31 @@ const server: FastifyInstance = Fastify({
 	},
 });
 
+// Register CORS
 server.register(fastifyCors, {
 	origin: ['http://localhost:5173'],
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
 
+// Register core plugins
 server.register(databasePlugin);
 server.register(fastifyCookie);
 server.register(customReplyPlugin);
 server.register(errorHandler);
+server.register(servicesPlugin); // Must be after database plugin
 server.register(authenticationPlugin);
 
-server.register(userPlugin, { prefix: '/api/v1' });
-server.register(authPlugin, { prefix: '/api/v1' });
-server.register(farmPlugin, { prefix: '/api/v1' });
-server.register(farmMemberPlugin, { prefix: '/api/v1' });
-server.register(invitationPlugin, { prefix: '/api/v1' });
-server.register(speciesPlugin, { prefix: '/api/v1' });
-server.register(breedPlugin, { prefix: '/api/v1' });
-server.register(animalPlugin, { prefix: '/api/v1' });
-server.register(animalMeasurementPlugin, { prefix: '/api/v1' });
+// Auto-load all resource plugins
+server.register(fastifyAutoload, {
+	dir: path.join(__dirname, 'resources'),
+	options: { prefix: '/api/v1' },
+	// Only load directories that have an index.ts file
+	matchFilter: (path) => path.endsWith('index.ts') || path.endsWith('index.js'),
+});
 
 //Error handler for validation errors
-server.setErrorHandler((error, request, reply) => {
+server.setErrorHandler((error, _request, reply) => {
 	server.log.error(error);
 
 	if (error.validation) {
@@ -113,3 +109,4 @@ const start = async () => {
 };
 
 start();
+
