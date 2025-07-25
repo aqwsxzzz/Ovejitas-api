@@ -129,6 +129,7 @@ export const AnimalResponseSchema = Type.Object({
 	breed: Type.Optional(BreedResponseSchema),
 	father: Type.Optional(ParentAnimalSchema),
 	mother: Type.Optional(ParentAnimalSchema),
+	farmId: Type.String(),
 }, {
 	$id: 'animalResponse',
 	additionalProperties: false,

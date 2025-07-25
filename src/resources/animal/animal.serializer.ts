@@ -1,11 +1,11 @@
 import { encodeId } from '../../utils/id-hash-util';
-import { AnimalResponse,   AnimalWithIncludes,   AnimalWithPossibleIncludes } from './animal.schema';
+import { AnimalResponse, AnimalWithIncludes, AnimalWithPossibleIncludes } from './animal.schema';
 
 export class AnimalSerializer {
 	static serialize(animal: AnimalWithPossibleIncludes): AnimalResponse {
 		const base = {
 			id: encodeId(animal.id),
-			farmId: animal.farmId,
+			farmId: encodeId(animal.farmId)!,
 			speciesId: encodeId(animal.speciesId),
 			breedId: encodeId(animal.breedId),
 			name: animal.name,
