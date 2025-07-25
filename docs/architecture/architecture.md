@@ -128,6 +128,8 @@ server.register(fastifyAutoload, {
 	dir: path.join(__dirname, 'resources'),
 	options: { prefix: '/api/v1' },
 	matchFilter: (path) => path.endsWith('index.ts') || path.endsWith('index.js'),
+	// @ts-expect-error this will work and skip directories without index.ts
+	dirNameRoutePrefix: false,
 });
 ```
 
