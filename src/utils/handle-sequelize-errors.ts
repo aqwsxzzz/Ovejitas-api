@@ -48,6 +48,10 @@ export function handleSequelizeError(error: unknown): ErrorResponse | null {
 		};
 	}
 
+	if (error instanceof Error) {
+		return  { status: 400, message: error.message };
+	}
+
 	// Not a Sequelize error
 	return null;
 }

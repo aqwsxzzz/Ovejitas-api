@@ -5,11 +5,11 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/v1/species/AdWNDqgV?language=en
+  url: http://localhost:8080/api/v1/species/AdWNDqgV?include=translations
   body: none
   auth: none
 }
 
-query {
-  language: en
+params:query {
+  include: translations
 }
