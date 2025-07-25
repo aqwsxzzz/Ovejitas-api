@@ -1,5 +1,5 @@
 import { Static, Type } from '@sinclair/typebox';
-import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createGetEndpointSchema, createPostEndpointSchema, createDeleteEndpointSchema } from '../../utils/schema-builder';
 
 export enum AnimalMeasurementType {
 	Weight = 'weight',
@@ -45,9 +45,15 @@ const AnimalMeasurementParamsSchema = Type.Object({
 	animalId: Type.String(),
 });
 
+const AnimalMeasurementDeleteParamsSchema = Type.Object({
+	animalId: Type.String(),
+	measurementId: Type.String(),
+});
+
 export type AnimalMeasurement = Static<typeof AnimalMeasurementSchema>;
 export type AnimalMeasurementResponse = Static<typeof AnimalMeasurementResponseSchema>;
 export type AnimalMeasurementParams = Static<typeof AnimalMeasurementParamsSchema>;
+export type AnimalMeasurementDeleteParams = Static<typeof AnimalMeasurementDeleteParamsSchema>;
 export type AnimalMeasurementCreate = Static<typeof AnimalMeasurementCreateSchema>;
 
 const AnimalMeasurementCreateSchema = Type.Object({
@@ -72,4 +78,9 @@ export const createAnimalMeasurementSchema = createPostEndpointSchema({
 	body: AnimalMeasurementCreateSchema,
 	dataSchema: AnimalMeasurementResponseSchema,
 	errorCodes: [400, 404],
+});
+
+export const deleteAnimalMeasurementSchema = createDeleteEndpointSchema({
+	params: AnimalMeasurementDeleteParamsSchema,
+	errorCodes: [404],
 });

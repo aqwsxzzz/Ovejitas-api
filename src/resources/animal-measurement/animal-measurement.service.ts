@@ -48,4 +48,33 @@ export class AnimalMeasurementService extends BaseService {
 			return this.db.models.AnimalMeasurement.create(measurementData, { transaction });
 		});
 	}
+
+	async deleteAnimalMeasurement({ animalId, measurementId }: {
+		animalId: number;
+		measurementId: number;
+	}): Promise<void> {
+		return this.db.sequelize.transaction(async (transaction) => {
+			// Find the measurement to verify it exists and belongs to the animal
+			const measurement = await this.db.models.AnimalMeasurement.findOne({
+				where: {
+					id: measurementId,
+					animalId: animalId,
+				},
+				transaction,
+			});
+
+			if (!measurement) {
+				throw new Error('Animal measurement not found');
+			}
+
+			// Verify the animal exists (additional safety check)
+			const animal = await this.db.models.Animal.findByPk(animalId, { transaction });
+			if (!animal) {
+				throw new Error('Animal not found');
+			}
+
+			// Delete the measurement
+			await measurement.destroy({ transaction });
+		});
+	}
 }
