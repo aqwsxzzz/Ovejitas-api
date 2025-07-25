@@ -1,7 +1,7 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
 import { Animal, AnimalAcquisitionType, AnimalReproductiveStatus, AnimalSex, AnimalStatus } from './animal.schema';
 
-type AnimalCreationAttributes = Pick<Animal, 'name' | 'speciesId' | 'farmId' | 'breedId' | 'tagNumber' > & Partial<Pick<Animal, 'sex' | 'birthDate' | 'weight' | 'status' | 'reproductiveStatus' | 'fatherId' | 'motherId' | 'acquisitionType' | 'acquisitionDate'>>;
+type AnimalCreationAttributes = Pick<Animal, 'name' | 'speciesId' | 'farmId' | 'breedId' | 'tagNumber' > & Partial<Pick<Animal, 'sex' | 'birthDate' | 'weightId' | 'status' | 'reproductiveStatus' | 'fatherId' | 'motherId' | 'acquisitionType' | 'acquisitionDate'>>;
 
 export class AnimalModel extends Model<Animal, AnimalCreationAttributes> {
 	declare id: number;
@@ -12,7 +12,6 @@ export class AnimalModel extends Model<Animal, AnimalCreationAttributes> {
 	declare tagNumber: string;
 	declare sex: string;
 	declare birthDate: string;
-	declare weight: number | null | undefined;
 	declare status: string;
 	declare reproductiveStatus: string;
 	declare fatherId: number | null | undefined;
@@ -21,6 +20,7 @@ export class AnimalModel extends Model<Animal, AnimalCreationAttributes> {
 	declare acquisitionDate: string;
 	declare createdAt: string;
 	declare updatedAt: string;
+	declare weightId: number | null | undefined;
 }
 
 export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
@@ -72,11 +72,7 @@ export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
 		allowNull: true,
 		field: 'birth_date',
 	},
-	weight: {
-		type: DataTypes.FLOAT,
-		allowNull: true,
-		field: 'weight',
-	},
+
 	status: {
 		type: DataTypes.ENUM(...Object.values(AnimalStatus)),
 		allowNull: false,
@@ -114,6 +110,13 @@ export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
 		type: DataTypes.DATE,
 		allowNull: true,
 		field: 'acquisition_date',
+	},
+	weightId: {
+		type: DataTypes.INTEGER,
+		allowNull: true,
+		field: 'weight_id',
+		references: { model: 'animal_measurements', key: 'id' },
+		onDelete: 'SET NULL',
 	},
 	createdAt: {
 		type: DataTypes.DATE,

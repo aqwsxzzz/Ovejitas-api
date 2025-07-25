@@ -1,13 +1,9 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import {  AnimalCreate,  AnimalInclude,  animalSchemas, createAnimalSchema, listAnimalSchema } from './animal.schema';
+import {  AnimalCreate,  AnimalInclude, createAnimalSchema, listAnimalSchema } from './animal.schema';
 import { AnimalService } from './animal.service';
 import { AnimalSerializer } from './animal.serializer';
 
 const animalPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-
-	animalSchemas.forEach((schema) => {
-		fastify.addSchema(schema);
-	});
 
 	const animalService = new AnimalService(fastify.db);
 

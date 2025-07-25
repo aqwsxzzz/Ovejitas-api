@@ -12,7 +12,6 @@ export class AnimalSerializer {
 			tagNumber: animal.tagNumber,
 			sex: animal.sex as AnimalResponse['sex'],
 			birthDate: animal.birthDate,
-			weight: animal.weight ?? undefined,
 			status: animal.status as AnimalResponse['status'],
 			reproductiveStatus: animal.reproductiveStatus as AnimalResponse['reproductiveStatus'],
 			fatherId: animal.fatherId ? encodeId(animal.fatherId) : '',
@@ -21,6 +20,7 @@ export class AnimalSerializer {
 			acquisitionDate: animal.acquisitionDate,
 			createdAt: animal.createdAt,
 			updatedAt: animal.updatedAt,
+			weightId: animal.weightId ? encodeId(animal.weightId) : '',
 		};
 
 		const result: AnimalWithIncludes = { ...base };

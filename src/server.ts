@@ -14,6 +14,7 @@ import invitationPlugin from './resources/invitation/invitation.plugin';
 import speciesPlugin from './resources/species/species.plugin';
 import breedPlugin from './resources/breed/breed.plugin';
 import animalPlugin from './resources/animal/animal.plugin';
+import animalMeasurementPlugin from './resources/animal-measurement/animal-measurement.plugin';
 
 const server: FastifyInstance = Fastify({
 	logger: true,
@@ -50,6 +51,7 @@ server.register(invitationPlugin, { prefix: '/api/v1' });
 server.register(speciesPlugin, { prefix: '/api/v1' });
 server.register(breedPlugin, { prefix: '/api/v1' });
 server.register(animalPlugin, { prefix: '/api/v1' });
+server.register(animalMeasurementPlugin, { prefix: '/api/v1' });
 
 //Error handler for validation errors
 server.setErrorHandler((error, request, reply) => {

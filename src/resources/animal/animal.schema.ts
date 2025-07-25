@@ -53,11 +53,11 @@ const AnimalSchema = Type.Object({
 	farmId: Type.Integer(),
 	speciesId: Type.Integer(),
 	breedId: Type.Integer(),
+	weightId: Type.Integer(),
 	name: Type.String(),
 	tagNumber: Type.String(),
 	sex: Type.Enum(AnimalSex),
 	birthDate: Type.String(),
-	weight: Type.Number(),
 	status: Type.Enum(AnimalStatus),
 	reproductiveStatus: Type.Enum(AnimalReproductiveStatus),
 	fatherId: Type.Integer(),
@@ -78,7 +78,6 @@ export const AnimalCreateSchema = Type.Object({
 	tagNumber: Type.String(),
 	sex: Type.Optional(Type.Enum(AnimalSex)),
 	birthDate: Type.Optional(Type.String()),
-	weight: Type.Optional(Type.Number()),
 	status: Type.Optional(Type.Enum(AnimalStatus)),
 	reproductiveStatus: Type.Optional(Type.Enum(AnimalReproductiveStatus)),
 	fatherId: Type.Optional(Type.String()),
@@ -97,7 +96,6 @@ export const AnimalUpdateSchema = Type.Object({
 	tagNumber: Type.String(),
 	sex: Type.Enum(AnimalSex),
 	birthDate: Type.String(),
-	weight: Type.Number(),
 	status: Type.Enum(AnimalStatus),
 	reproductiveStatus: Type.Enum(AnimalReproductiveStatus),
 	fatherId: Type.String(),
@@ -124,9 +122,9 @@ export const AnimalResponseSchema = Type.Object({
 	id: Type.String(),
 	speciesId: Type.String(),
 	breedId: Type.String(),
-	weight: Type.Optional(Type.Number()),
 	fatherId: Type.Optional(Type.String()),
 	motherId: Type.Optional(Type.String()),
+	weightId: Type.Optional(Type.String()),
 	species: Type.Optional(SpeciesResponseSchema),
 	breed: Type.Optional(BreedResponseSchema),
 	father: Type.Optional(ParentAnimalSchema),
@@ -151,8 +149,6 @@ export type AnimalResponse = Static<typeof AnimalResponseSchema>;
 export type AnimalUpdate = Static<typeof AnimalUpdateSchema>;
 export type AnimalParams = Static<typeof AnimalParamsSchema>;
 export type AnimalInclude = Static<typeof AnimalIncludeSchema>;
-
-export const animalSchemas = [AnimalSchema, AnimalCreateSchema, AnimalUpdateSchema, AnimalResponseSchema];
 
 export const createAnimalSchema = createPostEndpointSchema({
 	body: AnimalCreateSchema,
