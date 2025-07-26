@@ -75,8 +75,15 @@ export class AnimalService extends BaseService {
 		});
 	}
 
-	async getAnimalById(id: number): Promise<AnimalModel | null> {
-		return await this.db.models.Animal.findByPk(id);
+	async getAnimalById(id: number, includeParam?: string): Promise<AnimalModel | null> {
+		const findOptions: FindOptions = {};
+
+		if (includeParam) {
+			this.validateIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+			findOptions.include = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+		}
+
+		return await this.db.models.Animal.findByPk(id, findOptions);
 	}
 
 	async updateAnimal(id: number, farmId: number, data: AnimalUpdate): Promise<AnimalModel | null> {

@@ -167,3 +167,10 @@ export const listAnimalSchema = createGetEndpointSchema({
 	dataSchema: Type.Array(AnimalResponseSchema),
 	errorCodes: [404],
 });
+
+export const getAnimalByIdSchema = createGetEndpointSchema({
+	params: AnimalParamsSchema,
+	querystring: AnimalIncludeSchema,
+	dataSchema: AnimalResponseSchema,
+	errorCodes: [404],
+});
