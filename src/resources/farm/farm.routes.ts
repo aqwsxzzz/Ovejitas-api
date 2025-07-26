@@ -9,6 +9,7 @@ import {
 	updateFarmSchema,
 } from './farm.schema';
 import { FarmSerializer } from './farm.serializer';
+import { decodeId } from '../../utils/id-hash-util';
 
 const farmRoutes: FastifyPluginAsync = async (fastify) => {
 	// Create Farm
@@ -46,7 +47,8 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 	}, async (request: FastifyRequest<{ Params: FarmParams }>, reply) => {
 		try {
 			const { farmId } = request.params;
-			const farm = await fastify.farmService.getFarm(farmId);
+			const decodedFarmId = decodeId(farmId)!;
+			const farm = await fastify.farmService.getFarm(decodedFarmId);
 			const serializedFarm = FarmSerializer.serialize(farm);
 			reply.success(serializedFarm, 'Farm retrieved successfully');
 		} catch (error) {
@@ -62,7 +64,8 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 		try {
 			const { farmId } = request.params;
 			const farmData = request.body;
-			const farm = await fastify.farmService.updateFarm(farmId, farmData);
+			const decodedFarmId = decodeId(farmId)!;
+			const farm = await fastify.farmService.updateFarm(decodedFarmId, farmData);
 			const serializedFarm = FarmSerializer.serialize(farm);
 			reply.success(serializedFarm, 'Farm updated successfully');
 		} catch (error) {
@@ -77,7 +80,8 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 	}, async (request: FastifyRequest<{ Params: FarmParams }>, reply) => {
 		try {
 			const { farmId } = request.params;
-			await fastify.farmService.deleteFarm(farmId);
+			const decodedFarmId = decodeId(farmId)!;
+			await fastify.farmService.deleteFarm(decodedFarmId);
 			reply.success('Farm deleted successfully');
 		} catch (error) {
 			console.error('Error deleting farm:', error);

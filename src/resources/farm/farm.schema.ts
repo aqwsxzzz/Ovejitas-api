@@ -12,7 +12,7 @@ export const FarmSchema = Type.Object({
 });
 
 const FarmParamsSchema = Type.Object({
-	farmId: Type.Integer({ minimum: 1 }),
+	farmId: Type.String({ minimum: 1 }),
 }, {
 	$id: 'farmParams',
 	additionalProperties: false,
