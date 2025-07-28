@@ -5,6 +5,7 @@ import { SpeciesCreateInput } from './species.schema';
 import { FindOptions } from 'sequelize';
 import { BaseService } from '../../services/base.service';
 import { OrderParser, TypedOrderConfig } from '../../utils/order-parser';
+import { UserLanguage } from '../user/user.schema';
 
 export class SpeciesService extends BaseService {
 
@@ -42,19 +43,20 @@ export class SpeciesService extends BaseService {
 		return { species, translation };
 	}
 
-	/**
-   * Get all species with optional includes
-   * @param includeParam - Comma-separated string of relations to include
-   * @returns Promise<SpeciesModel[]>
-   * @throws Error if invalid includes are requested
-   */
-	async getAllSpecies(includeParam?: string, order?: string): Promise<SpeciesModel[]> {
+	async getAllSpecies(includeParam?: string, order?: string, language?: UserLanguage): Promise<SpeciesModel[]> {
 		const findOptions: FindOptions = {};
 
 		if (includeParam) {
 			// Validate includes before parsing
 			this.validateIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
-			findOptions.include = this.parseIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
+			let includes = this.parseIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
+
+			// Filter translations by language if translations are included and language is provided
+			if (includeParam.includes('translations') && language) {
+				includes = this.filterTranslationsByLanguage(includes, language);
+			}
+
+			findOptions.include = includes;
 		}
 
 		if (order) {
@@ -66,19 +68,19 @@ export class SpeciesService extends BaseService {
 		return await this.db.models.Species.findAll(findOptions);
 	}
 
-	/**
-   * Get species by ID with optional includes
-   * @param id - Species ID
-   * @param includeParam - Comma-separated string of relations to include
-   * @returns Promise<SpeciesModel | null>
-   * @throws Error if invalid includes are requested
-   */
-	async getSpeciesById(id: number, includeParam?: string): Promise<SpeciesModel | null> {
-		const findOptions: FindOptions = { where: { id } };
+	async getSpeciesById(id: number,language: UserLanguage, includeParam?: string ): Promise<SpeciesModel | null> {
+		const findOptions: FindOptions = { where: { id  } };
 
 		if (includeParam) {
 			this.validateIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
-			findOptions.include = this.parseIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
+			let includes = this.parseIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
+
+			// Filter translations by language if translations are included
+			if (includeParam.includes('translations')) {
+				includes = this.filterTranslationsByLanguage(includes, language);
+			}
+
+			findOptions.include = includes;
 		}
 
 		return await this.db.models.Species.findOne(findOptions);

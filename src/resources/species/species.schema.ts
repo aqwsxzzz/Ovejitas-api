@@ -2,6 +2,7 @@
 import {  Static, Type } from '@sinclair/typebox';
 import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 import { SpeciesTranslationResponseSchema } from '../species-translation/species-translation.schema';
+import { UserLanguage } from '../user/user.schema';
 
 const SpeciesSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
@@ -41,6 +42,7 @@ const SpeciesParamsSchema = Type.Object({
 const SpeciesQuerystringSchema = Type.Object({
 	include: Type.Optional(Type.String()),
 	order: Type.Optional(Type.String()),
+	language: (Type.Enum(UserLanguage)),
 }, {
 	$id: 'speciesQuerystring',
 	additionalProperties: false,

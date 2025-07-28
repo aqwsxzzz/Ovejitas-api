@@ -1,6 +1,7 @@
 import { Database } from '../database';
 import { IncludeParser, IncludeConfig, SequelizeIncludeObject } from '../utils/include-parser';
 import { OrderConfig, OrderParser, SequelizeOrderItem } from '../utils/order-parser';
+import { UserLanguage } from '../resources/user/user.schema';
 
 export abstract class BaseService {
 	protected db: Database;
@@ -81,5 +82,28 @@ export abstract class BaseService {
 				throw new Error(`Order '${cleanOrderKey}' is not allowed for this resource`);
 			}
 		}
+	}
+
+	/**
+   * Filters translation includes by language
+   * @param includes - Array of Sequelize include objects
+   * @param language - Language to filter by
+   * @param translationIncludeName - Name of the translation include (defaults to 'translations')
+   * @returns Modified includes array with language filtering applied
+   */
+	protected filterTranslationsByLanguage(
+		includes: SequelizeIncludeObject[],
+		language: UserLanguage,
+		translationIncludeName: string = 'translations'
+	): SequelizeIncludeObject[] {
+		return includes.map(include => {
+			if (include.as === translationIncludeName) {
+				return {
+					...include,
+					where: { language }
+				};
+			}
+			return include;
+		});
 	}
 }

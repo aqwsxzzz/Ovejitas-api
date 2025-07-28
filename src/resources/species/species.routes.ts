@@ -30,8 +30,8 @@ const speciesRoutes: FastifyPluginAsync = async (fastify) => {
 		preHandler: fastify.authenticate,
 	}, async (request: FastifyRequest<{ Querystring: SpeciesQueryString }>, reply) => {
 		try {
-			const { include, order } = request.query;
-			const species = await fastify.speciesService.getAllSpecies(include, order);
+			const { include, order, language } = request.query;
+			const species = await fastify.speciesService.getAllSpecies(include, order, language);
 			const serializedSpecies = SpeciesSerializer.serializeMany(species);
 			reply.success(serializedSpecies);
 		} catch (error) {
@@ -45,7 +45,8 @@ const speciesRoutes: FastifyPluginAsync = async (fastify) => {
 	}, async (request: FastifyRequest<{ Params: SpeciesParams, Querystring: SpeciesQueryString }>, reply) => {
 		try {
 			const { id } = request.params;
-			const species = await fastify.speciesService.getSpeciesById(decodeId(id)!, request.query.include);
+			const { language, include } = request.query;
+			const species = await fastify.speciesService.getSpeciesById(decodeId(id)!, language, include);
 			const serializedSpecies = SpeciesSerializer.serialize(species!);
 			reply.success(serializedSpecies);
 		} catch (error) {
