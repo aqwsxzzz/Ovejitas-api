@@ -45,7 +45,7 @@ export class AnimalService extends BaseService {
 		},
 	} satisfies TypedIncludeConfig);
 
-	async getAnimals(farmId: number, includeParam?: string, language?: UserLanguage): Promise<AnimalModel[] | null> {
+	async getAnimals(farmId: number,  language: UserLanguage, includeParam?: string): Promise<AnimalModel[] | null> {
 
 		const findOptions: FindOptions = {
 			where: {
@@ -58,7 +58,7 @@ export class AnimalService extends BaseService {
 			let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 
 			// Filter species translations by language if species and translations are included
-			if (includeParam.includes('species.translations') && language) {
+			if (includeParam.includes('species.translations') ) {
 				includes = this.filterTranslationsByLanguage(includes, language);
 			}
 
@@ -83,7 +83,7 @@ export class AnimalService extends BaseService {
 		});
 	}
 
-	async getAnimalById(id: number, includeParam?: string, language?: UserLanguage): Promise<AnimalModel | null> {
+	async getAnimalById(id: number,language: UserLanguage, includeParam?: string ): Promise<AnimalModel | null> {
 		const findOptions: FindOptions = {};
 
 		if (includeParam) {
@@ -91,7 +91,7 @@ export class AnimalService extends BaseService {
 			let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 
 			// Filter species translations by language if species and translations are included
-			if (includeParam.includes('species.translations') && language) {
+			if (includeParam.includes('species.translations')  ) {
 				includes = this.filterTranslationsByLanguage(includes, language);
 			}
 

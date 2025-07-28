@@ -10,7 +10,7 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 		try {
 			const { include, language } = request.query;
 			const farmId = request.lastVisitedFarmId;
-			const animals = await fastify.animalService.getAnimals(farmId, include, language);
+			const animals = await fastify.animalService.getAnimals(farmId, language,  include);
 
 			const serializedAnimals = AnimalSerializer.serializeMany(animals!);
 
@@ -30,7 +30,7 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 				return reply.error('Invalid animal ID', 400);
 			}
 
-			const animal = await fastify.animalService.getAnimalById(animalId, include, language);
+			const animal = await fastify.animalService.getAnimalById(animalId, language,  include);
 
 			if (!animal) {
 				return reply.error('Animal not found', 404);
