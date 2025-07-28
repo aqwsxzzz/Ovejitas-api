@@ -68,7 +68,7 @@ const AnimalMeasurementCreateSchema = Type.Object({
 });
 
 export const listAnimalMeasurementsSchema = createGetEndpointSchema({
-	querystring: AnimalMeasurementParamsSchema,
+	params: AnimalMeasurementParamsSchema,
 	dataSchema: Type.Array(AnimalMeasurementResponseSchema),
 	errorCodes: [404],
 });
