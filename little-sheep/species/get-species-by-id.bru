@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/api/v1/species/AdWNDqgV?include=translations
+  url: http://localhost:8080/api/v1/species/AdWNDqgV?include=translations&language=en
   body: none
   auth: none
 }
@@ -16,6 +16,7 @@ headers {
 
 params:query {
   include: translations
+  language: en
 }
 
 docs {
@@ -36,9 +37,14 @@ docs {
   ### Include Options
   - `include` (string, optional): Comma-separated list of related data to include
     - Available includes:
-      - `translations` - Include all species translations
-      - `translations.language` - Include translations with language details (nested)
-    - Example: `translations` or `translations.language`
+      - `translations` - Include species translations (filtered by language)
+    - Example: `translations`
+  
+  ### Language Filtering
+  - `language` (string, required): Filter translations by language code
+    - Available languages: `en` (English), `es` (Spanish)
+    - Only affects translation includes - filters to show only the specified language
+    - Example: `language=en` shows only English translation
   
   ## Response
   
@@ -59,13 +65,6 @@ docs {
           "name": "Bovine",
           "createdAt": "2024-01-01T00:00:00.000Z",
           "updatedAt": "2024-01-01T00:00:00.000Z"
-        },
-        {
-          "id": "encoded_translation_id_2",
-          "language": "es", 
-          "name": "Bovino",
-          "createdAt": "2024-01-02T00:00:00.000Z",
-          "updatedAt": "2024-01-02T00:00:00.000Z"
         }
       ]
     },
@@ -86,23 +85,25 @@ docs {
   GET /api/v1/species/AdWNDqgV
   ```
   
-  ### With All Translations
+  ### With English Translation
   ```
-  GET /api/v1/species/AdWNDqgV?include=translations
+  GET /api/v1/species/AdWNDqgV?include=translations&language=en
   ```
   
-  ### With Translations and Language Details
+  ### With Spanish Translation
   ```
-  GET /api/v1/species/AdWNDqgV?include=translations.language
+  GET /api/v1/species/AdWNDqgV?include=translations&language=es
   ```
+  
   
   ## Notes
   
   - The species ID must be a valid encoded species ID
   - Include relationships are dynamically loaded based on query parameter
-  - Invalid include parameters will return validation errors
+  - Invalid include/language parameters will return validation errors
   - All IDs in response are encoded using hashids for security
-  - Translations show all available language versions of the species name
+  - Translations are filtered by language parameter when translations are included
+  - Language parameter is required for proper API functionality
   - Requires authentication to access species data
-  - Useful for getting detailed information about a specific species
+  - Useful for getting detailed information about a specific species in a specific language
 }

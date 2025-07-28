@@ -21,12 +21,6 @@ export class SpeciesService extends BaseService {
 			model: 'SpeciesTranslation' as const,
 			as: 'translations',
 			attributes: ['id', 'language', 'name', 'createdAt', 'updatedAt'],
-			nested: {
-				language: {
-					model: 'Language' as const,
-					as: 'languageDetails',
-				},
-			},
 		},
 
 	} satisfies TypedIncludeConfig);
