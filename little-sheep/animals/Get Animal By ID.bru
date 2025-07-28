@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/api/v1/animals/:id?include=species.translations,breed,father,mother,lastMeasurement
+  url: http://localhost:8080/api/v1/animals/:id?include=species.translations,breed,father,mother,lastMeasurement&language=en
   body: none
   auth: none
 }
@@ -20,6 +20,7 @@ params:path {
 
 params:query {
   include: species.translations,breed,father,mother,lastMeasurement
+  language: en
 }
 
 vars:pre-request {
@@ -41,15 +42,22 @@ docs {
   
   ## Query Parameters
   
+  ### Include Options
   - `include` (string, optional): Comma-separated list of related data to include
     - Available includes:
       - `species` - Include species information
-      - `species.translations` - Include species with translation data
+      - `species.translations` - Include species with translation data (filtered by language if specified)
       - `breed` - Include breed information
       - `father` - Include father animal data (partial)
       - `mother` - Include mother animal data (partial)
       - `lastMeasurement` - Include most recent measurement
     - Example: `species.translations,breed,father,mother,lastMeasurement`
+  
+  ### Language Filtering
+  - `language` (string, optional): Filter species translations by language code
+    - Available languages: `en` (English), `es` (Spanish)
+    - Only affects translation includes within species - filters to show only the specified language
+    - Example: `language=en` shows only English translations for species
   
   ## Response
   
@@ -138,6 +146,7 @@ docs {
   - Animal ID is globally unique, no farm filtering is applied
   - All IDs are encoded using hashids for security
   - Include relationships are dynamically loaded based on query parameter
+  - Species translations are filtered by language parameter when `species.translations` is included
   - Parent animal data (father/mother) includes limited fields for performance
   - The lastMeasurement include returns only the most recent measurement
   - If no includes are specified, only the base animal data is returned
