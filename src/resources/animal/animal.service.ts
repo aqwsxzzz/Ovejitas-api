@@ -4,6 +4,7 @@ import { AnimalCreate, AnimalUpdate } from './animal.schema';
 import { decodeId } from '../../utils/id-hash-util';
 import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
 import { FindOptions, Transaction } from 'sequelize';
+import { UserLanguage } from '../user/user.schema';
 
 export class AnimalService extends BaseService {
 
@@ -44,7 +45,7 @@ export class AnimalService extends BaseService {
 		},
 	} satisfies TypedIncludeConfig);
 
-	async getAnimals(farmId: number, includeParam?: string): Promise<AnimalModel[] | null> {
+	async getAnimals(farmId: number, includeParam?: string, language?: UserLanguage): Promise<AnimalModel[] | null> {
 
 		const findOptions: FindOptions = {
 			where: {
@@ -54,7 +55,14 @@ export class AnimalService extends BaseService {
 
 		if (includeParam) {
 			this.validateIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
-			findOptions.include = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+			let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+
+			// Filter species translations by language if species and translations are included
+			if (includeParam.includes('species.translations') && language) {
+				includes = this.filterTranslationsByLanguage(includes, language);
+			}
+
+			findOptions.include = includes;
 		}
 
 		return this.db.models.Animal.findAll(findOptions);
@@ -75,12 +83,19 @@ export class AnimalService extends BaseService {
 		});
 	}
 
-	async getAnimalById(id: number, includeParam?: string): Promise<AnimalModel | null> {
+	async getAnimalById(id: number, includeParam?: string, language?: UserLanguage): Promise<AnimalModel | null> {
 		const findOptions: FindOptions = {};
 
 		if (includeParam) {
 			this.validateIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
-			findOptions.include = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+			let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+
+			// Filter species translations by language if species and translations are included
+			if (includeParam.includes('species.translations') && language) {
+				includes = this.filterTranslationsByLanguage(includes, language);
+			}
+
+			findOptions.include = includes;
 		}
 
 		return await this.db.models.Animal.findByPk(id, findOptions);

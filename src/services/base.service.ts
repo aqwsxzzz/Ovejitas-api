@@ -94,15 +94,25 @@ export abstract class BaseService {
 	protected filterTranslationsByLanguage(
 		includes: SequelizeIncludeObject[],
 		language: UserLanguage,
-		translationIncludeName: string = 'translations'
+		translationIncludeName: string = 'translations',
 	): SequelizeIncludeObject[] {
 		return includes.map(include => {
+			// Handle direct translation includes
 			if (include.as === translationIncludeName) {
 				return {
 					...include,
-					where: { language }
+					where: { language },
 				};
 			}
+
+			// Handle nested translation includes
+			if (include.include && Array.isArray(include.include)) {
+				return {
+					...include,
+					include: this.filterTranslationsByLanguage(include.include, language, translationIncludeName),
+				};
+			}
+
 			return include;
 		});
 	}

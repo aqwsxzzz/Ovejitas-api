@@ -8,6 +8,7 @@ import { SpeciesModel } from '../species/species.model';
 import { SpeciesTranslationModel } from '../species-translation/species-translation.model';
 import { BreedModel } from '../breed/breed.model';
 import { AnimalMeasurementModel } from '../animal-measurement/animal-measurement.model';
+import { UserLanguage } from '../user/user.schema';
 
 export enum AnimalSex {
 	Male = 'male',
@@ -143,6 +144,7 @@ export const AnimalResponseSchema = Type.Object({
 
 export const AnimalIncludeSchema = Type.Object({
 	include: Type.Optional(Type.String()),
+	language: Type.Optional(Type.Enum(UserLanguage)),
 });
 
 export const AnimalParamsSchema = Type.Object({
