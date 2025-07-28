@@ -5,16 +5,87 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/v1/invitations/accept
+  url: http://localhost:8080/api/v1/invitations/accept
   body: json
   auth: none
+}
+
+headers {
+  Content-Type: application/json
 }
 
 body:json {
   {
     "token": "291e7c3d487df6dcdce0547c2804c8ef5bca594bd6605bdfdd8907c152cbf223",
-    "password": "Password1",
-    "displayName": "Chester 2",
-    "language": "es"
+    "password": "SecurePassword123",
+    "displayName": "New Farm Member",
+    "language": "en"
   }
+}
+
+docs {
+  # Accept Invitation
+  
+  Accepts a farm invitation by creating a new user account and adding them to the farm.
+  
+  ## Authentication
+  
+  **Not Required**: This endpoint creates the user account and authentication
+  
+  ## Request Body
+  
+  **Required Fields:**
+  - `token` (string): The invitation token received via email
+  - `password` (string): Password for the new user account (minimum 8 characters)
+  - `displayName` (string): Display name for the new user (minimum 1 character)
+  
+  **Optional Fields:**
+  - `language` (string): Preferred language for the user interface
+    - Allowed values: `"en"`, `"es"`, `"fr"` (based on UserLanguage enum)
+    - Defaults to system default if not provided
+  
+  ## Response
+  
+  **Success (201)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_invitation_id",
+      "email": "newmember@example.com",
+      "farmId": "encoded_farm_id",
+      "role": "member",
+      "token": "invitation_token",
+      "status": "accepted",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T12:30:00.000Z",
+      "expiresAt": "2024-01-08T00:00:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2024-01-01T12:30:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid token, password too short, or missing required fields
+  - `404`: Invitation not found, expired, or already used
+  
+  ## Process Flow
+  
+  When an invitation is accepted:
+  1. **User Creation**: A new user account is created with the provided details
+  2. **Farm Membership**: User is automatically added to the farm as a member
+  3. **Invitation Status**: Invitation status changes from "pending" to "accepted"
+  4. **Email Association**: The email from the invitation becomes the user's login email
+  
+  ## Notes
+  
+  - **One-time Use**: Each invitation token can only be used once
+  - **Expiration**: Invitations expire after 7 days
+  - **Account Creation**: This creates a complete user account
+  - **Automatic Login**: User should be redirected to login after successful acceptance
+  - **Email Verification**: The email is considered verified since it received the invitation
+  - **Role Assignment**: User is assigned the role specified in the invitation (usually "member")
 }

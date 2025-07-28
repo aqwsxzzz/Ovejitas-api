@@ -5,7 +5,79 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/v1/farms/AdWNDqgV/invitations
+  url: http://localhost:8080/api/v1/invitations
   body: none
   auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # List Invitations
+  
+  Retrieves all invitations for farms that the authenticated user owns.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": [
+      {
+        "id": "encoded_invitation_id_1",
+        "email": "user1@example.com",
+        "farmId": "encoded_farm_id",
+        "role": "member",
+        "token": "invitation_token_1",
+        "status": "pending",
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z",
+        "expiresAt": "2024-01-08T00:00:00.000Z"
+      },
+      {
+        "id": "encoded_invitation_id_2",
+        "email": "user2@example.com", 
+        "farmId": "encoded_farm_id",
+        "role": "member",
+        "token": "invitation_token_2",
+        "status": "accepted",
+        "createdAt": "2024-01-02T00:00:00.000Z",
+        "updatedAt": "2024-01-03T10:30:00.000Z",
+        "expiresAt": "2024-01-09T00:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid request parameters
+  - `404`: No invitations found or user doesn't own any farms
+  
+  ## Invitation Statuses
+  
+  - `"pending"` - Invitation sent but not yet accepted
+  - `"accepted"` - Invitation accepted and user account created
+  - `"expired"` - Invitation has passed its expiration date
+  - `"cancelled"` - Invitation was cancelled by the farm owner
+  
+  ## Notes
+  
+  - Only shows invitations for farms owned by the authenticated user
+  - Results include all invitation statuses (pending, accepted, expired, cancelled)
+  - Results are ordered by creation date (newest first)
+  - All IDs are encoded using hashids for security
+  - Empty array returned if user owns no farms or has sent no invitations
+  - Tokens are included in response for reference but should not be shared
+  - Expired invitations are automatically marked but not deleted
 }

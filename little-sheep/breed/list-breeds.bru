@@ -1,15 +1,72 @@
 meta {
-  name: List Breeds by Species
+  name: List Breeds
   type: http
-  seq: 3
+  seq: 1
 }
 
 get {
-  url: http://localhost:8080/v1/breeds?speciesId=AdWNDqgV
+  url: http://localhost:8080/api/v1/breeds?speciesId=AdWNDqgV&order=name:asc
   body: none
   auth: none
 }
 
-query {
+params:query {
   speciesId: AdWNDqgV
+  order: name:asc
+}
+
+docs {
+  # List Breeds
+  
+  Retrieves all breeds filtered by species ID with optional sorting.
+  
+  ## Query Parameters
+  
+  - `speciesId` (string, required): Encoded species ID to filter breeds
+  - `order` (string, optional): Sorting order for results
+    - Available fields: `name`, `id`, `createdAt`
+    - Format: `field:direction` (e.g., `name:asc`, `createdAt:desc`)
+    - Multiple sorts: `name:asc,createdAt:desc`
+    - Default: `name:asc`
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": [
+      {
+        "id": "encoded_breed_id",
+        "name": "Holstein",
+        "speciesId": "encoded_species_id",
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "encoded_breed_id_2",
+        "name": "Jersey",
+        "speciesId": "encoded_species_id",
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid speciesId parameter
+  
+  ## Notes
+  
+  - Default ordering is alphabetically by name (ascending)
+  - Species ID must be a valid encoded ID
+  - Returns empty array if no breeds found for the species
+  - All IDs are encoded using hashids for security
+  - Invalid order parameters will return a 400 error
+  - Sorting is case-sensitive for string fields
 }

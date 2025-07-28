@@ -1,0 +1,92 @@
+meta {
+  name: Create Animal Measurement
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/api/v1/animals/AdWNDqgV/measurements
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "measurementType": "weight",
+    "value": 75.5,
+    "unit": "kg",
+    "measuredAt": "2024-01-15T10:30:00Z",
+    "notes": "Monthly weight check"
+  }
+}
+
+docs {
+  # Create Animal Measurement
+  
+  Creates a new measurement record for a specific animal.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Path Parameters
+  
+  - `animalId` (string, required): Encoded ID of the animal to measure
+  
+  ## Request Body
+  
+  **Required Fields:**
+  - `measurementType` (string): Type of measurement being recorded
+    - Values: `"weight"`, `"height"`, `"temperature"`
+  - `value` (number): Numeric value of the measurement (minimum 0)
+  - `unit` (string): Unit of measurement
+    - For weight: `"kg"`
+    - For height: `"cms"`
+    - For temperature: `"celsius"`
+  
+  **Optional Fields:**
+  - `measuredAt` (string): ISO timestamp when measurement was taken (defaults to current time)
+  - `notes` (string): Additional notes about the measurement
+  
+  ## Response
+  
+  **Success (201)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_measurement_id",
+      "animalId": "encoded_animal_id",
+      "measurementType": "weight",
+      "value": 75.5,
+      "unit": "kg",
+      "measuredAt": "2024-01-15T10:30:00.000Z",
+      "measuredBy": "encoded_user_id",
+      "notes": "Monthly weight check",
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-01-15T10:30:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2024-01-15T10:30:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid request body (missing required fields, invalid measurement type/unit combination, or negative value)
+  - `404`: Animal not found or user doesn't have access
+  
+  ## Notes
+  
+  - The authenticated user is automatically recorded as `measuredBy`
+  - Measurement type and unit must be compatible combinations
+  - Animal must exist and be accessible to the authenticated user
+  - All IDs are encoded using hashids for security
+  - Date/time should be in ISO format
+  - Value must be non-negative number
+}

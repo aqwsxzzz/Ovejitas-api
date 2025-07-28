@@ -5,7 +5,60 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/v1/farms
+  url: http://localhost:8080/api/v1/farms
   body: none
   auth: none
-} 
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Get Farms
+  
+  Retrieves all farms associated with the authenticated user.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Farms retrieved successfully",
+    "data": [
+      {
+        "id": "encoded_farm_id_1",
+        "name": "Green Valley Farm",
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "encoded_farm_id_2", 
+        "name": "Sunny Acres Ranch",
+        "createdAt": "2024-01-02T00:00:00.000Z",
+        "updatedAt": "2024-01-02T00:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - No specific error codes (empty array returned if no farms)
+  
+  ## Notes
+  
+  - Returns farms where the user is either owner or member
+  - Results are automatically sorted by farm name
+  - All farm IDs are encoded using hashids for security
+  - Empty array returned if user has no associated farms
+  - Requires authentication to access farm data
+  - This endpoint has no query parameters or filtering options
+}

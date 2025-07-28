@@ -16,10 +16,14 @@
   },
   "include": [
     "src/**/*.ts",
-    "types"
-, "src/migrations/20240610120000-animal-model-migration.js", "src/migrations/20240610120000-animal-model-migration.js"  ],
+    "types/**/*",
+  ],
   "typeRoots": [
     "./node_modules/@types",
     "./types"
   ],
+  "ts-node": {
+    "files": true,
+    "typeCheck": true
+  }
 }

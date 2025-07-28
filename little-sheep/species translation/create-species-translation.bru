@@ -5,15 +5,87 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/v1/species-translation
+  url: http://localhost:8080/api/v1/species-translations
   body: json
   auth: none
 }
 
+headers {
+  Content-Type: application/json
+}
+
 body:json {
   {
-    "speciesId": "REPLACE_SPECIES_ID",
-    "languageCode": "en",
-    "name": "Sheep"
+    "speciesId": 1,
+    "language": "en",
+    "name": "Bovine"
   }
+}
+
+docs {
+  # Create Species Translation
+  
+  Creates a new translation for an existing species in a specific language.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Request Body
+  
+  - `speciesId` (integer, required): Database ID of the species to add translation for
+  - `language` (string, required): Language code (2 characters, e.g., "en", "es", "fr")
+  - `name` (string, required): Species name in the specified language (minimum 1 character)
+  
+  ## Response
+  
+  **Success (201)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_translation_id",
+      "speciesId": "encoded_species_id",
+      "language": "en",
+      "name": "Bovine",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid request body (missing fields, invalid language code, or invalid speciesId)
+  - `409`: Translation already exists for this species and language combination
+  
+  ## Usage Notes
+  
+  - **Language Uniqueness**: Each species can only have one translation per language
+  - **Language Code Format**: Must be a valid 2-character ISO language code
+  - **Species Validation**: The speciesId must exist in the species table
+  - **Name Requirements**: Species name must be at least 1 character long
+  - **Database ID**: Input uses raw database ID (integer), output uses encoded IDs
+  
+  ## Internationalization Workflow
+  
+  1. **Create Species**: First create a species with initial translation
+  2. **Add Translations**: Use this endpoint to add additional language versions
+  3. **Query with Translations**: Use species endpoints with `include=translations` to get all versions
+  
+  ## Example Use Cases
+  
+  - Adding Spanish translation: `{"speciesId": 1, "language": "es", "name": "Bovino"}`
+  - Adding French translation: `{"speciesId": 1, "language": "fr", "name": "Bovin"}`
+  - Adding German translation: `{"speciesId": 1, "language": "de", "name": "Rind"}`
+  
+  ## Notes
+  
+  - All IDs in response are encoded using hashids for security
+  - Input speciesId uses raw database ID for simplicity
+  - Requires authentication to create translations
+  - Supports full internationalization of species names
 } 

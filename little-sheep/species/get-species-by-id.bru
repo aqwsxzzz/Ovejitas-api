@@ -5,11 +5,105 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/v1/species/AdWNDqgV?language=en
+  url: http://localhost:8080/api/v1/species/AdWNDqgV?include=translations&language=en
   body: none
   auth: none
 }
 
-query {
+headers {
+  Content-Type: application/json
+}
+
+params:query {
+  include: translations
   language: en
+}
+
+docs {
+  # Get Species By ID
+  
+  Retrieves a specific animal species by its encoded ID with optional related data.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Path Parameters
+  
+  - `id` (string, required): Encoded ID of the species to retrieve
+  
+  ## Query Parameters
+  
+  ### Include Options
+  - `include` (string, optional): Comma-separated list of related data to include
+    - Available includes:
+      - `translations` - Include species translations (filtered by language)
+    - Example: `translations`
+  
+  ### Language Filtering
+  - `language` (string, required): Filter translations by language code
+    - Available languages: `en` (English), `es` (Spanish)
+    - Only affects translation includes - filters to show only the specified language
+    - Example: `language=en` shows only English translation
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_species_id",
+      "translationId": "encoded_translation_id",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "translations": [
+        {
+          "id": "encoded_translation_id_1",
+          "language": "en",
+          "name": "Bovine",
+          "createdAt": "2024-01-01T00:00:00.000Z",
+          "updatedAt": "2024-01-01T00:00:00.000Z"
+        }
+      ]
+    },
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `404`: Species not found with the specified ID
+  - `400`: Invalid include parameters
+  
+  ## Query Examples
+  
+  ### Basic Species Data
+  ```
+  GET /api/v1/species/AdWNDqgV
+  ```
+  
+  ### With English Translation
+  ```
+  GET /api/v1/species/AdWNDqgV?include=translations&language=en
+  ```
+  
+  ### With Spanish Translation
+  ```
+  GET /api/v1/species/AdWNDqgV?include=translations&language=es
+  ```
+  
+  
+  ## Notes
+  
+  - The species ID must be a valid encoded species ID
+  - Include relationships are dynamically loaded based on query parameter
+  - Invalid include/language parameters will return validation errors
+  - All IDs in response are encoded using hashids for security
+  - Translations are filtered by language parameter when translations are included
+  - Language parameter is required for proper API functionality
+  - Requires authentication to access species data
+  - Useful for getting detailed information about a specific species in a specific language
 }
