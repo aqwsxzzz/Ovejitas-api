@@ -24,6 +24,8 @@ export class OrderParser {
 	): SequelizeOrderItem[] {
 		if (!orderParam) return [];
 
+		this.validateConfig(allowedOrders);
+
 		const requestedOrders = orderParam.split(',').map(o => o.trim());
 		const sequelizeOrders: SequelizeOrderItem[] = [];
 
@@ -79,6 +81,30 @@ export class OrderParser {
 
 	static createConfig<T extends OrderConfig>(config: T): T {
 		return this.validateConfig(config);
+	}
+
+	/**
+	   * Validates that an order parameter only contains allowed orders
+	   * @param orderParam - The order parameter string
+	   * @param allowedOrders - Configuration of allowed orders
+	   * @throws Error if any order is not allowed
+	   */
+	protected validateOrder(
+		orderParam: string | undefined,
+		allowedOrders: OrderConfig,
+	): void {
+		if (!orderParam) return;
+
+		const requestedOrders = orderParam.split(',').map(o => o.trim());
+
+		for (const order of requestedOrders) {
+			const [orderKey] = order.split(':');
+			const cleanOrderKey = orderKey.trim();
+
+			if (!allowedOrders[cleanOrderKey]) {
+				throw new Error(`Order '${cleanOrderKey}' is not allowed for this resource`);
+			}
+		}
 	}
 }
 

@@ -2,6 +2,7 @@ import { Database } from '../database';
 import { IncludeParser, IncludeConfig, SequelizeIncludeObject } from '../utils/include-parser';
 import { OrderConfig, OrderParser, SequelizeOrderItem } from '../utils/order-parser';
 import { UserLanguage } from '../resources/user/user.schema';
+import { FilterConfig, FilterParser, SequelizeWhereOptions } from '../utils/filter-parser';
 
 export abstract class BaseService {
 	protected db: Database;
@@ -25,28 +26,6 @@ export abstract class BaseService {
 	}
 
 	/**
-   * Validates that an include parameter only contains allowed includes
-   * @param includeParam - The include parameter string
-   * @param allowedIncludes - Configuration of allowed includes
-   * @throws Error if any include is not allowed
-   */
-	protected validateIncludes(
-		includeParam: string | undefined,
-		allowedIncludes: IncludeConfig,
-	): void {
-		if (!includeParam) return;
-
-		const requestedIncludes = includeParam.split(',').map(i => i.trim());
-
-		for (const include of requestedIncludes) {
-			const mainInclude = include.split('.')[0];
-			if (!allowedIncludes[mainInclude]) {
-				throw new Error(`Include '${mainInclude}' is not allowed for this resource`);
-			}
-		}
-	}
-
-	/**
    * Parses order parameters with strict typing
    * @param orderParam - The order parameter string (e.g., "name:desc,createdAt:asc")
    * @param allowedOrders - Configuration of allowed orders for this service
@@ -61,27 +40,17 @@ export abstract class BaseService {
 	}
 
 	/**
-   * Validates that an order parameter only contains allowed orders
-   * @param orderParam - The order parameter string
-   * @param allowedOrders - Configuration of allowed orders
-   * @throws Error if any order is not allowed
+   * Parses filter parameters with strict typing
+   * @param filterParams - Object containing filter parameters from query string
+   * @param allowedFilters - Configuration of allowed filters for this service
+   * @returns Sequelize where options object
    */
-	protected validateOrder(
-		orderParam: string | undefined,
-		allowedOrders: OrderConfig,
-	): void {
-		if (!orderParam) return;
-
-		const requestedOrders = orderParam.split(',').map(o => o.trim());
-
-		for (const order of requestedOrders) {
-			const [orderKey] = order.split(':');
-			const cleanOrderKey = orderKey.trim();
-
-			if (!allowedOrders[cleanOrderKey]) {
-				throw new Error(`Order '${cleanOrderKey}' is not allowed for this resource`);
-			}
-		}
+	protected parseFilters(
+		filterParams: Record<string, string> | undefined,
+		allowedFilters: FilterConfig,
+	): SequelizeWhereOptions {
+		if (!filterParams) return {};
+		return FilterParser.parseFilters(filterParams, allowedFilters, this.db);
 	}
 
 	/**
@@ -115,5 +84,45 @@ export abstract class BaseService {
 
 			return include;
 		});
+	}
+
+	/**
+   * Combines multiple where conditions using AND logic
+   * @param conditions - Array of where condition objects
+   * @returns Combined where options
+   */
+	protected combineWhereConditions(...conditions: SequelizeWhereOptions[]): SequelizeWhereOptions {
+		const combined: SequelizeWhereOptions = {};
+
+		for (const condition of conditions) {
+			if (condition && Object.keys(condition).length > 0) {
+				Object.assign(combined, condition);
+			}
+		}
+
+		return combined;
+	}
+
+	/**
+   * Helper method to extract filter parameters from query string
+   * This removes pagination and other non-filter parameters
+   * @param query - Full query object from request
+   * @param excludeParams - Parameters to exclude from filtering (defaults to common pagination params)
+   * @returns Object containing only filter parameters
+   */
+	public extractFilterParams(
+		query: Record<string, unknown>,
+	): Record<string, string> {
+		const filterParams: Record<string, string> = {};
+
+		const excludeParams = ['page', 'limit', 'include', 'order', 'offset', 'language', 'sort', 'direction'];
+
+		for (const [key, value] of Object.entries(query)) {
+			if (!excludeParams.includes(key) && value !== undefined && value !== null) {
+				filterParams[key] = String(value);
+			}
+		}
+
+		return filterParams;
 	}
 }

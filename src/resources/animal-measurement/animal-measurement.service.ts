@@ -14,11 +14,7 @@ export class AnimalMeasurementService extends BaseService {
 
 	async getAnimalMeasurements(animalId: number, order?: string): Promise<AnimalMeasurementModel[]> {
 		const findOptions: FindOptions = { where: { animalId } };
-		if (order) {
-			// Validate orders before parsing
-			this.validateOrder(order, AnimalMeasurementService.ALLOWED_ORDERS);
-			findOptions.order = this.parseOrder(order, AnimalMeasurementService.ALLOWED_ORDERS);
-		}
+		findOptions.order = this.parseOrder(order, AnimalMeasurementService.ALLOWED_ORDERS);
 		return await this.db.models.AnimalMeasurement.findAll(findOptions);
 	}
 

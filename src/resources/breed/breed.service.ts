@@ -27,13 +27,7 @@ export class BreedService extends BaseService {
 			where: { speciesId },
 		};
 
-		if (order) {
-			this.validateOrder(order, BreedService.ALLOWED_ORDERS);
-			findOptions.order = this.parseOrder(order, BreedService.ALLOWED_ORDERS);
-		} else {
-			// Default order by name ASC
-			findOptions.order = [['name', 'ASC']];
-		}
+		findOptions.order = this.parseOrder(order, BreedService.ALLOWED_ORDERS);
 
 		return await this.db.models.Breed.findAll(findOptions);
 	}

@@ -4,13 +4,14 @@ import { AnimalSerializer } from './animal.serializer';
 import { decodeId } from '../../utils/id-hash-util';
 
 const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-	// Routes now use the decorated service instead of creating a new instance
 
 	fastify.get('/', { schema: listAnimalSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Querystring: AnimalInclude}>, reply) => {
 		try {
 			const { include, language } = request.query;
 			const farmId = request.lastVisitedFarmId;
-			const animals = await fastify.animalService.getAnimals(farmId, language,  include);
+			const filters = fastify.animalService.extractFilterParams(request.query );
+
+			const animals = await fastify.animalService.getAnimals(farmId, language, include, filters);
 
 			const serializedAnimals = AnimalSerializer.serializeMany(animals!);
 

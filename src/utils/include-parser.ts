@@ -45,6 +45,9 @@ export class IncludeParser {
 
 		if (!includeParam) return [];
 
+		// Validate includes first
+		this.validateIncludes(includeParam, allowedIncludes);
+
 		const requestedIncludes = includeParam.split(',').map(i => i.trim());
 		const sequelizeIncludes: SequelizeIncludeObject[] = [];
 
@@ -113,6 +116,27 @@ export class IncludeParser {
 	static createConfig<T extends IncludeConfig>(config: T): T {
 		return this.validateConfig(config);
 	}
+
+	/**
+	 * Validates that an include parameter only contains allowed includes
+	 * @param includeParam - The include parameter string
+	 * @param allowedIncludes - Configuration of allowed includes
+	 * @throws Error if any include is not allowed
+	 */
+	private static validateIncludes(
+		includeParam: string,
+		allowedIncludes: IncludeConfig,
+	): void {
+		const requestedIncludes = includeParam.split(',').map(i => i.trim());
+
+		for (const include of requestedIncludes) {
+			const mainInclude = include.split('.')[0];
+			if (!allowedIncludes[mainInclude]) {
+				throw new Error(`Include '${mainInclude}' is not allowed for this resource`);
+			}
+		}
+	}
+
 }
 
 // Utility type to extract model names from Database

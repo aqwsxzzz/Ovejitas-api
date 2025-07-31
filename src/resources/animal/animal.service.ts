@@ -1,10 +1,11 @@
 import { BaseService } from '../../services/base.service';
 import { AnimalModel } from './animal.model';
-import { AnimalCreate, AnimalUpdate } from './animal.schema';
+import { AnimalCreate, AnimalSex, AnimalUpdate } from './animal.schema';
 import { decodeId } from '../../utils/id-hash-util';
 import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
 import { FindOptions, Transaction } from 'sequelize';
 import { UserLanguage } from '../user/user.schema';
+import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
 
 export class AnimalService extends BaseService {
 
@@ -45,25 +46,27 @@ export class AnimalService extends BaseService {
 		},
 	} satisfies TypedIncludeConfig);
 
-	async getAnimals(farmId: number,  language: UserLanguage, includeParam?: string): Promise<AnimalModel[] | null> {
+	private static readonly ALLOWED_FILTERS: FilterConfig = {
+		sex: FilterConfigBuilder.enum('sex', Object.values(AnimalSex)),
+	};
+
+	async getAnimals(farmId: number,  language: UserLanguage, includeParam?: string, filters?: Record<string, string>): Promise<AnimalModel[] | null> {
+
+		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+		const filterWhere = this.parseFilters(filters, AnimalService.ALLOWED_FILTERS);
+
+		// Filter species translations by language if species and translations are included
+		if (includeParam?.includes('species.translations') ) {
+			includes = this.filterTranslationsByLanguage(includes, language);
+		}
 
 		const findOptions: FindOptions = {
 			where: {
 				farmId,
+				...filterWhere,
 			},
+			include: includes,
 		};
-
-		if (includeParam) {
-			this.validateIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
-			let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
-
-			// Filter species translations by language if species and translations are included
-			if (includeParam.includes('species.translations') ) {
-				includes = this.filterTranslationsByLanguage(includes, language);
-			}
-
-			findOptions.include = includes;
-		}
 
 		return this.db.models.Animal.findAll(findOptions);
 	}
@@ -86,17 +89,14 @@ export class AnimalService extends BaseService {
 	async getAnimalById(id: number,language: UserLanguage, includeParam?: string ): Promise<AnimalModel | null> {
 		const findOptions: FindOptions = {};
 
-		if (includeParam) {
-			this.validateIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
-			let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 
-			// Filter species translations by language if species and translations are included
-			if (includeParam.includes('species.translations')  ) {
-				includes = this.filterTranslationsByLanguage(includes, language);
-			}
-
-			findOptions.include = includes;
+		// Filter species translations by language if species and translations are included
+		if (includeParam?.includes('species.translations')  ) {
+			includes = this.filterTranslationsByLanguage(includes, language);
 		}
+
+		findOptions.include = includes;
 
 		return await this.db.models.Animal.findByPk(id, findOptions);
 	}

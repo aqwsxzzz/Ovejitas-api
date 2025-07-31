@@ -145,6 +145,7 @@ export const AnimalResponseSchema = Type.Object({
 export const AnimalIncludeSchema = Type.Object({
 	include: Type.Optional(Type.String()),
 	language: Type.Enum(UserLanguage),
+	sex: Type.Optional(Type.Enum(AnimalSex)),
 });
 
 export const AnimalParamsSchema = Type.Object({
