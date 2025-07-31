@@ -1,5 +1,5 @@
 import { Database } from '../database';
-import { Model, ModelStatic } from 'sequelize';
+import { Model, ModelStatic, WhereOptions } from 'sequelize';
 
 // Define the structure for a single include configuration
 export interface IncludeConfigItem {
@@ -10,6 +10,7 @@ export interface IncludeConfigItem {
   nested?: IncludeConfig;
   limit?: number;
   order?: [string, 'ASC' | 'DESC'][];
+  where?: WhereOptions;
 }
 
 // The main include configuration interface
@@ -26,6 +27,7 @@ export interface SequelizeIncludeObject {
   include?: SequelizeIncludeObject[];
   limit?: number;
   order?: [string, 'ASC' | 'DESC'][];
+  where?: WhereOptions;
 }
 
 // Type guard to ensure model exists in database
@@ -86,6 +88,11 @@ export class IncludeParser {
 			// Add order if specified
 			if (config.order && config.order.length > 0) {
 				includeObj.order = [...config.order]; // Create a copy to avoid mutations
+			}
+
+			// Add where clause if specified
+			if (config.where) {
+				includeObj.where = { ...config.where }; // Create a copy to avoid mutations
 			}
 
 			// Handle nested includes (e.g., "translations.language")
