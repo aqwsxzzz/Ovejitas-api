@@ -1,15 +1,17 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { AnimalMeasurementParams, AnimalMeasurementDeleteParams, AnimalMeasurementCreate, listAnimalMeasurementsSchema, createAnimalMeasurementSchema, deleteAnimalMeasurementSchema } from './animal-measurement.schema';
+import { AnimalMeasurementParams, AnimalMeasurementDeleteParams, AnimalMeasurementCreate, listAnimalMeasurementsSchema, createAnimalMeasurementSchema, deleteAnimalMeasurementSchema, AnimalMeasurementQuery } from './animal-measurement.schema';
 import { decodeId } from '../../utils/id-hash-util';
 import { AnimalMeasurementSerializer } from './animal-measurement.serializer';
 
 const animalMeasurementRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	// Routes now use the decorated service instead of creating a new instance
 
-	fastify.get('/animals/:animalId/measurements', { schema: listAnimalMeasurementsSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Params: AnimalMeasurementParams}>, reply) => {
+	fastify.get('/animals/:animalId/measurements', { schema: listAnimalMeasurementsSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Params: AnimalMeasurementParams, Querystring: AnimalMeasurementQuery}>, reply) => {
 		try {
 			const { animalId } = request.params;
-			const measurements = await fastify.animalMeasurementService.getAnimalMeasurements(decodeId(animalId)!);
+			const { measurementType } = request.query;
+
+			const measurements = await fastify.animalMeasurementService.getAnimalMeasurements(decodeId(animalId)!, '', { measurementType: measurementType as string });
 			const serializedMeasurements = AnimalMeasurementSerializer.serializeMany(measurements);
 			reply.success(serializedMeasurements);
 		} catch (error) {

@@ -2,7 +2,8 @@ import { FindOptions } from 'sequelize';
 import { BaseService } from '../../services/base.service';
 import { OrderParser, TypedOrderConfig } from '../../utils/order-parser';
 import { AnimalMeasurementModel } from './animal-measurement.model';
-import { AnimalMeasurementCreate } from './animal-measurement.schema';
+import { AnimalMeasurementCreate, AnimalMeasurementType } from './animal-measurement.schema';
+import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
 
 export class AnimalMeasurementService extends BaseService {
 	private static readonly ALLOWED_ORDERS = OrderParser.createConfig({
@@ -12,9 +13,17 @@ export class AnimalMeasurementService extends BaseService {
 
 	} satisfies TypedOrderConfig);
 
-	async getAnimalMeasurements(animalId: number, order?: string): Promise<AnimalMeasurementModel[]> {
-		const findOptions: FindOptions = { where: { animalId } };
-		findOptions.order = this.parseOrder(order, AnimalMeasurementService.ALLOWED_ORDERS);
+	private static readonly ALLOWED_FILTERS: FilterConfig = {
+		measurementType: FilterConfigBuilder.enum('measurementType', Object.values(AnimalMeasurementType)),
+	};
+
+	async getAnimalMeasurements(animalId: number, order?: string, filters?: Record<string, string>): Promise<AnimalMeasurementModel[]> {
+		const ordering = this.parseOrder(order, AnimalMeasurementService.ALLOWED_ORDERS);
+		const filterWhere = this.parseFilters(filters, AnimalMeasurementService.ALLOWED_FILTERS);
+
+		const findOptions: FindOptions = { where: { animalId, ...filterWhere } };
+		findOptions.order = ordering;
+
 		return await this.db.models.AnimalMeasurement.findAll(findOptions);
 	}
 

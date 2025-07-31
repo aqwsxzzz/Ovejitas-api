@@ -53,6 +53,13 @@ const AnimalMeasurementParamsSchema = Type.Object({
 	animalId: Type.String(),
 });
 
+const AnimalMeasurementQuerySchema = Type.Object({
+	measurementType: Type.Optional(Type.Enum(AnimalMeasurementType)),
+}, {
+	$id: 'animalMeasurementQuery',
+	additionalProperties: false,
+});
+
 const AnimalMeasurementDeleteParamsSchema = Type.Object({
 	animalId: Type.String(),
 	measurementId: Type.String(),
@@ -63,6 +70,7 @@ export type AnimalMeasurementResponse = Static<typeof AnimalMeasurementResponseS
 export type AnimalMeasurementParams = Static<typeof AnimalMeasurementParamsSchema>;
 export type AnimalMeasurementDeleteParams = Static<typeof AnimalMeasurementDeleteParamsSchema>;
 export type AnimalMeasurementCreate = Static<typeof AnimalMeasurementCreateSchema>;
+export type AnimalMeasurementQuery = Static<typeof AnimalMeasurementQuerySchema>;
 
 const AnimalMeasurementCreateSchema = Type.Object(
 	{
@@ -82,6 +90,7 @@ export const listAnimalMeasurementsSchema = createGetEndpointSchema({
 	params: AnimalMeasurementParamsSchema,
 	dataSchema: Type.Array(AnimalMeasurementResponseSchema),
 	errorCodes: [404],
+	querystring: AnimalMeasurementQuerySchema,
 });
 
 export const createAnimalMeasurementSchema = createPostEndpointSchema({
