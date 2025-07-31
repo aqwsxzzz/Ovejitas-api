@@ -2,7 +2,7 @@ import { FindOptions } from 'sequelize';
 import { BaseService } from '../../services/base.service';
 import { OrderParser, TypedOrderConfig } from '../../utils/order-parser';
 import { AnimalMeasurementModel } from './animal-measurement.model';
-import { AnimalMeasurementCreate, AnimalMeasurementType } from './animal-measurement.schema';
+import { AnimalMeasurementCreate, AnimalMeasurementType, AnimalMeasurementUnit } from './animal-measurement.schema';
 import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
 
 export class AnimalMeasurementService extends BaseService {
@@ -15,6 +15,12 @@ export class AnimalMeasurementService extends BaseService {
 
 	private static readonly ALLOWED_FILTERS: FilterConfig = {
 		measurementType: FilterConfigBuilder.enum('measurementType', Object.values(AnimalMeasurementType)),
+	};
+
+	private static readonly VALID_TYPE_UNIT_MAPPINGS = {
+		[AnimalMeasurementType.Weight]: [AnimalMeasurementUnit.Kg],
+		[AnimalMeasurementType.Height]: [AnimalMeasurementUnit.Cm],
+		[AnimalMeasurementType.Temperature]: [AnimalMeasurementUnit.Celsius],
 	};
 
 	async getAnimalMeasurements(animalId: number, order?: string, filters?: Record<string, string>): Promise<AnimalMeasurementModel[]> {
@@ -38,6 +44,8 @@ export class AnimalMeasurementService extends BaseService {
 			if (!animal) {
 				throw new Error('Animal not found');
 			}
+
+			this.validateMeasurementTypeUnit(data.measurementType, data.unit);
 
 			// Create the measurement
 			const measurementData = {
@@ -72,14 +80,19 @@ export class AnimalMeasurementService extends BaseService {
 				throw new Error('Animal measurement not found');
 			}
 
-			// Verify the animal exists (additional safety check)
 			const animal = await this.db.models.Animal.findByPk(animalId, { transaction });
 			if (!animal) {
 				throw new Error('Animal not found');
 			}
 
-			// Delete the measurement
 			await measurement.destroy({ transaction });
 		});
+	}
+
+	private validateMeasurementTypeUnit(measurementType: AnimalMeasurementType, unit: AnimalMeasurementUnit): void {
+		const validUnits = AnimalMeasurementService.VALID_TYPE_UNIT_MAPPINGS[measurementType];
+		if (!validUnits || !validUnits.includes(unit)) {
+			throw new Error(`Invalid unit '${unit}' for measurement type '${measurementType}'. Valid units are: ${validUnits?.join(', ') || 'none'}`);
+		}
 	}
 }
