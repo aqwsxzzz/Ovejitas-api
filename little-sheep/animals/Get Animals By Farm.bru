@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/api/v1/animals?include=species.translations,breed,father,mother&language=en
+  url: http://localhost:8080/api/v1/animals?include=species.translations,breed,father,mother&language=en&sex=female
   body: none
   auth: none
 }
@@ -17,6 +17,7 @@ headers {
 params:query {
   include: species.translations,breed,father,mother
   language: en
+  sex: female
 }
 
 docs {
@@ -46,6 +47,11 @@ docs {
     - Available languages: `en` (English), `es` (Spanish)
     - Only affects translation includes within species - filters to show only the specified language
     - Example: `language=en` shows only English translations for species
+  
+  ### Animal Filtering
+  - `sex` (string, optional): Filter animals by sex
+    - Available values: `male`, `female`, `unknown`
+    - Example: `sex=female` returns only female animals
   
   ## Response
   
