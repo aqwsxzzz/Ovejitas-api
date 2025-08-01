@@ -5,9 +5,15 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/api/v1/animals/AdWNDqgV/measurements
+  url: http://localhost:8080/api/v1/animals/AdWNDqgV/measurements?measurementType=weight
   body: none
   auth: none
+}
+
+query {
+  measurementType: weight
+  ~measurementType: height
+  ~measurementType: temperature
 }
 
 headers {
@@ -26,6 +32,10 @@ docs {
   ## Path Parameters
   
   - `animalId` (string, required): Encoded ID of the animal to get measurements for
+  
+  ## Query Parameters
+  
+  - `measurementType` (string, optional): Filter by measurement type. Allowed values: `weight`, `height`, `temperature`
   
   ## Response
   
@@ -72,6 +82,7 @@ docs {
   ## Notes
   
   - Returns all measurements for the specified animal
+  - Results can be filtered by measurement type using the query parameter
   - Results are ordered by measurement date (newest first)
   - Measurement types include: `"weight"`, `"height"`, `"temperature"`
   - Units include: `"kg"`, `"cms"`, `"celsius"`
