@@ -1,8 +1,8 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import fastifyAutoload from '@fastify/autoload';
 import fastifyCookie from '@fastify/cookie';
-import fastifyCors from '@fastify/cors';
 import path from 'path';
+import cors from '@fastify/cors';
 
 // Core plugins
 import customReplyPlugin from './plugins/custom-reply.plugin';
@@ -26,9 +26,19 @@ const server: FastifyInstance = Fastify({
 	},
 });
 
-// Register CORS
-server.register(fastifyCors, {
-	origin: ['http://localhost:5173', 'https://ovejitas.onrender.com'],
+const allowedOrigins = ['http://localhost:5173', 'https://ovejitas.onrender.com'];
+
+server.register(cors, {
+	origin: (origin, cb) => {
+		// Allow requests with no origin (like Postman or curl)
+		if (!origin) return cb(null, true);
+
+		if (allowedOrigins.includes(origin)) {
+			cb(null, true); // Reflects the origin in the CORS header
+		} else {
+			cb(new Error('Not allowed by CORS'), false);
+		}
+	},
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
@@ -40,11 +50,6 @@ server.register(customReplyPlugin);
 server.register(errorHandler);
 server.register(servicesPlugin); // Must be after database plugin
 server.register(authenticationPlugin);
-
-server.addHook('onRequest', (req, res, done) => {
-	console.log('🔍 Incoming Origin:', req.headers.origin);
-	done();
-});
 
 // Auto-load all resource plugins
 server.register(fastifyAutoload, {
