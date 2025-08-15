@@ -41,6 +41,11 @@ server.register(errorHandler);
 server.register(servicesPlugin); // Must be after database plugin
 server.register(authenticationPlugin);
 
+server.addHook('onRequest', (req, res, done) => {
+	console.log('🔍 Incoming Origin:', req.headers.origin);
+	done();
+});
+
 // Auto-load all resource plugins
 server.register(fastifyAutoload, {
 	dir: path.join(__dirname, 'resources'),
