@@ -28,7 +28,7 @@ const server: FastifyInstance = Fastify({
 
 // Register CORS
 server.register(fastifyCors, {
-	origin: ['http://localhost:5173'],
+	origin: ['http://localhost:5173', 'https://ovejitas.onrender.com'],
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
@@ -56,21 +56,21 @@ server.setErrorHandler((error, _request, reply) => {
 	server.log.error(error);
 
 	if (error.validation) {
-
 		// Check for additional properties errors
 		const additionalPropsErrors = error.validation.filter(
-			(err: {keyword: string}) => err.keyword === 'additionalProperties',
+			(err: { keyword: string }) => err.keyword === 'additionalProperties',
 		);
 
 		if (additionalPropsErrors.length > 0) {
 			// Extract all additional property names
-			const additionalProps = additionalPropsErrors.map(
-				(err: {params?: {additionalProperty?: string}}) => err.params?.additionalProperty,
-			).filter(Boolean);
+			const additionalProps = additionalPropsErrors
+				.map((err: { params?: { additionalProperty?: string } }) => err.params?.additionalProperty)
+				.filter(Boolean);
 
-			const message = additionalProps.length === 1
-				? `Additional property '${additionalProps[0]}' is not allowed`
-				: `Additional properties not allowed: ${additionalProps.join(', ')}`;
+			const message =
+				additionalProps.length === 1
+					? `Additional property '${additionalProps[0]}' is not allowed`
+					: `Additional properties not allowed: ${additionalProps.join(', ')}`;
 
 			reply.status(400).send({
 				error: 'Validation Error',
@@ -111,4 +111,3 @@ const start = async () => {
 };
 
 start();
-
