@@ -13,7 +13,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 			reply.setCookie('jwt', token, {
 				httpOnly: true,
 				path: '/',
-				sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+				sameSite: 'none',
 				secure: process.env.NODE_ENV === 'production',
 				maxAge: 60 * 60 * 24, // 1 day
 			}).success(UserSerializer.serialize(user), 'Login successful');
