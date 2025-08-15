@@ -14,7 +14,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 				httpOnly: true,
 				path: '/',
 				sameSite: 'none',
-				secure: process.env.NODE_ENV === 'production',
+				secure: process.env.NODE_ENV !== 'development',
 				maxAge: 60 * 60 * 24, // 1 day
 			}).success(UserSerializer.serialize(user), 'Login successful');
 
