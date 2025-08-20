@@ -11,16 +11,16 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 		async (request: FastifyRequest<{ Body: UserLoginInput }>, reply) => {
 			try {
 				const { email, password } = request.body;
-				const { user, token } = await fastify.authService.login({ email, password });
+				const { user } = await fastify.authService.login({ email, password });
 
 				reply
-					.setCookie('jwt', token, {
-						httpOnly: true,
-						path: '/',
-						sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-						secure: process.env.NODE_ENV !== 'development',
-						maxAge: 60 * 60 * 24, // 1 day
-					})
+					// .setCookie('jwt', token, {
+					// 	httpOnly: true,
+					// 	 path: "/api/v1/auth/refresh",
+					// 	sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+					// 	secure: process.env.NODE_ENV !== 'development',
+					// 	maxAge: 60 * 60 * 24, // 1 day
+					// })
 					.success(UserSerializer.serialize(user), 'Login successful');
 			} catch (error) {
 				fastify.handleDbError(error, reply);
