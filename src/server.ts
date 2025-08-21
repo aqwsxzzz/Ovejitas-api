@@ -13,6 +13,7 @@ import authenticationPlugin from './plugins/authentication-plugin';
 
 const server: FastifyInstance = Fastify({
 	logger: true,
+	trustProxy: process.env.NODE_ENV === 'production',
 	ajv: {
 		customOptions: {
 			// Don't remove additional properties - instead throw validation errors
@@ -26,7 +27,9 @@ const server: FastifyInstance = Fastify({
 	},
 });
 
-const allowedOrigins = ['http://localhost:5173', 'https://ovejitas.onrender.com'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+	? process.env.ALLOWED_ORIGINS.split(',')
+	: ['http://localhost:5173', 'https://ovejitas.onrender.com'];
 
 server.register(cors, {
 	origin: (origin, cb) => {
@@ -41,6 +44,8 @@ server.register(cors, {
 	},
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+	exposedHeaders: ['set-cookie'],
 });
 
 // Register core plugins

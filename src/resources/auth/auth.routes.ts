@@ -11,16 +11,17 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 		async (request: FastifyRequest<{ Body: UserLoginInput }>, reply) => {
 			try {
 				const { email, password } = request.body;
-				const { user } = await fastify.authService.login({ email, password });
+				const { user, token } = await fastify.authService.login({ email, password });
 
 				reply
-					// .setCookie('jwt', token, {
-					// 	httpOnly: true,
-					// 	 path: "/api/v1/auth/refresh",
-					// 	sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-					// 	secure: process.env.NODE_ENV !== 'development',
-					// 	maxAge: 60 * 60 * 24, // 1 day
-					// })
+					.setCookie('jwt', token, {
+						httpOnly: true,
+						sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+						secure: process.env.NODE_ENV === 'production',
+						maxAge: 60 * 60 * 24, // 1 day
+						path: '/',
+						domain: process.env.COOKIE_DOMAIN || undefined,
+					})
 					.success(UserSerializer.serialize(user), 'Login successful');
 			} catch (error) {
 				fastify.handleDbError(error, reply);
@@ -50,7 +51,13 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
 	fastify.post('/logout', { preHandler: fastify.authenticate }, async (_request, reply) => {
 		try {
-			reply.clearCookie('jwt', { path: '/' });
+			reply.clearCookie('jwt', {
+				path: '/',
+				domain: process.env.COOKIE_DOMAIN || undefined,
+				httpOnly: true,
+				sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+				secure: process.env.NODE_ENV === 'production',
+			});
 			reply.success('Logged out');
 		} catch (error) {
 			fastify.handleDbError(error, reply);
