@@ -16,8 +16,8 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 				reply
 					.setCookie('jwt', token, {
 						httpOnly: true,
-						sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-						secure: process.env.NODE_ENV === 'production',
+						sameSite: process.env.NODE_ENV === 'development' ? 'strict' : 'none',
+						secure: process.env.NODE_ENV !== 'development',
 						maxAge: 60 * 60 * 24, // 1 day
 						path: '/',
 						domain: process.env.COOKIE_DOMAIN || undefined,
