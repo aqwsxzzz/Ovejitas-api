@@ -76,7 +76,7 @@ export class AnimalService extends BaseService {
 			await this.validateBreedSpeciesMatch(breedId, speciesId, transaction);
 			await this.validateTagNumberUniqueness(data.tagNumber, data.farmId, speciesId, transaction);
 
-			return this.db.models.Animal.create({ ...data, breedId, speciesId, fatherId, motherId });
+			return this.db.models.Animal.create({ ...data, breedId, speciesId, fatherId, motherId, name: data.name || '' }, { transaction });
 		});
 	}
 

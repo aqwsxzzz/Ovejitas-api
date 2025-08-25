@@ -77,7 +77,7 @@ const AnimalSchema = Type.Object({
 });
 
 export const AnimalCreateSchema = Type.Object({
-	name: Type.String(),
+	name: Type.Optional(Type.String()),
 	speciesId: Type.String(),
 	breedId: Type.String(),
 	tagNumber: Type.String(),
@@ -95,18 +95,18 @@ export const AnimalCreateSchema = Type.Object({
 });
 
 export const AnimalUpdateSchema = Type.Object({
-	name: Type.String(),
+	name: Type.Optional(Type.String()),
 	speciesId: Type.String(),
 	breedId: Type.String(),
 	tagNumber: Type.String(),
-	sex: Type.Enum(AnimalSex),
-	birthDate: Type.String(),
-	status: Type.Enum(AnimalStatus),
-	reproductiveStatus: Type.Enum(AnimalReproductiveStatus),
-	fatherId: Type.String(),
-	motherId: Type.String(),
-	acquisitionType: Type.Enum(AnimalAcquisitionType),
-	acquisitionDate: Type.String(),
+	sex: Type.Optional(Type.Enum(AnimalSex)),
+	birthDate: Type.Optional(Type.String()),
+	status: Type.Optional(Type.Enum(AnimalStatus)),
+	reproductiveStatus: Type.Optional(Type.Enum(AnimalReproductiveStatus)),
+	fatherId: Type.Optional(Type.String()),
+	motherId: Type.Optional(Type.String()),
+	acquisitionType: Type.Optional(Type.Enum(AnimalAcquisitionType)),
+	acquisitionDate: Type.Optional(Type.String()),
 }, {
 	$id: 'animalUpdate',
 	additionalProperties: false,

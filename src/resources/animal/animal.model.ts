@@ -53,7 +53,7 @@ export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
 	},
 	name: {
 		type: DataTypes.STRING,
-		allowNull: false,
+		allowNull: true,
 		field: 'name',
 	},
 	tagNumber: {
@@ -102,7 +102,7 @@ export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
 	},
 	acquisitionType: {
 		type: DataTypes.ENUM(...Object.values(AnimalAcquisitionType)),
-		allowNull: false,
+		allowNull: true,
 		field: 'acquisition_type',
 		defaultValue: AnimalAcquisitionType.Other,
 	},
