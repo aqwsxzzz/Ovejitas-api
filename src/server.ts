@@ -39,12 +39,12 @@ server.register(cors, {
 		if (allowedOrigins.includes(origin)) {
 			cb(null, true); // Reflects the origin in the CORS header
 		} else {
-			cb(new Error('Not allowed by CORS'), false);
+			 cb(null, false); // don't throw, just deny silently
 		}
 	},
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+	allowedHeaders: ['*'],
 	exposedHeaders: ['set-cookie'],
 });
 
