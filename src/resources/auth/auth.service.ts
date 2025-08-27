@@ -83,10 +83,6 @@ export class AuthService extends BaseService {
 		return user;
 	}
 
-	async logout() {
-
-	}
-
 	private async  handleInvitationSignUp(body: UserSignupInput,   transaction: Transaction) {
 		const { displayName, email, password, language = 'es', invitationToken } = body;
 		const invitation = await this.db.models.Invitation.findOne({ where: { token: invitationToken, status: 'pending' }, transaction });
