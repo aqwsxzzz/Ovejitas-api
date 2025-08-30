@@ -74,6 +74,15 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 			fastify.handleDbError(error, reply);
 		}
 	});
+
+	fastify.get('/health', async (request: FastifyRequest, reply) => {
+		try {
+			const health = await fastify.authService.health();
+			reply.success({ status: health });
+		} catch (error) {
+			fastify.handleDbError(error, reply);
+		}
+	});
 };
 
 export default authRoutes;
