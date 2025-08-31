@@ -42,6 +42,7 @@ export class AnimalService extends BaseService {
 
 	private static readonly ALLOWED_FILTERS: FilterConfig = {
 		sex: FilterConfigBuilder.enum('sex', Object.values(AnimalSex)),
+		groupName: FilterConfigBuilder.string('groupName'),
 	};
 
 	async getAnimals(farmId: number,  language: UserLanguage, includeParam?: string, filters?: Record<string, string>): Promise<AnimalModel[] | null> {

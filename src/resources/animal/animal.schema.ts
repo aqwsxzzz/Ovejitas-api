@@ -71,6 +71,7 @@ const AnimalSchema = Type.Object({
 	acquisitionDate: Type.String(),
 	createdAt: Type.String(),
 	updatedAt: Type.String(),
+	groupName: Type.String(),
 }, {
 	$id: 'animal',
 	additionalProperties: false,
@@ -89,6 +90,7 @@ export const AnimalCreateSchema = Type.Object({
 	motherId: Type.Optional(Type.String()),
 	acquisitionType: Type.Optional(Type.Enum(AnimalAcquisitionType)),
 	acquisitionDate: Type.Optional(Type.String()),
+	groupName: Type.Optional(Type.String()),
 }, {
 	$id: 'animalCreate',
 	additionalProperties: false,
@@ -107,6 +109,7 @@ export const AnimalUpdateSchema = Type.Object({
 	motherId: Type.Optional(Type.String()),
 	acquisitionType: Type.Optional(Type.Enum(AnimalAcquisitionType)),
 	acquisitionDate: Type.Optional(Type.String()),
+	groupName: Type.Optional(Type.String()),
 }, {
 	$id: 'animalUpdate',
 	additionalProperties: false,

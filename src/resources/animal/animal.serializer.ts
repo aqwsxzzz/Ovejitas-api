@@ -22,6 +22,7 @@ export class AnimalSerializer {
 			createdAt: animal.createdAt,
 			updatedAt: animal.updatedAt,
 			weightId: animal.weightId ? encodeId(animal.weightId) : '',
+			groupName: animal.groupName,
 		};
 
 		const result: AnimalWithIncludes = { ...base };

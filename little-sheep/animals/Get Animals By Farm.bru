@@ -51,6 +51,8 @@ docs {
   - `sex` (string, optional): Filter animals by sex
     - Available values: `male`, `female`, `unknown`
     - Example: `sex=female` returns only female animals
+  - `groupName` (string, optional): Filter animals by group name
+    - Example: `groupName=Spring 2023 Batch` returns only animals in that group
   
   ## Response
   
@@ -75,6 +77,7 @@ docs {
         "motherId": "encoded_mother_id",
         "acquisitionType": "born",
         "acquisitionDate": "2023-01-01",
+        "groupName": "Spring 2023 Batch",
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z",
         "species": {

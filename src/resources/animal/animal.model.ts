@@ -21,6 +21,7 @@ export class AnimalModel extends Model<Animal, AnimalCreationAttributes> {
 	declare createdAt: string;
 	declare updatedAt: string;
 	declare weightId: number | null | undefined;
+	declare groupName: string;
 }
 
 export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
@@ -71,6 +72,12 @@ export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
 		type: DataTypes.DATE,
 		allowNull: true,
 		field: 'birth_date',
+	},
+
+	groupName: {
+		type: DataTypes.STRING,
+		allowNull: true,
+		field: 'group_name',
 	},
 
 	status: {
@@ -138,7 +145,7 @@ export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
 	indexes: [
 		{
 			unique: true,
-			fields: ['farm_id', 'species_id', 'tag_number'],
+			fields: ['farm_id', 'species_id', 'tag_number', 'group_name'],
 			where: { tag_number: { $ne: null } },
 		},
 	],

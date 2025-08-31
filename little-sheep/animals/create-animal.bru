@@ -27,7 +27,8 @@ body:json {
     "fatherId": "7ZWDkbpO",
     "motherId": "8XVEkcqP",
     "acquisitionType": "born",
-    "acquisitionDate": "2023-01-01"
+    "acquisitionDate": "2023-01-01",
+    "groupName": "Spring 2023 Batch"
   }
 }
 
@@ -61,6 +62,7 @@ docs {
   - `acquisitionType` (string): How the animal was acquired
     - Values: `"born"`, `"purchased"`, `"other"`
   - `acquisitionDate` (string): Date acquired in YYYY-MM-DD format
+  - `groupName` (string): Optional group name for bulk tracking (e.g., "Spring 2023 Batch")
   
   ## Response
   
@@ -84,6 +86,7 @@ docs {
       "motherId": "encoded_mother_id",
       "acquisitionType": "born",
       "acquisitionDate": "2023-01-01",
+      "groupName": "Spring 2023 Batch",
       "createdAt": "2024-01-01T00:00:00.000Z",
       "updatedAt": "2024-01-01T00:00:00.000Z"
     },
@@ -106,4 +109,5 @@ docs {
   - Species and breed must be valid and active
   - Dates should be in ISO date format (YYYY-MM-DD)
   - Requires authentication to create animals
+  - Group names are useful for bulk operations and tracking cohorts of animals
 }
