@@ -115,6 +115,19 @@ export const AnimalUpdateSchema = Type.Object({
 	additionalProperties: false,
 });
 
+export const AnimalBulkCreateSchema = Type.Object({
+	speciesId: Type.String(),
+	breedId: Type.String(),
+	groupName: Type.Optional(Type.String()),
+	tags: Type.Optional(Type.Array(Type.String())),
+	tagPrefix: Type.Optional(Type.String()),
+	tagStartNumber: Type.Optional(Type.Integer({ minimum: 1 })),
+	count: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+}, {
+	$id: 'animalBulkCreate',
+	additionalProperties: false,
+});
+
 const ParentAnimalSchema = Type.Object({
 	id: Type.String(),
 	name: Type.String(),
@@ -161,6 +174,7 @@ export type AnimalResponse = Static<typeof AnimalResponseSchema>;
 export type AnimalUpdate = Static<typeof AnimalUpdateSchema>;
 export type AnimalParams = Static<typeof AnimalParamsSchema>;
 export type AnimalInclude = Static<typeof AnimalIncludeSchema>;
+export type AnimalBulkCreate = Static<typeof AnimalBulkCreateSchema>;
 
 export const createAnimalSchema = createPostEndpointSchema({
 	body: AnimalCreateSchema,
@@ -179,4 +193,23 @@ export const getAnimalByIdSchema = createGetEndpointSchema({
 	querystring: AnimalIncludeSchema,
 	dataSchema: AnimalResponseSchema,
 	errorCodes: [404],
+});
+
+export const AnimalBulkCreateResponseSchema = Type.Object({
+	created: Type.Array(AnimalResponseSchema),
+	failed: Type.Array(Type.Object({
+		tagNumber: Type.String(),
+		reason: Type.String(),
+	})),
+}, {
+	$id: 'animalBulkCreateResponse',
+	additionalProperties: false,
+});
+
+export type AnimalBulkCreateResponse = Static<typeof AnimalBulkCreateResponseSchema>;
+
+export const bulkCreateAnimalSchema = createPostEndpointSchema({
+	body: AnimalBulkCreateSchema,
+	dataSchema: AnimalBulkCreateResponseSchema,
+	errorCodes: [400, 409],
 });

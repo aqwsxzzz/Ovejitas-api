@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { AnimalCreate, AnimalInclude, AnimalParams, createAnimalSchema, listAnimalSchema, getAnimalByIdSchema } from './animal.schema';
+import { AnimalCreate, AnimalBulkCreate, AnimalInclude, AnimalParams, createAnimalSchema, listAnimalSchema, getAnimalByIdSchema, bulkCreateAnimalSchema } from './animal.schema';
 import { AnimalSerializer } from './animal.serializer';
 import { decodeId } from '../../utils/id-hash-util';
 
@@ -50,6 +50,23 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 			const animal = await fastify.animalService.createAnimal({ data: { ...request.body, farmId } });
 			const serializedAnimal = AnimalSerializer.serialize(animal!);
 			reply.success(serializedAnimal);
+		} catch (error) {
+			fastify.handleDbError(error, reply);
+		}
+	});
+
+	fastify.post('/bulk', { schema: bulkCreateAnimalSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Body: AnimalBulkCreate}>, reply) => {
+		try {
+			const farmId = request.lastVisitedFarmId;
+			const result = await fastify.animalService.bulkCreateAnimals({ data: { ...request.body, farmId } });
+
+			// Serialize the created animals
+			const serializedResult = {
+				created: AnimalSerializer.serializeMany(result.created),
+				failed: result.failed,
+			};
+
+			reply.success(serializedResult);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}
