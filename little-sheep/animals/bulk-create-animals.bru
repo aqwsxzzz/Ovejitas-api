@@ -1,0 +1,158 @@
+meta {
+  name: Bulk Create Animals
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/api/v1/animals/bulk
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "speciesId": "AdWNDqgV",
+    "breedId": "NArJeWyE",
+    "groupName": "Spring 2024 Batch",
+    "tags": ["A100", "A101", "A102", "A103", "A104"]
+  }
+}
+
+body:json {
+  {
+    "speciesId": "AdWNDqgV",
+    "breedId": "NArJeWyE",
+    "groupName": "Fall 2024 Import",
+    "tagPrefix": "F24-",
+    "tagStartNumber": 1,
+    "count": 10
+  }
+}
+
+docs {
+  # Bulk Create Animals
+  
+  Creates multiple animals at once with automatic tag generation or provided tag numbers.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Request Body
+  
+  **Required Fields:**
+  - `speciesId` (string): Encoded ID of the species
+  - `breedId` (string): Encoded ID of the breed
+  
+  **Optional Fields:**
+  - `groupName` (string): Group name for tracking the batch (e.g., "Spring 2024 Batch")
+  
+  **Tag Generation Options:**
+  
+  ### Option 1: Provide specific tag numbers
+  - `tags` (string[]): Array of tag numbers to use
+  
+  ### Option 2: Auto-generate tag numbers
+  - `tagPrefix` (string): Optional prefix for generated tags (e.g., "A-", "F24-")
+  - `tagStartNumber` (integer): Starting number for tag generation (min: 1)
+  - `count` (integer): Number of animals to create (min: 1, max: 100)
+  
+  **Note:** You must provide either `tags` array OR both `tagStartNumber` and `count`
+  
+  ## Examples
+  
+  ### Example 1: Using specific tag numbers
+  ```json
+  {
+    "speciesId": "AdWNDqgV",
+    "breedId": "NArJeWyE",
+    "groupName": "Spring 2024 Batch",
+    "tags": ["A100", "A101", "A102", "A103", "A104"]
+  }
+  ```
+  
+  ### Example 2: Auto-generating tags with prefix
+  ```json
+  {
+    "speciesId": "AdWNDqgV",
+    "breedId": "NArJeWyE",
+    "groupName": "Fall 2024 Import",
+    "tagPrefix": "F24-",
+    "tagStartNumber": 1,
+    "count": 10
+  }
+  ```
+  This generates tags: F24-1, F24-2, F24-3, ..., F24-10
+  
+  ### Example 3: Auto-generating tags without prefix
+  ```json
+  {
+    "speciesId": "AdWNDqgV",
+    "breedId": "NArJeWyE",
+    "groupName": "Auction Lot 5",
+    "tagStartNumber": 500,
+    "count": 5
+  }
+  ```
+  This generates tags: 500, 501, 502, 503, 504
+  
+  ## Response
+  
+  **Success (201)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "created": [
+        {
+          "id": "encoded_animal_id",
+          "farmId": "encoded_farm_id",
+          "speciesId": "encoded_species_id",
+          "breedId": "encoded_breed_id",
+          "name": "",
+          "tagNumber": "A100",
+          "sex": "unknown",
+          "status": "alive",
+          "reproductiveStatus": "open",
+          "groupName": "Spring 2024 Batch",
+          "createdAt": "2024-01-01T00:00:00.000Z",
+          "updatedAt": "2024-01-01T00:00:00.000Z"
+        }
+      ],
+      "failed": [
+        {
+          "tagNumber": "A105",
+          "reason": "Tag number already exists for this farm and species"
+        }
+      ]
+    },
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Invalid request body or missing required tag generation parameters
+  - `409`: Some tags already exist (partial success - see failed array)
+  
+  ## Notes
+  
+  - Animals are automatically assigned to user's `lastVisitedFarmId`
+  - Tag numbers must be unique within the farm/species combination
+  - Animals created with empty names and default values:
+    - `name`: Empty string
+    - `sex`: "unknown"
+    - `status`: "alive"
+    - `reproductiveStatus`: "open"
+  - Group names are useful for tracking bulk imports and cohorts
+  - If some tags already exist, valid tags will still be created (partial success)
+  - Maximum 100 animals can be created in a single request
+  - All IDs are encoded using hashids for security
+}

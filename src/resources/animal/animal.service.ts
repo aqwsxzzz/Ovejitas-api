@@ -1,6 +1,6 @@
 import { BaseService } from '../../services/base.service';
 import { AnimalModel } from './animal.model';
-import { AnimalCreate, AnimalSex, AnimalUpdate } from './animal.schema';
+import { AnimalBulkCreate, AnimalCreate, AnimalReproductiveStatus, AnimalSex, AnimalStatus, AnimalUpdate } from './animal.schema';
 import { decodeId } from '../../utils/id-hash-util';
 import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
 import { FindOptions, Transaction } from 'sequelize';
@@ -129,6 +129,163 @@ export class AnimalService extends BaseService {
 
 			return animal;
 		});
+	}
+
+	async bulkCreateAnimals({ data }: { data: AnimalBulkCreate & { farmId: number } }): Promise<{ created: AnimalModel[], failed: { tagNumber: string; reason: string }[] }> {
+		const { farmId, groupName, speciesId: encodedSpeciesId, breedId: encodedBreedId } = data;
+
+		// Decode and validate IDs
+		const { speciesId, breedId } = this.decodeBulkCreateIds(encodedSpeciesId, encodedBreedId);
+
+		// Generate or validate tag numbers
+		const tagNumbers = this.generateTagNumbers(data);
+
+		// Perform bulk creation with validation
+		return await this.performBulkCreate({
+			farmId,
+			speciesId,
+			breedId,
+			tagNumbers,
+			groupName: groupName || null,
+		});
+	}
+
+	private decodeBulkCreateIds(encodedSpeciesId: string, encodedBreedId: string): { speciesId: number; breedId: number } {
+		const speciesId = decodeId(encodedSpeciesId);
+		const breedId = decodeId(encodedBreedId);
+
+		if (!speciesId || !breedId) {
+			throw new Error('Invalid species or breed ID');
+		}
+
+		return { speciesId, breedId };
+	}
+
+	private generateTagNumbers(data: AnimalBulkCreate): string[] {
+		const { tags, tagPrefix, tagStartNumber, count } = data;
+
+		// Use provided tags if available
+		if (tags && tags.length > 0) {
+			return tags;
+		}
+
+		// Generate tags from start number and count
+		if (tagStartNumber && count) {
+			const generatedTags: string[] = [];
+			for (let i = 0; i < count; i++) {
+				const tagNumber = tagPrefix
+					? `${tagPrefix}${tagStartNumber + i}`
+					: `${tagStartNumber + i}`;
+				generatedTags.push(tagNumber);
+			}
+			return generatedTags;
+		}
+
+		throw new Error('Either provide tags array or tagStartNumber with count');
+	}
+
+	private async performBulkCreate(params: {
+		farmId: number;
+		speciesId: number;
+		breedId: number;
+		tagNumbers: string[];
+		groupName: string | null;
+	}): Promise<{ created: AnimalModel[]; failed: { tagNumber: string; reason: string }[] }> {
+		const { farmId, speciesId, breedId, tagNumbers, groupName } = params;
+		const failedTags: { tagNumber: string; reason: string }[] = [];
+
+		const createdAnimals = await this.db.sequelize.transaction(async (transaction) => {
+			// Validate breed/species match
+			await this.validateBreedSpeciesMatch(breedId, speciesId, transaction);
+
+			// Check for existing tags
+			const validTags = await this.filterExistingTags({
+				tagNumbers,
+				farmId,
+				speciesId,
+				transaction,
+				failedTags,
+			});
+
+			// Create animals for valid tags
+			if (validTags.length > 0) {
+				const animalData = this.prepareBulkAnimalData({
+					validTags,
+					farmId,
+					speciesId,
+					breedId,
+					groupName,
+				});
+				return await this.db.models.Animal.bulkCreate(animalData, { transaction });
+			}
+
+			return [];
+		});
+
+		return {
+			created: createdAnimals,
+			failed: failedTags,
+		};
+	}
+
+	private async filterExistingTags(params: {
+		tagNumbers: string[];
+		farmId: number;
+		speciesId: number;
+		transaction: Transaction;
+		failedTags: { tagNumber: string; reason: string }[];
+	}): Promise<string[]> {
+		const { tagNumbers, farmId, speciesId, transaction, failedTags } = params;
+
+		// Find all existing tags in one query
+		const existingAnimals = await this.db.models.Animal.findAll({
+			where: {
+				tagNumber: tagNumbers,
+				farmId,
+				speciesId,
+			},
+			attributes: ['tagNumber'],
+			transaction,
+		});
+
+		const existingTagNumbers = new Set(existingAnimals.map(a => a.tagNumber));
+		const validTags: string[] = [];
+
+		// Separate valid and invalid tags
+		for (const tagNumber of tagNumbers) {
+			if (existingTagNumbers.has(tagNumber)) {
+				failedTags.push({
+					tagNumber,
+					reason: 'Tag number already exists for this farm and species',
+				});
+			} else {
+				validTags.push(tagNumber);
+			}
+		}
+
+		return validTags;
+	}
+
+	private prepareBulkAnimalData(params: {
+		validTags: string[];
+		farmId: number;
+		speciesId: number;
+		breedId: number;
+		groupName: string | null;
+	}) {
+		const { validTags, farmId, speciesId, breedId, groupName } = params;
+
+		return validTags.map(tagNumber => ({
+			farmId,
+			speciesId,
+			breedId,
+			tagNumber,
+			groupName,
+			name: '',
+			sex: AnimalSex.Unknown,
+			status: AnimalStatus.Alive,
+			reproductiveStatus: AnimalReproductiveStatus.Other,
+		}));
 	}
 
 	private async decodeAnimalIds(ids: {breedId: string, speciesId: string, fatherId?: string | undefined, motherId? : string  | undefined})  {
