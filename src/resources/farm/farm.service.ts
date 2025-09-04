@@ -1,12 +1,14 @@
 import { BaseService } from '../../services/base.service';
-import { FarmMemberWithFarm } from '../farm-member/farm-member.schema';
+import { FarmMemberRole, FarmMemberWithFarm } from '../farm-member/farm-member.schema';
 import { FarmModel } from './farm.model';
 import { FarmCreateInput, FarmUpdateInput } from './farm.schema';
 
 export class FarmService extends BaseService {
 
-	async createFarm(data: FarmCreateInput): Promise<FarmModel> {
+	async createFarm(data: FarmCreateInput, userId: number): Promise<FarmModel> {
 		const farm = await this.db.models.Farm.create(data);
+		await this.db.models.FarmMember.create({ farmId: farm.dataValues.id, userId: userId, role: FarmMemberRole.OWNER });
+
 		return farm;
 	}
 

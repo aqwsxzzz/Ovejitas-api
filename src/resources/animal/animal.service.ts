@@ -1,9 +1,9 @@
 import { BaseService } from '../../services/base.service';
 import { AnimalModel } from './animal.model';
 import { AnimalBulkCreate, AnimalCreate, AnimalReproductiveStatus, AnimalSex, AnimalStatus, AnimalUpdate } from './animal.schema';
-import { decodeId } from '../../utils/id-hash-util';
+import { decodeId, encodeId } from '../../utils/id-hash-util';
 import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
-import { FindOptions, Transaction } from 'sequelize';
+import { FindOptions, Transaction, QueryTypes } from 'sequelize';
 import { UserLanguage } from '../user/user.schema';
 import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
 
@@ -45,13 +45,13 @@ export class AnimalService extends BaseService {
 		groupName: FilterConfigBuilder.string('groupName'),
 	};
 
-	async getAnimals(farmId: number,  language: UserLanguage, includeParam?: string, filters?: Record<string, string>): Promise<AnimalModel[] | null> {
+	async getAnimals(farmId: number, language: UserLanguage, includeParam?: string, filters?: Record<string, string>): Promise<AnimalModel[] | null> {
 
 		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 		const filterWhere = this.parseFilters(filters, AnimalService.ALLOWED_FILTERS);
 
 		// Filter species translations by language if species and translations are included
-		if (includeParam?.includes('species.translations') ) {
+		if (includeParam?.includes('species.translations')) {
 			includes = this.filterTranslationsByLanguage(includes, language);
 		}
 
@@ -85,13 +85,13 @@ export class AnimalService extends BaseService {
 		});
 	}
 
-	async getAnimalById(id: number,language: UserLanguage, includeParam?: string ): Promise<AnimalModel | null> {
+	async getAnimalById(id: number, language: UserLanguage, includeParam?: string): Promise<AnimalModel | null> {
 		const findOptions: FindOptions = {};
 
 		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 
 		// Filter species translations by language if species and translations are included
-		if (includeParam?.includes('species.translations')  ) {
+		if (includeParam?.includes('species.translations')) {
 			includes = this.filterTranslationsByLanguage(includes, language);
 		}
 
@@ -148,6 +148,39 @@ export class AnimalService extends BaseService {
 			tagNumbers,
 			groupName: groupName || null,
 		});
+	}
+
+	async getAnimalDashboard({ farmId, language }: { farmId: number, language: UserLanguage }): Promise<{ count: number, species: { id: string, name: string } }[]> {
+		interface DashboardResult {
+			count: string;
+			speciesId: number;
+			speciesName: string;
+		}
+
+		const results = await this.db.sequelize.query<DashboardResult>(
+			`SELECT 
+				a.species_id as "speciesId",
+				COUNT(a.id) as count,
+				st.name as "speciesName"
+			FROM animals a
+			LEFT JOIN species s ON a.species_id = s.id
+			LEFT JOIN species_translation st ON s.id = st.species_id AND st.language_code = :language
+			WHERE a.farm_id = :farmId
+			GROUP BY a.species_id, st.name
+			ORDER BY count DESC`,
+			{
+				replacements: { farmId, language },
+				type: QueryTypes.SELECT,
+			},
+		);
+
+		return results.map((result) => ({
+			count: parseInt(result.count),
+			species: {
+				id: encodeId(result.speciesId),
+				name: result.speciesName || '',
+			},
+		}));
 	}
 
 	private decodeBulkCreateIds(encodedSpeciesId: string, encodedBreedId: string): { speciesId: number; breedId: number } {

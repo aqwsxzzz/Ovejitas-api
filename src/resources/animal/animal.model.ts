@@ -145,7 +145,7 @@ export const initAnimalModel = (sequelize: Sequelize) => AnimalModel.init({
 	indexes: [
 		{
 			unique: true,
-			fields: ['farm_id', 'species_id', 'tag_number', 'group_name'],
+			fields: ['farm_id', 'species_id', 'tag_number'],
 			where: { tag_number: { $ne: null } },
 		},
 	],

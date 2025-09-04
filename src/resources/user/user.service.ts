@@ -12,6 +12,13 @@ export class UserService extends BaseService {
 		return user;
 	}
 
+	async updateLastVisitedFarm(userId: number, farmId: number): Promise<void> {
+		await this.db.models.User.update(
+			{ lastVisitedFarmId: farmId },
+			{ where: { id: userId } },
+		);
+	}
+
 	async deleteUser(id: number): Promise<void> {
 		const user = await this.db.models.User.findByPk(id);
 		if (!user) throw new Error('User not found');

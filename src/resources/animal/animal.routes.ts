@@ -1,7 +1,8 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { AnimalCreate, AnimalBulkCreate, AnimalInclude, AnimalParams, createAnimalSchema, listAnimalSchema, getAnimalByIdSchema, bulkCreateAnimalSchema } from './animal.schema';
+import { AnimalCreate, AnimalBulkCreate, AnimalInclude, AnimalParams, createAnimalSchema, listAnimalSchema, getAnimalByIdSchema, bulkCreateAnimalSchema, getAnimalDashboardSchema } from './animal.schema';
 import { AnimalSerializer } from './animal.serializer';
 import { decodeId } from '../../utils/id-hash-util';
+import { UserLanguage } from '../user/user.schema';
 
 const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
@@ -67,6 +68,20 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 			};
 
 			reply.success(serializedResult);
+		} catch (error) {
+			fastify.handleDbError(error, reply);
+		}
+	});
+
+	fastify.get('/dashboard', { schema: getAnimalDashboardSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Querystring: { language: UserLanguage }}>, reply) => {
+		try {
+			const farmId = request.lastVisitedFarmId;
+			const { language } = request.query;
+
+			const dashboardData = await fastify.animalService.getAnimalDashboard({ farmId, language });
+			const serializedData = AnimalSerializer.serializeDashboard(dashboardData);
+
+			reply.success(serializedData);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

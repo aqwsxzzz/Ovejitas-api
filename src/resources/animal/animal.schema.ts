@@ -213,3 +213,27 @@ export const bulkCreateAnimalSchema = createPostEndpointSchema({
 	dataSchema: AnimalBulkCreateResponseSchema,
 	errorCodes: [400, 409],
 });
+
+// Dashboard schemas
+export const AnimalDashboardItemSchema = Type.Object({
+	count: Type.Integer(),
+	species: Type.Object({
+		id: Type.String(),
+		name: Type.String(),
+	}),
+}, {
+	$id: 'animalDashboardItem',
+	additionalProperties: false,
+});
+
+export const AnimalDashboardResponseSchema = Type.Array(AnimalDashboardItemSchema, {
+	$id: 'animalDashboardResponse',
+});
+
+export type AnimalDashboardItem = Static<typeof AnimalDashboardItemSchema>;
+export type AnimalDashboardResponse = Static<typeof AnimalDashboardResponseSchema>;
+
+export const getAnimalDashboardSchema = createGetEndpointSchema({
+	dataSchema: AnimalDashboardResponseSchema,
+	errorCodes: [400, 404],
+});

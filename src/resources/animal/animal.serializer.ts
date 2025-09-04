@@ -1,5 +1,5 @@
 import { encodeId } from '../../utils/id-hash-util';
-import { AnimalResponse, AnimalWithIncludes, AnimalWithPossibleIncludes } from './animal.schema';
+import { AnimalResponse, AnimalWithIncludes, AnimalWithPossibleIncludes, AnimalDashboardResponse } from './animal.schema';
 import { AnimalMeasurementResponse } from '../animal-measurement/animal-measurement.schema';
 
 export class AnimalSerializer {
@@ -97,5 +97,9 @@ export class AnimalSerializer {
 
 	static serializeMany(animals: AnimalWithPossibleIncludes[]): AnimalResponse[] {
 		return animals.map(a => this.serialize(a));
+	}
+
+	static serializeDashboard(dashboardData: { count: number, species: { id: string, name: string } }[]): AnimalDashboardResponse {
+		return dashboardData;
 	}
 }

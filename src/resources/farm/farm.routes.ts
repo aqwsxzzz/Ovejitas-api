@@ -19,7 +19,7 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 	}, async (request: FastifyRequest<{ Body: FarmCreateInput }>, reply) => {
 		try {
 			const farmData = request.body;
-			const newFarm = await fastify.farmService.createFarm(farmData);
+			const newFarm = await fastify.farmService.createFarm(farmData, request.user!.id);
 			const serializedFarm = FarmSerializer.serialize(newFarm);
 			reply.success(serializedFarm, 'Farm created successfully');
 		} catch (error) {
@@ -48,7 +48,14 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 		try {
 			const { farmId } = request.params;
 			const decodedFarmId = decodeId(farmId)!;
+			const  lastVisitedFarmId = request.lastVisitedFarmId;
 			const farm = await fastify.farmService.getFarm(decodedFarmId);
+
+			// Update user's lastVisitedFarmId if different from current
+			if (request.user && lastVisitedFarmId !== decodedFarmId) {
+				await fastify.userService.updateLastVisitedFarm(request.user.id, decodedFarmId);
+			}
+
 			const serializedFarm = FarmSerializer.serialize(farm);
 			reply.success(serializedFarm, 'Farm retrieved successfully');
 		} catch (error) {

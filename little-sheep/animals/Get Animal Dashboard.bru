@@ -1,0 +1,88 @@
+meta {
+  name: Get Animal Dashboard
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://localhost:8080/api/v1/animals/dashboard?language=en
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+params:query {
+  language: en
+}
+
+docs {
+  # Get Animal Dashboard
+  
+  Retrieves a dashboard summary showing the count of animals grouped by species for the authenticated user's last visited farm.
+  
+  ## Authentication
+  
+  **Required**: JWT cookie from login endpoint
+  
+  ## Query Parameters
+  
+  - `language` (string, required): Language code for species name translations
+    - Available languages: `en` (English), `es` (Spanish)
+    - Example: `language=en` returns species names in English
+  
+  ## Response
+  
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": [
+      {
+        "count": 15,
+        "species": {
+          "id": "encoded_species_id",
+          "name": "Bovine"
+        }
+      },
+      {
+        "count": 8,
+        "species": {
+          "id": "encoded_species_id_2",
+          "name": "Sheep"
+        }
+      },
+      {
+        "count": 3,
+        "species": {
+          "id": "encoded_species_id_3",
+          "name": "Goat"
+        }
+      }
+    ],
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+  
+  **Error Responses**:
+  - `400`: Bad request (invalid parameters)
+  - `404`: Farm not found or no access
+  - `401`: Unauthorized (not authenticated)
+  
+  ## Notes
+  
+  - Uses the user's `lastVisitedFarmId` to determine which farm's animals to count
+  - Returns an array of objects, each containing:
+    - `count`: The number of animals of that species
+    - `species.id`: The encoded species ID
+    - `species.name`: The translated name of the species in the requested language
+  - Species are only included in the response if they have at least one animal
+  - If no animals exist for the farm, returns an empty array
+  - All species IDs are encoded using hashids for security
+  - Species names are translated based on the language parameter
+}
