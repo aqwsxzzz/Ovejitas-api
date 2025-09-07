@@ -1,0 +1,101 @@
+meta {
+  name: List Expenses
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:8080/api/v1/expenses?category=feed&status=paid
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+params:query {
+  category: feed
+  status: paid
+  ~paymentMethod: cash
+  ~dateFrom: 2025-01-01
+  ~dateTo: 2025-12-31
+  ~speciesId: AdWNDqgV
+  ~breedId: BdXMErgW
+  ~animalId: CeYNFshX
+}
+
+docs {
+  # List Farm Expenses
+
+  Retrieves all expenses for the authenticated user's current farm with optional filtering.
+
+  ## Authentication
+
+  **Required**: JWT cookie from login endpoint
+
+  ## Query Parameters
+
+  **Filter Parameters** (all optional):
+  - `category` (string): Filter by expense category
+    - Values: `"feed"`, `"veterinary"`, `"transport"`, `"equipment"`, `"labor"`, `"utilities"`, `"maintenance"`, `"other"`
+  - `paymentMethod` (string): Filter by payment method
+    - Values: `"cash"`, `"bank_transfer"`, `"credit_card"`, `"debit_card"`, `"check"`, `"other"`
+  - `status` (string): Filter by expense status
+    - Values: `"pending"`, `"paid"`, `"reimbursed"`
+  - `dateFrom` (string): Filter expenses from this date (YYYY-MM-DD format)
+  - `dateTo` (string): Filter expenses up to this date (YYYY-MM-DD format)
+  - `speciesId` (string): Filter expenses related to specific species (encoded ID)
+  - `breedId` (string): Filter expenses related to specific breed (encoded ID)
+  - `animalId` (string): Filter expenses related to specific animal (encoded ID)
+
+  ## Response
+
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": [
+      {
+        "id": "encoded_expense_id",
+        "farmId": "encoded_farm_id",
+        "date": "2025-01-15",
+        "amount": 125.50,
+        "description": "Monthly feed supply",
+        "category": "feed",
+        "speciesId": "encoded_species_id",
+        "breedId": "encoded_breed_id",
+        "animalId": "encoded_animal_id",
+        "lotId": "encoded_lot_id",
+        "vendor": "Farm Supply Co.",
+        "paymentMethod": "bank_transfer",
+        "invoiceNumber": "INV-2025-001",
+        "quantity": 50,
+        "quantityUnit": "bags",
+        "unitCost": 2.51,
+        "status": "paid",
+        "createdBy": "encoded_user_id",
+        "createdAt": "2025-01-15T10:30:00.000Z",
+        "updatedAt": "2025-01-15T10:30:00.000Z"
+      }
+    ],
+    "meta": {
+      "timestamp": "2025-01-15T10:30:00.000Z"
+    }
+  }
+  ```
+
+  **Error Responses**:
+  - `404`: No expenses found or user doesn't have access to farm
+
+  ## Notes
+
+  - Returns expenses for the authenticated user's currently visited farm
+  - Results are ordered by date (newest first), then by ID
+  - All ID fields are encoded using hashids for security
+  - Filters can be combined for more specific results
+  - Optional fields (like speciesId, breedId, etc.) may be null in the response
+  - Amount is returned as a decimal number
+  - Date format is YYYY-MM-DD
+}
