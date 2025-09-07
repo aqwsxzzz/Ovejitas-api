@@ -1,31 +1,6 @@
-# Ovejitas-api Coding Standards
+# File Patterns
 
-Simple, practical standards based on the expense resource implementation.
-
-## Resource Structure
-
-Each business resource follows this exact 6-file pattern:
-
-```
-src/resources/{resource-name}/
-├── index.ts                    # Plugin entry point
-├── {resource}.routes.ts        # Route definitions
-├── {resource}.model.ts         # Sequelize model
-├── {resource}.schema.ts        # TypeBox schemas + types
-├── {resource}.service.ts       # Business logic service
-└── {resource}.serializer.ts    # Response transformation
-```
-
-## Naming Rules
-
-- **Directories**: kebab-case (`expense`, `animal-measurement`)
-- **Files**: `{resource}.{type}.ts` (`expense.model.ts`)
-- **Classes**: PascalCase + suffix (`ExpenseModel`, `ExpenseService`)
-- **Database**: snake_case tables/columns (`expenses`, `farm_id`)
-
-## File Patterns
-
-### 1. Schema File (`{resource}.schema.ts`)
+## 1. Schema File (`{resource}.schema.ts`)
 
 ```typescript
 import { Static, Type } from '@sinclair/typebox';
@@ -71,7 +46,7 @@ export const createResourceSchema = createPostEndpointSchema({
 });
 ```
 
-### 2. Model File (`{resource}.model.ts`)
+## 2. Model File (`{resource}.model.ts`)
 
 ```typescript
 import { DataTypes, Model, Sequelize } from 'sequelize';
@@ -125,7 +100,7 @@ export const initResourceModel = (sequelize: Sequelize) => ResourceModel.init({
 });
 ```
 
-### 3. Service File (`{resource}.service.ts`)
+## 3. Service File (`{resource}.service.ts`)
 
 ```typescript
 import { BaseService } from '../../services/base.service';
@@ -157,7 +132,7 @@ export class ResourceService extends BaseService {
 }
 ```
 
-### 4. Routes File (`{resource}.routes.ts`)
+## 4. Routes File (`{resource}.routes.ts`)
 
 ```typescript
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
@@ -201,7 +176,7 @@ const resourceRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 export default resourceRoutes;
 ```
 
-### 5. Serializer File (`{resource}.serializer.ts`)
+## 5. Serializer File (`{resource}.serializer.ts`)
 
 ```typescript
 import { encodeId } from '../../utils/id-hash-util';
@@ -225,7 +200,7 @@ export class ResourceSerializer {
 }
 ```
 
-### 6. Index File (`index.ts`)
+## 6. Index File (`index.ts`)
 
 ```typescript
 import { FastifyPluginAsync } from 'fastify';
@@ -237,41 +212,3 @@ const resourcePlugin: FastifyPluginAsync = async (fastify) => {
 
 export default resourcePlugin;
 ```
-
-## Essential Rules
-
-1. **Always use TypeBox** for schemas and generate Static types
-2. **Use `declare`** in models (no getters)
-3. **Extend BaseService** for all services
-4. **Encode/decode IDs** using `id-hash-util`
-5. **Use schema-builder utilities** for endpoint schemas
-6. **Handle errors** with `fastify.handleDbError(error, reply)`
-7. **Wrap complex operations** in transactions
-8. **Type requests** when accessing body/params
-9. **Use farm scoping** with `request.lastVisitedFarmId`
-10. **Serialize all responses** consistently
-
-## Import Order
-
-```typescript
-// 1. External libraries
-import { FastifyInstance } from 'fastify';
-import { Type, Static } from '@sinclair/typebox';
-
-// 2. Utils
-import { createPostEndpointSchema } from '../../utils/schema-builder';
-import { encodeId, decodeId } from '../../utils/id-hash-util';
-
-// 3. Related resources (if needed)
-import { RelatedResourceResponse } from '../related/related.schema';
-
-// 4. Local files
-import { ResourceModel } from './resource.model';
-```
-
-## Database Conventions
-
-- Tables: `snake_case` plural (`expenses`, `animal_measurements`)
-- Columns: `snake_case` with field mapping (`farmId` → `farm_id`)
-- Foreign keys: `{table_singular}_id` (`farm_id`, `animal_id`)
-- Indexes: `idx_{table}_{columns}`
