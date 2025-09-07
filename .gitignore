@@ -35,6 +35,7 @@ coverage/
 
 .bmad-core
 .claude
+.bmad-core/*
 .cursor
 .seeded
 
