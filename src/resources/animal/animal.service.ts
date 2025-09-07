@@ -43,6 +43,18 @@ export class AnimalService extends BaseService {
 	private static readonly ALLOWED_FILTERS: FilterConfig = {
 		sex: FilterConfigBuilder.enum('sex', Object.values(AnimalSex)),
 		groupName: FilterConfigBuilder.string('groupName'),
+		speciesId: {
+			attribute: 'speciesId',
+			operator: 'eq',
+			type: 'number',
+			transform: (value: string) => {
+				const decoded = decodeId(value);
+				if (!decoded) {
+					throw new Error(`Invalid speciesId: ${value}`);
+				}
+				return decoded;
+			},
+		},
 	};
 
 	async getAnimals(farmId: number, language: UserLanguage, includeParam?: string, filters?: Record<string, string>): Promise<AnimalModel[] | null> {
