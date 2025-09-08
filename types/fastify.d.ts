@@ -11,6 +11,7 @@ import { InvitationService } from '../src/resources/invitation/invitation.servic
 import { SpeciesService } from '../src/resources/species/species.service';
 import { SpeciesTranslationService } from '../src/resources/species-translation/species-translation.service';
 import { UserService } from '../src/resources/user/user.service';
+import { ExpenseService } from '../src/resources/expense/expense.service';
 
 declare module 'fastify' {
 	interface FastifyInstance {
@@ -29,6 +30,7 @@ declare module 'fastify' {
 		speciesService: SpeciesService;
 		speciesTranslationService: SpeciesTranslationService;
 		userService: UserService;
+		expenseService: ExpenseService;
 
 		// Helpers
 		handleDbError: (error: unknown, reply: FastifyReply) => void;

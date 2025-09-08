@@ -1,0 +1,115 @@
+meta {
+  name: Update Expense
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:8080/api/v1/expenses/AdWNDqgV
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "amount": 130.75,
+    "description": "Updated monthly feed supply - price increase",
+    "paymentMethod": "credit_card",
+    "status": "paid"
+  }
+}
+
+docs {
+  # Update Expense
+
+  Updates an existing expense record for the authenticated user's current farm.
+
+  ## Authentication
+
+  **Required**: JWT cookie from login endpoint
+
+  ## Path Parameters
+
+  - `id` (string, required): Encoded ID of the expense to update
+
+  ## Request Body
+
+  **All fields are optional** - only provide fields you want to update:
+
+  - `date` (string): Date when the expense occurred (YYYY-MM-DD format)
+  - `amount` (number): Total cost of the expense (minimum 0)
+  - `description` (string): Free text notes about the expense
+  - `category` (string): Type of expense
+    - Values: `"feed"`, `"veterinary"`, `"transport"`, `"equipment"`, `"labor"`, `"utilities"`, `"maintenance"`, `"other"`
+  - `speciesId` (string): Encoded ID of related species
+  - `breedId` (string): Encoded ID of related breed
+  - `animalId` (string): Encoded ID of specific animal if applicable
+  - `lotId` (string): Encoded ID of animal group/lot if applicable
+  - `vendor` (string): Supplier or vendor name
+  - `paymentMethod` (string): How the payment was made
+    - Values: `"cash"`, `"bank_transfer"`, `"credit_card"`, `"debit_card"`, `"check"`, `"other"`
+  - `invoiceNumber` (string): External invoice or receipt reference
+  - `quantity` (number): Number of units purchased (minimum 0)
+  - `quantityUnit` (string): Type of units
+    - Values: `"kg"`, `"liters"`, `"units"`, `"boxes"`, `"bags"`, `"doses"`, `"hours"`, `"other"`
+  - `unitCost` (number): Price per unit (minimum 0)
+  - `status` (string): Payment status
+    - Values: `"pending"`, `"paid"`, `"reimbursed"`
+
+  ## Validation Rules
+
+  - Same validation rules as create expense apply
+  - If both current and new `quantity` and `unitCost` values result in both being present, `amount` must equal the calculation
+  - If updating `quantity`, `quantityUnit` must also be present (either existing or provided in update)
+  - Expense must belong to the current farm
+
+  ## Response
+
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_expense_id",
+      "farmId": "encoded_farm_id",
+      "date": "2025-01-15",
+      "amount": 130.75,
+      "description": "Updated monthly feed supply - price increase",
+      "category": "feed",
+      "speciesId": "encoded_species_id",
+      "breedId": "encoded_breed_id",
+      "animalId": null,
+      "lotId": null,
+      "vendor": "Farm Supply Co.",
+      "paymentMethod": "credit_card",
+      "invoiceNumber": "INV-2025-001",
+      "quantity": 50,
+      "quantityUnit": "bags",
+      "unitCost": 2.51,
+      "status": "paid",
+      "createdBy": "encoded_user_id",
+      "createdAt": "2025-01-15T10:30:00.000Z",
+      "updatedAt": "2025-01-15T11:45:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2025-01-15T11:45:00.000Z"
+    }
+  }
+  ```
+
+  **Error Responses**:
+  - `400`: Invalid request body (validation failures, amount calculation mismatch, etc.)
+  - `404`: Expense not found or user doesn't have access
+
+  ## Notes
+
+  - Only provided fields are updated, others remain unchanged
+  - Expense must belong to the authenticated user's currently visited farm
+  - Server-side validation ensures data consistency
+  - The `updatedAt` timestamp is automatically updated
+}

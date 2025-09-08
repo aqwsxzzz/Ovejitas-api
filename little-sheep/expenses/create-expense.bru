@@ -1,0 +1,122 @@
+meta {
+  name: Create Expense
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/api/v1/expenses
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "date": "2025-01-15",
+    "amount": 125.50,
+    "description": "Monthly feed supply for cattle",
+    "category": "feed",
+    "speciesId": "AdWNDqgV",
+    "breedId": "BdXMErgW",
+    "vendor": "Farm Supply Co.",
+    "paymentMethod": "bank_transfer",
+    "invoiceNumber": "INV-2025-001",
+    "quantity": 50,
+    "quantityUnit": "bags",
+    "unitCost": 2.51,
+    "status": "paid"
+  }
+}
+
+docs {
+  # Create Expense
+
+  Creates a new expense record for the authenticated user's current farm.
+
+  ## Authentication
+
+  **Required**: JWT cookie from login endpoint
+
+  ## Request Body
+
+  **Required Fields:**
+  - `date` (string): Date when the expense occurred (YYYY-MM-DD format)
+  - `amount` (number): Total cost of the expense (minimum 0)
+  - `category` (string): Type of expense
+    - Values: `"feed"`, `"veterinary"`, `"transport"`, `"equipment"`, `"labor"`, `"utilities"`, `"maintenance"`, `"other"`
+
+  **Optional Fields:**
+  - `description` (string): Free text notes about the expense
+  - `speciesId` (string): Encoded ID of related species
+  - `breedId` (string): Encoded ID of related breed
+  - `animalId` (string): Encoded ID of specific animal if applicable
+  - `lotId` (string): Encoded ID of animal group/lot if applicable
+  - `vendor` (string): Supplier or vendor name
+  - `paymentMethod` (string): How the payment was made
+    - Values: `"cash"`, `"bank_transfer"`, `"credit_card"`, `"debit_card"`, `"check"`, `"other"`
+  - `invoiceNumber` (string): External invoice or receipt reference
+  - `quantity` (number): Number of units purchased (minimum 0)
+  - `quantityUnit` (string): Type of units (required if quantity is provided)
+    - Values: `"kg"`, `"liters"`, `"units"`, `"boxes"`, `"bags"`, `"doses"`, `"hours"`, `"other"`
+  - `unitCost` (number): Price per unit (minimum 0)
+  - `status` (string): Payment status (defaults to "paid")
+    - Values: `"pending"`, `"paid"`, `"reimbursed"`
+
+  ## Validation Rules
+
+  - If both `quantity` and `unitCost` are provided, `amount` must equal `quantity × unitCost`
+  - If `quantity` is provided, `quantityUnit` is required
+  - If `breedId` is provided, it must belong to the specified `speciesId`
+  - If `animalId` is provided, it must belong to the current farm
+
+  ## Response
+
+  **Success (201)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_expense_id",
+      "farmId": "encoded_farm_id",
+      "date": "2025-01-15",
+      "amount": 125.50,
+      "description": "Monthly feed supply for cattle",
+      "category": "feed",
+      "speciesId": "encoded_species_id",
+      "breedId": "encoded_breed_id",
+      "animalId": null,
+      "lotId": null,
+      "vendor": "Farm Supply Co.",
+      "paymentMethod": "bank_transfer",
+      "invoiceNumber": "INV-2025-001",
+      "quantity": 50,
+      "quantityUnit": "bags",
+      "unitCost": 2.51,
+      "status": "paid",
+      "createdBy": "encoded_user_id",
+      "createdAt": "2025-01-15T10:30:00.000Z",
+      "updatedAt": "2025-01-15T10:30:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2025-01-15T10:30:00.000Z"
+    }
+  }
+  ```
+
+  **Error Responses**:
+  - `400`: Invalid request body (validation failures, amount calculation mismatch, etc.)
+  - `404`: Related entities not found (species, breed, animal)
+
+  ## Notes
+
+  - Expense is automatically associated with the user's currently visited farm
+  - The authenticated user is automatically recorded as the creator
+  - All related entity IDs must be encoded using hashids
+  - Amount calculation is validated server-side for accuracy
+  - Date must be in YYYY-MM-DD format
+}

@@ -18,6 +18,7 @@ params:query {
   include: species.translations,breed,father,mother
   language: en
   sex: female
+  ~speciesId: AdWNDqgV
 }
 
 docs {
@@ -53,6 +54,9 @@ docs {
     - Example: `sex=female` returns only female animals
   - `groupName` (string, optional): Filter animals by group name
     - Example: `groupName=Spring 2023 Batch` returns only animals in that group
+  - `speciesId` (string, optional): Filter animals by species
+    - Value: Encoded species ID (e.g., "AdWNDqgV")
+    - Example: `speciesId=AdWNDqgV` returns only animals of that species
   
   ## Response
   

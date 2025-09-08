@@ -6,6 +6,7 @@ import { AnimalService } from '../resources/animal/animal.service';
 import { AnimalMeasurementService } from '../resources/animal-measurement/animal-measurement.service';
 import { AuthService } from '../resources/auth/auth.service';
 import { BreedService } from '../resources/breed/breed.service';
+import { ExpenseService } from '../resources/expense/expense.service';
 import { FarmService } from '../resources/farm/farm.service';
 import { FarmMemberService } from '../resources/farm-member/farm-member.service';
 import { InvitationService } from '../resources/invitation/invitation.service';
@@ -21,6 +22,7 @@ const servicesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	fastify.decorate('animalMeasurementService', new AnimalMeasurementService(fastify.db));
 	fastify.decorate('authService', new AuthService(fastify.db));
 	fastify.decorate('breedService', new BreedService(fastify.db));
+	fastify.decorate('expenseService', new ExpenseService(fastify.db));
 	fastify.decorate('farmService', new FarmService(fastify.db));
 	fastify.decorate('farmMemberService', new FarmMemberService(fastify.db));
 	fastify.decorate('invitationService', new InvitationService(fastify.db));
