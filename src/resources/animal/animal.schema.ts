@@ -1,6 +1,6 @@
 import { SpeciesResponse, SpeciesResponseSchema } from './../species/species.schema';
 import { Static, Type } from '@sinclair/typebox';
-import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createGetEndpointSchema, createPostEndpointSchema, createDeleteEndpointSchema } from '../../utils/schema-builder';
 import { BreedResponse, BreedResponseSchema } from '../breed/breed.schema';
 import { AnimalMeasurementResponse, AnimalMeasurementResponseSchema } from '../animal-measurement/animal-measurement.schema';
 import { AnimalModel } from './animal.model';
@@ -235,5 +235,10 @@ export type AnimalDashboardResponse = Static<typeof AnimalDashboardResponseSchem
 
 export const getAnimalDashboardSchema = createGetEndpointSchema({
 	dataSchema: AnimalDashboardResponseSchema,
+	errorCodes: [400, 404],
+});
+
+export const deleteAnimalSchema = createDeleteEndpointSchema({
+	params: AnimalParamsSchema,
 	errorCodes: [400, 404],
 });

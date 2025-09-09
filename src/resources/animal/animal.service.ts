@@ -195,6 +195,22 @@ export class AnimalService extends BaseService {
 		}));
 	}
 
+	async deleteAnimal(id: number, farmId: number): Promise<boolean> {
+		return this.db.sequelize.transaction(async (transaction) => {
+			const animal = await this.db.models.Animal.findOne({
+				where: { id, farmId },
+				transaction,
+			});
+
+			if (!animal) {
+				return false;
+			}
+
+			await animal.destroy({ transaction });
+			return true;
+		});
+	}
+
 	private decodeBulkCreateIds(encodedSpeciesId: string, encodedBreedId: string): { speciesId: number; breedId: number } {
 		const speciesId = decodeId(encodedSpeciesId);
 		const breedId = decodeId(encodedBreedId);
