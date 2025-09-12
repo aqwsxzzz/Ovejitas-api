@@ -1,9 +1,7 @@
 import { BaseService } from '../../services/base.service';
 import { decodeId } from '../../utils/id-hash-util';
-import { hashPassword } from '../../utils/password-util';
 import { createInvitationToken } from '../../utils/token-util';
 import { FarmMemberRole } from '../farm-member/farm-member.schema';
-import { UserLanguage } from '../user/user.schema';
 import { InvitationStatus, InvitationAcceptInput, InvitationCreateInput, ListInvitationParams } from './invitation.schema';
 
 const MAX_FREE_USER_FARMS = 2;
@@ -46,7 +44,7 @@ export class InvitationService extends BaseService {
 	// Accept Invitation
 	async acceptInvitation(data: InvitationAcceptInput) {
 
-		const { token, password, displayName, language } = data;
+		const { token } = data;
 		const invitation = await this.db.models.Invitation.findOne({ where: { token, status: 'pending' } });
 
 		if (!invitation) throw new Error('Invalid or expired invitation token');
@@ -59,17 +57,10 @@ export class InvitationService extends BaseService {
 			return invitation;
 		}
 
-		let user = await this.db.models.User.findOne({ where: { email: invitation.dataValues.email } });
+		const user = await this.db.models.User.findOne({ where: { email: invitation.dataValues.email } });
 
 		if (!user) {
-			const hashedPassword = await hashPassword(password);
-			user = await this.db.models.User.create({
-				displayName,
-				email: invitation.dataValues.email,
-				password: hashedPassword,
-				language: (language as UserLanguage) || UserLanguage.ES,
-				lastVisitedFarmId: Number(invitation.dataValues.farmId),
-			});
+			throw new Error('User not found');
 		}
 		const farmCount = await this.getUserFarmCount(user.dataValues.id);
 
@@ -91,12 +82,12 @@ export class InvitationService extends BaseService {
 	// List Invitations
 	async listInvitations(data: ListInvitationParams) {
 		const { farmId } = data;
-		const decodedFarmId = decodeId(farmId);
+		const decodedFarmId = decodeId(farmId!);
 
 		if (typeof decodedFarmId !== 'number') throw new Error('Invalid farm ID');
 
 		const invitations = await this.db.models.Invitation.findAll({
-			where: { farmId: String(decodedFarmId), status: InvitationStatus.PENDING },
+			where: { farmId: decodedFarmId, status: InvitationStatus.PENDING },
 		});
 
 		return invitations;

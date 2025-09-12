@@ -1,6 +1,5 @@
 import { Static, Type } from '@sinclair/typebox';
 import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
-import { UserLanguage } from '../user/user.schema';
 import { FarmMemberRole } from '../farm-member/farm-member.schema';
 
 export enum InvitationStatus {
@@ -35,9 +34,7 @@ const InvitationCreateSchema = Type.Object({
 
 const InvitationAcceptSchema = Type.Object({
 	token: Type.String(),
-	password: Type.String({ minLength: 8 }),
-	displayName: Type.String({ minLength: 1 }),
-	language: Type.Optional(Type.Enum(UserLanguage)),
+
 }, {
 	$id: 'invitationAccept',
 	additionalProperties: false,
@@ -71,7 +68,7 @@ export const acceptInvitationSchema = createPostEndpointSchema({
 });
 
 export const listInvitationsSchema = createGetEndpointSchema({
-	params: ListInvitationParamsSchema,
-	dataSchema: InvitationResponseSchema,
+	querystring: ListInvitationParamsSchema,
+	dataSchema: Type.Array(InvitationResponseSchema),
 	errorCodes: [400, 404],
 });

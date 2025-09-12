@@ -41,9 +41,9 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
 	// List Invitations
 	fastify.get('/', {
 		schema: listInvitationsSchema,
-	}, async (request: FastifyRequest<{ Params: ListInvitationParams }>, reply) => {
+	}, async (request: FastifyRequest<{ Querystring: ListInvitationParams }>, reply) => {
 		try {
-			const data = request.params;
+			const data = request.query;
 			const invitations = await fastify.invitationService.listInvitations(data);
 			const serializedInvitations = InvitationSerializer.serializeMany(invitations);
 			reply.success(serializedInvitations);
