@@ -1,5 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import {
+	acceptInvitationSchema,
 	createInvitationSchema,
 	InvitationAcceptInput,
 	InvitationCreateInput,
@@ -25,7 +26,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Accept Invitation
 	fastify.post('/accept', {
-		schema: createInvitationSchema,
+		schema: acceptInvitationSchema,
 	}, async (request: FastifyRequest<{ Body: InvitationAcceptInput }>, reply) => {
 		try {
 			const data = request.body;
