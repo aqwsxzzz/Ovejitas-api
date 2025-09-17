@@ -1,6 +1,6 @@
 import { BaseService } from '../../services/base.service';
 import { FarmMemberModel } from './farm-member.model';
-import { FarmMemberCreateInput } from './farm-member.schema';
+import { FarmMemberCreateInput, FarmMemberWithUser } from './farm-member.schema';
 
 export class FarmMemberService extends BaseService {
 
@@ -9,10 +9,15 @@ export class FarmMemberService extends BaseService {
 		return farmMember;
 	}
 
-	async getFarmMembers(farmId: number): Promise<FarmMemberModel[]> {
+	async getFarmMembersWithUsers(farmId: number): Promise<FarmMemberWithUser[]> {
 		const farmMembers = await this.db.models.FarmMember.findAll({
 			where: { farmId },
+			include: [{
+				model: this.db.models.User,
+				as: 'user',
+				attributes: ['id', 'displayName', 'email'],
+			}],
 		});
-		return farmMembers;
+		return farmMembers as unknown as FarmMemberWithUser[];
 	}
 }

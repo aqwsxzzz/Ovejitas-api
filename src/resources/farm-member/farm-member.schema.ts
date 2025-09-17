@@ -25,6 +25,13 @@ const FarmMemberParamsSchema = Type.Pick(FarmMemberSchema, ['id'], {
 	additionalProperties: false,
 });
 
+const FarmMemberFarmParamsSchema = Type.Object({
+	farmId: Type.String(),
+}, {
+	$id: 'farmMemberFarmParams',
+	additionalProperties: false,
+});
+
 const FarmMemberCreateSchema = Type.Pick(FarmMemberSchema, ['farmId','userId','role'], {
 	$id: 'farmMemberCreate',
 	additionalProperties: false,
@@ -43,14 +50,46 @@ const FarmMemberResponseSchema = Type.Object({
 	additionalProperties: false,
 });
 
+const FarmMemberWithUserResponseSchema = Type.Object({
+	id: Type.String(),
+	farmId: Type.String(),
+	userId: Type.String(),
+	role: Type.Enum(FarmMemberRole),
+	user: Type.Object({
+		id: Type.String(),
+		displayName: Type.String(),
+		email: Type.String(),
+	}),
+	createdAt: Type.String({ format: 'date-time' }),
+	updatedAt: Type.String({ format: 'date-time' }),
+}, {
+	$id: 'farmMemberWithUserResponse',
+	additionalProperties: false,
+});
+
+const FarmMemberListResponseSchema = Type.Array(FarmMemberWithUserResponseSchema, {
+	$id: 'farmMemberListResponse',
+});
+
 export type FarmMember = Static<typeof FarmMemberSchema>;
 export type FarmMemberCreateInput = Static<typeof FarmMemberCreateSchema>;
 export type FarmMemberUpdateInput = Static<typeof FarmMemberUpdateSchema>;
 export type FarmMemberResponse = Static<typeof FarmMemberResponseSchema>;
 export type FarmMemberParamsSchema = Static<typeof FarmMemberParamsSchema>;
+export type FarmMemberFarmParams = Static<typeof FarmMemberFarmParamsSchema>;
+export type FarmMemberWithUserResponse = Static<typeof FarmMemberWithUserResponseSchema>;
+export type FarmMemberListResponse = Static<typeof FarmMemberListResponseSchema>;
 
 export interface FarmMemberWithFarm extends FarmMemberModel {
 	farm: FarmModel;
+}
+
+export interface FarmMemberWithUser extends FarmMemberModel {
+	user: {
+		id: number;
+		displayName: string;
+		email: string;
+	};
 }
 
 export const createFarmMemberSchema = createPostEndpointSchema({
@@ -69,5 +108,11 @@ export const updateFarmMemberSchema = createPostEndpointSchema({
 export const getFarmMemberSchema = createGetEndpointSchema({
 	params: FarmMemberParamsSchema,
 	dataSchema: FarmMemberResponseSchema,
+	errorCodes: [404],
+});
+
+export const getFarmMembersSchema = createGetEndpointSchema({
+	params: FarmMemberFarmParamsSchema,
+	dataSchema: FarmMemberListResponseSchema,
 	errorCodes: [404],
 });
