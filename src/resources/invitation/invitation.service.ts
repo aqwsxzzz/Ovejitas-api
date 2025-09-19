@@ -1,13 +1,21 @@
+import { FindOptions } from 'sequelize';
 import { BaseService } from '../../services/base.service';
 import { decodeId } from '../../utils/id-hash-util';
 import { createInvitationToken } from '../../utils/token-util';
 import { FarmMemberRole } from '../farm-member/farm-member.schema';
 import { InvitationStatus, InvitationAcceptInput, InvitationCreateInput, ListInvitationParams } from './invitation.schema';
+import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
 
 const MAX_FREE_USER_FARMS = 2;
 const INVITATION_EXPIRY_DAYS = 7;
 
 export class InvitationService extends BaseService {
+
+	private static readonly ALLOWED_FILTERS: FilterConfig = {
+		status: FilterConfigBuilder.enum('status', Object.values(InvitationStatus)),
+		email: FilterConfigBuilder.string('email', 'ilike'),
+
+	};
 
 	 async createInvitation(data: InvitationCreateInput) {
 		const { email, farmId } = data;
@@ -81,14 +89,22 @@ export class InvitationService extends BaseService {
 
 	// List Invitations
 	async listInvitations(data: ListInvitationParams) {
-		const { farmId } = data;
+		const { farmId, status, email } = data;
 		const decodedFarmId = decodeId(farmId!);
 
 		if (typeof decodedFarmId !== 'number') throw new Error('Invalid farm ID');
 
-		const invitations = await this.db.models.Invitation.findAll({
-			where: { farmId: decodedFarmId, status: InvitationStatus.PENDING },
-		});
+		const filterWhere = this.parseFilters({ status: status ?? '', email: email ?? '' }, InvitationService.ALLOWED_FILTERS);
+
+		// Combine base condition with filters
+		const findOptions: FindOptions = {
+			where: {
+				farmId: decodedFarmId,
+				...filterWhere,
+			},
+		};
+
+		const invitations = await this.db.models.Invitation.findAll(findOptions);
 
 		return invitations;
 	}

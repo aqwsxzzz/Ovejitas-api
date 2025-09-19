@@ -48,6 +48,8 @@ const InvitationResponseSchema = Type.Object({
 
 const ListInvitationParamsSchema = Type.Object({
 	farmId: Type.String(),
+	status: Type.Optional(Type.Enum(InvitationStatus)),
+	email: Type.Optional(Type.String()),
 });
 
 export type Invitation = Static<typeof InvitationSchema>;

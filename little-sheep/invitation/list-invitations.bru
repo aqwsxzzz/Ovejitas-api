@@ -5,9 +5,15 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/api/v1/invitations
+  url: http://localhost:8080/api/v1/invitations?farmId={{farmId}}
   body: none
   auth: none
+}
+
+params:query {
+  farmId: {{farmId}}
+  ~status: pending
+  ~email: user@example.com
 }
 
 headers {
@@ -16,13 +22,37 @@ headers {
 
 docs {
   # List Invitations
-  
-  Retrieves all invitations for farms that the authenticated user owns.
-  
+
+  Retrieves invitations for a specific farm with optional filtering by status and email.
+
   ## Authentication
-  
+
   **Required**: JWT cookie from login endpoint
-  
+
+  ## Query Parameters
+
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | farmId | string | Yes | Encoded farm ID to list invitations for |
+  | status | string | No | Filter by invitation status (pending, accepted, expired, cancelled) |
+  | email | string | No | Filter by recipient email (case-insensitive) |
+
+  ## Example Requests
+
+  ```
+  # Get all invitations for a farm
+  GET /api/v1/invitations?farmId=encoded_farm_id
+
+  # Get only pending invitations
+  GET /api/v1/invitations?farmId=encoded_farm_id&status=pending
+
+  # Get invitations for a specific email
+  GET /api/v1/invitations?farmId=encoded_farm_id&email=user@example.com
+
+  # Combine filters
+  GET /api/v1/invitations?farmId=encoded_farm_id&status=pending&email=user@example.com
+  ```
+
   ## Response
   
   **Success (200)**:
@@ -72,12 +102,14 @@ docs {
   - `"cancelled"` - Invitation was cancelled by the farm owner
   
   ## Notes
-  
-  - Only shows invitations for farms owned by the authenticated user
-  - Results include all invitation statuses (pending, accepted, expired, cancelled)
-  - Results are ordered by creation date (newest first)
+
+  - farmId parameter is required - specifies which farm's invitations to retrieve
+  - User must have access to the specified farm
+  - Email filtering is case-insensitive (user@example.com matches User@Example.com)
+  - Status filtering accepts: pending, accepted, expired, cancelled
+  - When no filters are specified (except farmId), returns all invitations for that farm
   - All IDs are encoded using hashids for security
-  - Empty array returned if user owns no farms or has sent no invitations
+  - Empty array returned if no invitations match the filters
   - Tokens are included in response for reference but should not be shared
   - Expired invitations are automatically marked but not deleted
 }
