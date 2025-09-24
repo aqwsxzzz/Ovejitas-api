@@ -1,0 +1,103 @@
+meta {
+  name: Get Farm Members
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:8080/api/v1/farm-members/:farmId/members
+  body: none
+  auth: none
+}
+
+params:path {
+  farmId: encoded_farm_id_here
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Get Farm Members
+
+  Retrieves all members of a specific farm, including their user details.
+
+  ## Authentication
+
+  **Required**: JWT cookie from login endpoint
+
+  ## Parameters
+
+  - **farmId** (path parameter): The encoded farm ID (hashid format)
+
+  ## Response
+
+  **Success (200)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Farm members retrieved successfully",
+    "data": [
+      {
+        "id": "encoded_member_id_1",
+        "farmId": "encoded_farm_id",
+        "userId": "encoded_user_id_1",
+        "role": "owner",
+        "user": {
+          "id": "encoded_user_id_1",
+          "displayName": "John Doe",
+          "email": "john.doe@example.com"
+        },
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "encoded_member_id_2",
+        "farmId": "encoded_farm_id",
+        "userId": "encoded_user_id_2",
+        "role": "member",
+        "user": {
+          "id": "encoded_user_id_2",
+          "displayName": "Jane Smith",
+          "email": "jane.smith@example.com"
+        },
+        "createdAt": "2024-01-02T00:00:00.000Z",
+        "updatedAt": "2024-01-02T00:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+
+  **Error Responses**:
+
+  **404 Not Found**:
+  - Invalid or non-existent farm ID
+  ```json
+  {
+    "status": "error",
+    "message": "Farm not found"
+  }
+  ```
+
+  **401 Unauthorized**:
+  - No authentication token provided
+  ```json
+  {
+    "status": "error",
+    "message": "Authentication required"
+  }
+  ```
+
+  ## Notes
+
+  - Returns all members associated with the specified farm
+  - Each member includes their role (owner/member) and user details
+  - All IDs are encoded using hashids for security
+  - Empty array returned if farm has no members (though this shouldn't happen as farms require at least an owner)
+  - User must be authenticated to access this endpoint
+  - Access control should verify user has permission to view this farm's members
+}
