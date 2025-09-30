@@ -17,32 +17,24 @@ headers {
 body:json {
   {
     "token": "291e7c3d487df6dcdce0547c2804c8ef5bca594bd6605bdfdd8907c152cbf223",
-    "password": "SecurePassword123",
-    "displayName": "New Farm Member",
-    "language": "en"
+    "email": "newmember@example.com"
   }
 }
 
 docs {
   # Accept Invitation
-  
-  Accepts a farm invitation by creating a new user account and adding them to the farm.
-  
+
+  Accepts a pending farm invitation for an existing user and adds them to the farm.
+
   ## Authentication
-  
-  **Not Required**: This endpoint creates the user account and authentication
-  
+
+  **Required**: User must be authenticated with JWT cookie
+
   ## Request Body
-  
+
   **Required Fields:**
   - `token` (string): The invitation token received via email
-  - `password` (string): Password for the new user account (minimum 8 characters)
-  - `displayName` (string): Display name for the new user (minimum 1 character)
-  
-  **Optional Fields:**
-  - `language` (string): Preferred language for the user interface
-    - Allowed values: `"en"`, `"es"`, `"fr"` (based on UserLanguage enum)
-    - Defaults to system default if not provided
+  - `email` (string): The email address that received the invitation (must match the invitation email)
   
   ## Response
   
@@ -69,23 +61,25 @@ docs {
   ```
   
   **Error Responses**:
-  - `400`: Invalid token, password too short, or missing required fields
+  - `400`: Invalid token, email mismatch, or missing required fields
+    - "Email does not match the invitation" - The provided email doesn't match the invitation
   - `404`: Invitation not found, expired, or already used
-  
+
   ## Process Flow
-  
+
   When an invitation is accepted:
-  1. **User Creation**: A new user account is created with the provided details
-  2. **Farm Membership**: User is automatically added to the farm as a member
-  3. **Invitation Status**: Invitation status changes from "pending" to "accepted"
-  4. **Email Association**: The email from the invitation becomes the user's login email
-  
+  1. **Email Validation**: Verifies the provided email matches the invitation email
+  2. **User Lookup**: Finds the existing user account by email
+  3. **Farm Limit Check**: Verifies user hasn't reached max farm memberships (2 for free users)
+  4. **Farm Membership**: User is added to the farm with the role from invitation
+  5. **Invitation Status**: Invitation status changes from "pending" to "accepted"
+
   ## Notes
-  
+
+  - **Email Security**: Email must match the invitation to prevent unauthorized access
   - **One-time Use**: Each invitation token can only be used once
   - **Expiration**: Invitations expire after 7 days
-  - **Account Creation**: This creates a complete user account
-  - **Automatic Login**: User should be redirected to login after successful acceptance
-  - **Email Verification**: The email is considered verified since it received the invitation
+  - **Existing Users Only**: User account must already exist (use signup flow for new users)
+  - **Farm Limit**: Free users can join up to 2 farms maximum
   - **Role Assignment**: User is assigned the role specified in the invitation (usually "member")
 }

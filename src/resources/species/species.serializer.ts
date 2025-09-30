@@ -1,6 +1,5 @@
 import { encodeId } from '../../utils/id-hash-util';
 import { SpeciesTranslationModel } from '../species-translation/species-translation.model';
-import { SpeciesTranslationSerializer } from '../species-translation/species-translation.serializer';
 import { SpeciesModel } from './species.model';
 import { SpeciesResponse } from './species.schema';
 
@@ -18,7 +17,13 @@ export class SpeciesSerializer {
 			id: encodeId(species.id),
 			createdAt: species.createdAt,
 			updatedAt: species.updatedAt,
-			translations: species.translations.map(t => SpeciesTranslationSerializer.serialize(t)),
+			translations: species.translations.map(t => ({
+				id: encodeId(t.id),
+				language: t.language,
+				name: t.name,
+				createdAt: t.createdAt,
+				updatedAt: t.updatedAt,
+			})),
 		};
 	}
 

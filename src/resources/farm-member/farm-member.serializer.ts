@@ -1,8 +1,9 @@
 import { encodeId } from '../../utils/id-hash-util';
-import { FarmMemberWithUser, FarmMemberWithUserResponse } from './farm-member.schema';
+import { FarmMemberWithUser, FarmMemberWithUserResponse, FarmMemberRole } from './farm-member.schema';
+import { getEntityPermissions } from '../../utils/permission.serializer';
 
 export class FarmMemberSerializer {
-	static serialize(farmMember: FarmMemberWithUser): FarmMemberWithUserResponse {
+	static serialize(farmMember: FarmMemberWithUser, userRole?: FarmMemberRole): FarmMemberWithUserResponse {
 		return {
 			id: encodeId(farmMember.dataValues.id),
 			farmId: encodeId(farmMember.dataValues.farmId),
@@ -15,10 +16,11 @@ export class FarmMemberSerializer {
 			},
 			createdAt: farmMember.dataValues.createdAt,
 			updatedAt: farmMember.dataValues.updatedAt,
+			...(userRole && { permissions: getEntityPermissions('member', userRole) }),
 		};
 	}
 
-	static serializeMany(farmMembers: FarmMemberWithUser[]): FarmMemberWithUserResponse[] {
-		return farmMembers.map(farmMember => this.serialize(farmMember));
+	static serializeMany(farmMembers: FarmMemberWithUser[], userRole?: FarmMemberRole): FarmMemberWithUserResponse[] {
+		return farmMembers.map(farmMember => this.serialize(farmMember, userRole));
 	}
 }

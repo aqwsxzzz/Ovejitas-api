@@ -83,6 +83,7 @@ docs {
       "groupName": "Spring 2023 Batch",
       "createdAt": "2024-01-01T00:00:00.000Z",
       "updatedAt": "2024-01-01T00:00:00.000Z",
+      "permissions": ["animals:read", "animals:create", "animals:delete"],
       "species": {
         "id": "encoded_species_id",
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -141,8 +142,15 @@ docs {
   - `400`: Invalid animal ID format
   - `404`: Animal not found
   
+  ## Permissions
+
+  The response includes a `permissions` array indicating what actions the authenticated user can perform:
+  - `animals:read` - Can view animal details (all authenticated users)
+  - `animals:create` - Can create new animals (owners and members)
+  - `animals:delete` - Can delete animals (owners only)
+
   ## Notes
-  
+
   - Animal ID is globally unique, no farm filtering is applied
   - All IDs are encoded using hashids for security
   - Include relationships are dynamically loaded based on query parameter
@@ -150,4 +158,5 @@ docs {
   - Parent animal data (father/mother) includes limited fields for performance
   - The lastMeasurement include returns only the most recent measurement
   - If no includes are specified, only the base animal data is returned
+  - Permissions array is included when user is authenticated with a farm role
 }

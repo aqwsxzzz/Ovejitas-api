@@ -62,6 +62,7 @@ const FarmMemberWithUserResponseSchema = Type.Object({
 	}),
 	createdAt: Type.String({ format: 'date-time' }),
 	updatedAt: Type.String({ format: 'date-time' }),
+	permissions: Type.Optional(Type.Array(Type.String())),
 }, {
 	$id: 'farmMemberWithUserResponse',
 	additionalProperties: false,

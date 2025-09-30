@@ -27,8 +27,21 @@ export class AuthService extends BaseService {
 			throw new Error('Invalid credentials');
 		}
 
+		// Fetch user's farm role from the lastVisitedFarmId
+		const farmMember = await this.db.models.FarmMember.findOne({
+			where: {
+				userId: user.dataValues.id,
+				farmId: user.dataValues.lastVisitedFarmId,
+			},
+		});
+
 		const token = createJwtToken(
-			{ id: user.dataValues.id, email: user.dataValues.email, role: user.dataValues.role },
+			{
+				id: user.dataValues.id,
+				email: user.dataValues.email,
+				role: user.dataValues.role,
+				farmRole: farmMember?.dataValues.role || FarmMemberRole.MEMBER,
+			},
 			JWT_SECRET,
 			{ expiresIn: '1d' },
 		);
@@ -93,6 +106,10 @@ export class AuthService extends BaseService {
 
 		if (!invitation) {
 			throw new Error('Invalid or expired invitation token');
+		}
+
+		if (invitation.dataValues.email !== email) {
+			throw new Error('Email does not match the invitation');
 		}
 
 		if (!invitation.dataValues.expiresAt || new Date(invitation.dataValues.expiresAt).getTime() < Date.now()) {

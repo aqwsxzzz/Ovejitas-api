@@ -3,8 +3,17 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '../resources/user/user.model';
 import { UserRole } from '../resources/user/user.schema';
+import { FarmMemberRole } from '../resources/farm-member/farm-member.schema';
+import { createAuthorizeDecorator } from '../utils/rbac';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
+interface JWTPayload {
+	id: number;
+	email: string;
+	role: UserRole;
+	farmRole: FarmMemberRole;
+}
 
 export default fp(async function authenticationPlugin(fastify: FastifyInstance) {
 	fastify.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply) {
@@ -15,8 +24,13 @@ export default fp(async function authenticationPlugin(fastify: FastifyInstance) 
 		}
 
 		try {
-			const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; role: UserRole };
-			request.user = decoded;
+			const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+			request.user = {
+				id: decoded.id,
+				email: decoded.email,
+				role: decoded.role,
+				farmRole: decoded.farmRole,
+			};
 
 			// Fetch user from DB to get lastVisitedFarmId and language
 			const user = await UserModel.findByPk(decoded.id);
@@ -32,4 +46,7 @@ export default fp(async function authenticationPlugin(fastify: FastifyInstance) 
 			return;
 		}
 	});
+
+	// Register the authorize decorator
+	fastify.decorate('authorize', createAuthorizeDecorator(fastify));
 });

@@ -1,9 +1,11 @@
 import { encodeId } from '../../utils/id-hash-util';
 import { AnimalResponse, AnimalWithIncludes, AnimalWithPossibleIncludes, AnimalDashboardResponse } from './animal.schema';
 import { AnimalMeasurementResponse } from '../animal-measurement/animal-measurement.schema';
+import { FarmMemberRole } from '../farm-member/farm-member.schema';
+import { getEntityPermissions } from '../../utils/permission.serializer';
 
 export class AnimalSerializer {
-	static serialize(animal: AnimalWithPossibleIncludes): AnimalResponse {
+	static serialize(animal: AnimalWithPossibleIncludes, userRole?: FarmMemberRole): AnimalResponse {
 		const base = {
 			id: encodeId(animal.id),
 			farmId: encodeId(animal.farmId)!,
@@ -25,7 +27,10 @@ export class AnimalSerializer {
 			groupName: animal.groupName,
 		};
 
-		const result: AnimalWithIncludes = { ...base };
+		const result: AnimalWithIncludes = {
+			...base,
+			...(userRole && { permissions: getEntityPermissions('animal', userRole) }),
+		};
 
 		if (animal.species) {
 			result.species = {
@@ -95,8 +100,8 @@ export class AnimalSerializer {
 		return result;
 	}
 
-	static serializeMany(animals: AnimalWithPossibleIncludes[]): AnimalResponse[] {
-		return animals.map(a => this.serialize(a));
+	static serializeMany(animals: AnimalWithPossibleIncludes[], userRole?: FarmMemberRole): AnimalResponse[] {
+		return animals.map(a => this.serialize(a, userRole));
 	}
 
 	static serializeDashboard(dashboardData: { count: number, species: { id: string, name: string } }[]): AnimalDashboardResponse {

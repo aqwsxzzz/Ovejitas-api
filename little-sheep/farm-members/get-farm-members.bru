@@ -50,7 +50,8 @@ docs {
           "email": "john.doe@example.com"
         },
         "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z"
+        "updatedAt": "2024-01-01T00:00:00.000Z",
+        "permissions": ["members:read", "members:invite", "members:delete"]
       },
       {
         "id": "encoded_member_id_2",
@@ -63,7 +64,8 @@ docs {
           "email": "jane.smith@example.com"
         },
         "createdAt": "2024-01-02T00:00:00.000Z",
-        "updatedAt": "2024-01-02T00:00:00.000Z"
+        "updatedAt": "2024-01-02T00:00:00.000Z",
+        "permissions": ["members:read"]
       }
     ],
     "meta": {
@@ -92,6 +94,17 @@ docs {
   }
   ```
 
+  ## Permissions
+
+  Each farm member object includes a `permissions` array indicating what actions the authenticated user can perform:
+  - `members:read` - Can view member list (all authenticated users)
+  - `members:invite` - Can invite new members (owners only)
+  - `members:delete` - Can remove members (owners only)
+
+  The permissions array reflects the authenticated user's farm role:
+  - **Owners**: `["members:read", "members:invite", "members:delete"]`
+  - **Members**: `["members:read"]`
+
   ## Notes
 
   - Returns all members associated with the specified farm
@@ -100,4 +113,5 @@ docs {
   - Empty array returned if farm has no members (though this shouldn't happen as farms require at least an owner)
   - User must be authenticated to access this endpoint
   - Access control should verify user has permission to view this farm's members
+  - Permissions array is included when user is authenticated with a farm role
 }

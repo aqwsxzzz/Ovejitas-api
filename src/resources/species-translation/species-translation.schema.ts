@@ -23,9 +23,12 @@ export const SpeciesTranslationCreateSchema = Type.Object({
 });
 
 export const SpeciesTranslationResponseSchema = Type.Object({
-	...SpeciesTranslationSchema.properties,
 	id: Type.String(),
-	speciesId: Type.String(),
+	speciesId: Type.Optional(Type.String()),
+	language: Type.String({ minLength: 2, maxLength: 2 }),
+	name: Type.String({ minLength: 1 }),
+	createdAt: Type.String({ format: 'date-time' }),
+	updatedAt: Type.String({ format: 'date-time' }),
 }, {
 	$id: 'speciesTranslationResponse',
 	additionalProperties: false,
