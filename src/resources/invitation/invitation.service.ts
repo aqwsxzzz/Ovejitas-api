@@ -52,10 +52,14 @@ export class InvitationService extends BaseService {
 	// Accept Invitation
 	async acceptInvitation(data: InvitationAcceptInput) {
 
-		const { token } = data;
+		const { token, email } = data;
 		const invitation = await this.db.models.Invitation.findOne({ where: { token, status: 'pending' } });
 
 		if (!invitation) throw new Error('Invalid or expired invitation token');
+
+		if (invitation.dataValues.email !== email) {
+			throw new Error('Email does not match the invitation');
+		}
 
 		if (!invitation.dataValues.farmId) throw new Error('Invalid farm ID');
 

@@ -108,6 +108,10 @@ export class AuthService extends BaseService {
 			throw new Error('Invalid or expired invitation token');
 		}
 
+		if (invitation.dataValues.email !== email) {
+			throw new Error('Email does not match the invitation');
+		}
+
 		if (!invitation.dataValues.expiresAt || new Date(invitation.dataValues.expiresAt).getTime() < Date.now()) {
 			invitation.setDataValue('status', InvitationStatus.EXPIRED);
 			await invitation.save({ transaction });

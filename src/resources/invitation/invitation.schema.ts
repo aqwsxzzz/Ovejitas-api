@@ -34,7 +34,7 @@ const InvitationCreateSchema = Type.Object({
 
 const InvitationAcceptSchema = Type.Object({
 	token: Type.String(),
-
+	email: Type.String({ format: 'email' }),
 }, {
 	$id: 'invitationAccept',
 	additionalProperties: false,
