@@ -14,7 +14,7 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
 			const animals = await fastify.animalService.getAnimals(farmId, language, include, filters);
 
-			const serializedAnimals = AnimalSerializer.serializeMany(animals!);
+			const serializedAnimals = AnimalSerializer.serializeMany(animals!, request.user?.farmRole);
 
 			reply.success(serializedAnimals);
 		} catch (error) {
@@ -38,7 +38,7 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 				return reply.error('Animal not found', 404);
 			}
 
-			const serializedAnimal = AnimalSerializer.serialize(animal);
+			const serializedAnimal = AnimalSerializer.serialize(animal, request.user?.farmRole);
 			reply.success(serializedAnimal);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
@@ -49,7 +49,7 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 		try {
 			const farmId = request.lastVisitedFarmId;
 			const animal = await fastify.animalService.createAnimal({ data: { ...request.body, farmId } });
-			const serializedAnimal = AnimalSerializer.serialize(animal!);
+			const serializedAnimal = AnimalSerializer.serialize(animal!, request.user?.farmRole);
 			reply.success(serializedAnimal);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
@@ -63,7 +63,7 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
 			// Serialize the created animals
 			const serializedResult = {
-				created: AnimalSerializer.serializeMany(result.created),
+				created: AnimalSerializer.serializeMany(result.created, request.user?.farmRole),
 				failed: result.failed,
 			};
 
@@ -87,7 +87,7 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 		}
 	});
 
-	fastify.delete('/:id', { schema: deleteAnimalSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Params: AnimalParams}>, reply) => {
+	fastify.delete('/:id', { schema: deleteAnimalSchema, preHandler: fastify.authorize(['animals:delete']) }, async (request: FastifyRequest<{Params: AnimalParams}>, reply) => {
 		try {
 			const { id } = request.params;
 			const farmId = request.lastVisitedFarmId;

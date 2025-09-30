@@ -39,7 +39,7 @@ const farmMemberRoutes: FastifyPluginAsync = async (fastify) => {
 			}
 
 			const farmMembers = await fastify.farmMemberService.getFarmMembersWithUsers(decodedFarmId);
-			const serializedMembers = FarmMemberSerializer.serializeMany(farmMembers);
+			const serializedMembers = FarmMemberSerializer.serializeMany(farmMembers, request.user?.farmRole);
 
 			reply.success(serializedMembers, 'Farm members retrieved successfully');
 		} catch (error) {

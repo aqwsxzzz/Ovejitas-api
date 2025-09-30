@@ -12,6 +12,7 @@ import { SpeciesService } from '../src/resources/species/species.service';
 import { SpeciesTranslationService } from '../src/resources/species-translation/species-translation.service';
 import { UserService } from '../src/resources/user/user.service';
 import { ExpenseService } from '../src/resources/expense/expense.service';
+import { FarmMemberRole } from '../src/resources/farm-member/farm-member.schema';
 
 declare module 'fastify' {
 	interface FastifyInstance {
@@ -35,6 +36,7 @@ declare module 'fastify' {
 		// Helpers
 		handleDbError: (error: unknown, reply: FastifyReply) => void;
 		authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void>;
+		authorize(permissions: string[]): (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 	}
 
 	interface FastifyRequest {
@@ -42,6 +44,7 @@ declare module 'fastify' {
 			id: number;
 			email: string;
 			role: string;
+			farmRole: FarmMemberRole;
 		} | null;
 		lastVisitedFarmId: number;
 		language: string;

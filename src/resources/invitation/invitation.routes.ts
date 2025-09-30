@@ -13,6 +13,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
 	// Create Invitation
 	fastify.post('/', {
 		schema: createInvitationSchema,
+		preHandler: fastify.authorize(['members:invite']),
 	}, async (request: FastifyRequest<{ Body: InvitationCreateInput }>, reply) => {
 		try {
 			const data = request.body;
