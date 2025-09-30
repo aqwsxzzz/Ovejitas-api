@@ -49,12 +49,19 @@ docs {
   
   **Error Responses**:
   - `400`: Invalid animal ID format
+  - `403`: Insufficient permissions (user is not a farm owner)
   - `404`: Animal not found or does not belong to the user's farm
-  
+
+  ## Permissions
+
+  This endpoint requires the `animals:delete` permission, which is only available to farm owners.
+
   ## Notes
-  
+
+  - **Permission Required**: Only farm owners can delete animals (requires `animals:delete` permission)
   - Only animals belonging to the authenticated user's current farm can be deleted
   - The deletion is permanent and cannot be undone
   - All IDs are encoded using hashids for security
   - This operation uses a database transaction to ensure data integrity
+  - Returns 403 if user doesn't have `animals:delete` permission
 }

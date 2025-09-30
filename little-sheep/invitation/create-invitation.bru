@@ -64,9 +64,13 @@ docs {
   - `404`: Farm not found or user doesn't have permission to invite
   - `409`: User is already a member of this farm or has a pending invitation
   
+  ## Permissions
+
+  This endpoint requires the `members:invite` permission, which is only available to farm owners.
+
   ## Notes
-  
-  - Only farm owners can create invitations
+
+  - **Permission Required**: Only farm owners can create invitations (requires `members:invite` permission)
   - The farm ID must be a valid encoded farm ID
   - Invitations expire after 7 days by default
   - A unique token is generated for each invitation
@@ -74,4 +78,5 @@ docs {
   - Email must not already be associated with the farm
   - The invitation token is used in the signup/accept process
   - All IDs are encoded using hashids for security
+  - Returns 403 if user doesn't have `members:invite` permission
 }

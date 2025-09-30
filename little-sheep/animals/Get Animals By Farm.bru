@@ -84,6 +84,7 @@ docs {
         "groupName": "Spring 2023 Batch",
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z",
+        "permissions": ["animals:read", "animals:create", "animals:delete"],
         "species": {
           "id": "encoded_species_id",
           "createdAt": "2024-01-01T00:00:00.000Z",
@@ -118,8 +119,19 @@ docs {
   **Error Responses**:
   - `404`: No animals found or invalid farm access
   
+  ## Permissions
+
+  Each animal object includes a `permissions` array indicating what actions the authenticated user can perform:
+  - `animals:read` - Can view animal details (all authenticated users)
+  - `animals:create` - Can create new animals (owners and members)
+  - `animals:delete` - Can delete animals (owners only)
+
+  The permissions array reflects the user's farm role:
+  - **Owners**: `["animals:read", "animals:create", "animals:delete"]`
+  - **Members**: `["animals:read", "animals:create"]`
+
   ## Notes
-  
+
   - Uses the user's `lastVisitedFarmId` to determine which farm's animals to return
   - All IDs are encoded using hashids for security
   - Include relationships are dynamically loaded based on query parameter
@@ -127,4 +139,5 @@ docs {
   - Results show animals owned by the current farm only
   - Empty array returned if no animals exist
   - Parent animal data (father/mother) includes limited fields for performance
+  - Permissions array is included when user is authenticated with a farm role
 }
