@@ -78,11 +78,13 @@ export class AnimalService extends BaseService {
 		return this.db.models.Animal.findAll(findOptions);
 	}
 
-	async createAnimal({ data }: { data: AnimalCreate & { farmId: number } }): Promise<AnimalModel | null> {
+	async createAnimal({ data, language }: { data: AnimalCreate & { farmId: number }, language: UserLanguage }): Promise<AnimalModel | null> {
 		return this.db.sequelize.transaction(async (transaction) => {
 			const { breedId, speciesId, fatherId, motherId } = await this.decodeAnimalIds(data);
 
 			const { acquisitionDate, birthDate, ...rest } = data;
+			// Remove language from rest data
+			delete (rest as Partial<AnimalCreate>).language;
 
 			if (fatherId || motherId) {
 				await this.validateParents(fatherId, motherId, transaction);
@@ -93,7 +95,28 @@ export class AnimalService extends BaseService {
 
 			const createData = { ...rest, breedId, speciesId, fatherId, motherId, name: data.name || '', ...(birthDate ? { birthDate } : {}), ...(acquisitionDate ? { acquisitionDate } : {}) };
 
-			return this.db.models.Animal.create(createData, { transaction });
+			const animal = await this.db.models.Animal.create(createData, { transaction });
+
+			// Fetch animal with species and translations
+			return this.db.models.Animal.findByPk(animal.id, {
+				include: [
+					{
+						model: this.db.models.Species,
+						as: 'species',
+						attributes: ['id', 'createdAt', 'updatedAt'],
+						include: [
+							{
+								model: this.db.models.SpeciesTranslation,
+								as: 'translations',
+								attributes: ['id', 'language', 'name', 'createdAt', 'updatedAt'],
+								where: { language },
+								required: false,
+							},
+						],
+					},
+				],
+				transaction,
+			});
 		});
 	}
 

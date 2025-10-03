@@ -91,6 +91,7 @@ export const AnimalCreateSchema = Type.Object({
 	acquisitionType: Type.Optional(Type.Enum(AnimalAcquisitionType)),
 	acquisitionDate: Type.Optional(Type.String()),
 	groupName: Type.Optional(Type.String()),
+	language: Type.Enum(UserLanguage),
 }, {
 	$id: 'animalCreate',
 	additionalProperties: false,

@@ -48,7 +48,8 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	fastify.post('/', { schema: createAnimalSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Body: AnimalCreate}>, reply) => {
 		try {
 			const farmId = request.lastVisitedFarmId;
-			const animal = await fastify.animalService.createAnimal({ data: { ...request.body, farmId } });
+			const { language } = request.body;
+			const animal = await fastify.animalService.createAnimal({ data: { ...request.body, farmId }, language });
 			const serializedAnimal = AnimalSerializer.serialize(animal!);
 			reply.success(serializedAnimal);
 		} catch (error) {
