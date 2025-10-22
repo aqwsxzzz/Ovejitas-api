@@ -33,22 +33,13 @@ export interface Database {
 }
 
 export const initDatabase = async (): Promise<Database> => {
-	const connectionString = `postgresql://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}?sslmode=require`;
-
-	const sequelize = new Sequelize(connectionString, {
+	const sequelize = new Sequelize({
 		dialect: 'postgres',
-		// host: process.env.DB_HOST,
-		// port: Number(process.env.DB_PORT),
-		// username: process.env.DB_USER,
-		// password: process.env.DB_PASS,
-		// database: process.env.DB_NAME,
-		// dialectOptions: {
-		// 	ssl: {
-		// 		require: true,
-		// 		rejectUnauthorized: false, // required for Supabase pooler
-		// 	},
-		// },
-		logging: false,
+		host: process.env.DB_HOST,
+		port: Number(process.env.DB_PORT),
+		username: process.env.DB_USER,
+		password: process.env.DB_PASS,
+		database: process.env.DB_NAME,
 	});
 
 	const User = initUserModel(sequelize);
