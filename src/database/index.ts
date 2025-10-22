@@ -4,26 +4,32 @@ import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
 import { FarmMemberModel, initFarmMemberModel } from '../resources/farm-member/farm-member.model';
 import { InvitationModel, initInvitationModel } from '../resources/invitation/invitation.model';
 import { initSpeciesModel, SpeciesModel } from '../resources/species/species.model';
-import { initSpeciesTranslationModel, SpeciesTranslationModel } from '../resources/species-translation/species-translation.model';
+import {
+	initSpeciesTranslationModel,
+	SpeciesTranslationModel,
+} from '../resources/species-translation/species-translation.model';
 import { BreedModel, initBreedModel } from '../resources/breed/breed.model';
 import { AnimalModel, initAnimalModel } from '../resources/animal/animal.model';
-import { AnimalMeasurementModel, initAnimalMeasurementModel } from '../resources/animal-measurement/animal-measurement.model';
+import {
+	AnimalMeasurementModel,
+	initAnimalMeasurementModel,
+} from '../resources/animal-measurement/animal-measurement.model';
 import { ExpenseModel, initExpenseModel } from '../resources/expense/expense.model';
 
 export interface Database {
-    sequelize: Sequelize;
-    models: {
-		User: typeof UserModel
-		Farm: typeof FarmModel
-		FarmMember: typeof FarmMemberModel
-		Invitation: typeof InvitationModel
-		Species: typeof SpeciesModel
-		SpeciesTranslation: typeof SpeciesTranslationModel
-		Breed: typeof BreedModel
-		Animal: typeof AnimalModel
-		AnimalMeasurement: typeof AnimalMeasurementModel
-		Expense: typeof ExpenseModel
-    }
+	sequelize: Sequelize;
+	models: {
+		User: typeof UserModel;
+		Farm: typeof FarmModel;
+		FarmMember: typeof FarmMemberModel;
+		Invitation: typeof InvitationModel;
+		Species: typeof SpeciesModel;
+		SpeciesTranslation: typeof SpeciesTranslationModel;
+		Breed: typeof BreedModel;
+		Animal: typeof AnimalModel;
+		AnimalMeasurement: typeof AnimalMeasurementModel;
+		Expense: typeof ExpenseModel;
+	};
 }
 
 export const initDatabase = async (): Promise<Database> => {
@@ -34,6 +40,12 @@ export const initDatabase = async (): Promise<Database> => {
 		username: process.env.DB_USER,
 		password: process.env.DB_PASS,
 		database: process.env.DB_NAME,
+		dialectOptions: {
+			ssl: {
+				require: true,
+				rejectUnauthorized: false, // required for Supabase pooler
+			},
+		},
 	});
 
 	const User = initUserModel(sequelize);
