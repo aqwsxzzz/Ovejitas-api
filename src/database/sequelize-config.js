@@ -10,6 +10,12 @@ module.exports = {
 		port: Number(process.env.DB_PORT) || 5432,
 		dialect: process.env.DB_DIALECT || 'postgres',
 		logging: process.env.NODE_ENV !== 'production',
+		dialectOptions: {
+			ssl: process.env.DB_HOST && process.env.DB_HOST.includes('supabase') ? {
+				require: true,
+				rejectUnauthorized: false,
+			} : false,
+		},
 	},
 	test: {
 		username: process.env.DB_USER || 'user',
@@ -28,5 +34,11 @@ module.exports = {
 		port: Number(process.env.DB_PORT) || 5432,
 		dialect: process.env.DB_DIALECT || 'postgres',
 		logging: false,
+		dialectOptions: {
+			ssl: {
+				require: true,
+				rejectUnauthorized: false,
+			},
+		},
 	},
 };
