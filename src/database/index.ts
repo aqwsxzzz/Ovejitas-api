@@ -40,6 +40,18 @@ export const initDatabase = async (): Promise<Database> => {
 		username: process.env.DB_USER,
 		password: process.env.DB_PASS,
 		database: process.env.DB_NAME,
+		dialectOptions: {
+			ssl: {
+				require: true,
+				rejectUnauthorized: false, // Required for Supabase
+			},
+		},
+		pool: {
+			max: 5,
+			min: 0,
+			acquire: 30000,
+			idle: 10000,
+		},
 	});
 
 	const User = initUserModel(sequelize);
