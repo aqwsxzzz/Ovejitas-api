@@ -46,6 +46,8 @@ export const initDatabase = async (): Promise<Database> => {
 		}
 	}
 
+	const useSSL = process.env.DB_SSL === 'true';
+
 	const sequelize = new Sequelize({
 		dialect: 'postgres',
 		host: resolvedHost,
@@ -53,12 +55,17 @@ export const initDatabase = async (): Promise<Database> => {
 		username: process.env.DB_USER,
 		password: process.env.DB_PASS,
 		database: process.env.DB_NAME,
-		dialectOptions: {
-			ssl: {
-				require: true,
-				rejectUnauthorized: false, // Required for Supabase
-			},
-		},
+		...(useSSL
+			? {
+				// Supabase and other managed services require SSL in production
+				dialectOptions: {
+					ssl: {
+						require: true,
+						rejectUnauthorized: false,
+					},
+				},
+			}
+			: {}),
 		pool: {
 			max: 5,
 			min: 0,
