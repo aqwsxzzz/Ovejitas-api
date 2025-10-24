@@ -1,5 +1,5 @@
 import { lookup } from 'dns/promises';
-import { Sequelize } from 'sequelize';
+import { Options, Sequelize } from 'sequelize';
 import { initUserModel, UserModel } from '../resources/user/user.model';
 import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
 import { FarmMemberModel, initFarmMemberModel } from '../resources/farm-member/farm-member.model';
@@ -46,21 +46,13 @@ export const initDatabase = async (): Promise<Database> => {
 		}
 	}
 
-	const SSL_DISABLED = process.env.DB_SSL_DISABLED === 'true';
-	const SSLConfig = {
+	const sequelizeOptions: Options = {
 		dialect: 'postgres',
 		host: resolvedHost,
 		port: Number(process.env.DB_PORT),
 		username: process.env.DB_USER,
 		password: process.env.DB_PASS,
 		database: process.env.DB_NAME,
-
-		dialectOptions: {
-			ssl: {
-				require: true,
-				rejectUnauthorized: false, // Required for Supabase
-			},
-		},
 		pool: {
 			max: 5,
 			min: 0,
@@ -69,16 +61,19 @@ export const initDatabase = async (): Promise<Database> => {
 		},
 	};
 
-	const noSSLConfig = {
-		dialect: 'postgres',
-		host: resolvedHost,
-		port: Number(process.env.DB_PORT),
-		username: process.env.DB_USER,
-		password: process.env.DB_PASS,
-		database: process.env.DB_NAME,
-	};
-	//@ts-expect-error no anda
-	const sequelize = new Sequelize(SSL_DISABLED ? noSSLConfig : SSLConfig);
+	const sslDisabled = process.env.DB_SSL_DISABLED === 'true';
+	if (!sslDisabled) {
+		sequelizeOptions.dialectOptions = {
+			ssl: {
+				require: true,
+				rejectUnauthorized: false,
+				// Preserve the hostname for SNI when resolving to a raw IPv4 address
+				...(configuredHost ? { servername: configuredHost } : {}),
+			},
+		};
+	}
+
+	const sequelize = new Sequelize(sequelizeOptions);
 
 	const User = initUserModel(sequelize);
 	const Farm = initFarmModel(sequelize);
