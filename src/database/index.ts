@@ -46,33 +46,39 @@ export const initDatabase = async (): Promise<Database> => {
 		}
 	}
 
-	const useSSL = process.env.DB_SSL === 'true';
-
-	const sequelize = new Sequelize({
+	const SSL_DISABLED = process.env.DB_SSL_DISABLED === 'true';
+	const SSLConfig = {
 		dialect: 'postgres',
 		host: resolvedHost,
 		port: Number(process.env.DB_PORT),
 		username: process.env.DB_USER,
 		password: process.env.DB_PASS,
 		database: process.env.DB_NAME,
-		...(useSSL
-			? {
-				// Supabase and other managed services require SSL in production
-				dialectOptions: {
-					ssl: {
-						require: true,
-						rejectUnauthorized: false,
-					},
-				},
-			}
-			: {}),
+
+		dialectOptions: {
+			ssl: {
+				require: true,
+				rejectUnauthorized: false, // Required for Supabase
+			},
+		},
 		pool: {
 			max: 5,
 			min: 0,
 			acquire: 30000,
 			idle: 10000,
 		},
-	});
+	};
+
+	const noSSLConfig = {
+		dialect: 'postgres',
+		host: resolvedHost,
+		port: Number(process.env.DB_PORT),
+		username: process.env.DB_USER,
+		password: process.env.DB_PASS,
+		database: process.env.DB_NAME,
+	};
+	//@ts-expect-error no anda
+	const sequelize = new Sequelize(SSL_DISABLED ? noSSLConfig : SSLConfig);
 
 	const User = initUserModel(sequelize);
 	const Farm = initFarmModel(sequelize);
