@@ -1,4 +1,3 @@
-import { lookup } from 'dns/promises';
 import { Options, Sequelize } from 'sequelize';
 import { initUserModel, UserModel } from '../resources/user/user.model';
 import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
@@ -41,28 +40,13 @@ export const initDatabase = async (): Promise<Database> => {
 	console.log('DB_NAME:', process.env.DB_NAME);
 	console.log('DB_USER:', process.env.DB_USER ? `${process.env.DB_USER.substring(0, 15)}...` : 'NOT SET');
 	console.log('DB_PASS:', process.env.DB_PASS ? '[SET]' : '[NOT SET]');
-	console.log('DB_FORCE_IPV4:', process.env.DB_FORCE_IPV4);
 	console.log('DB_SSL_DISABLED:', process.env.DB_SSL_DISABLED);
 	console.log('NODE_ENV:', process.env.NODE_ENV);
 	console.log('==============================');
 
-	const configuredHost = process.env.DB_HOST;
-	let resolvedHost = configuredHost;
-
-	// Force IPv4 resolution if enabled (required for Render + Supabase)
-	if (process.env.DB_FORCE_IPV4 === 'true' && configuredHost) {
-		try {
-			const { address } = await lookup(configuredHost, { family: 4 });
-			resolvedHost = address;
-			console.log(`✓ Resolved ${configuredHost} to IPv4: ${address}`);
-		} catch (error) {
-			console.warn('✗ Failed to resolve IPv4 address for DB host, falling back to configured host.', error);
-		}
-	}
-
 	const sequelizeOptions: Options = {
 		dialect: 'postgres',
-		host: resolvedHost,
+		host: process.env.DB_HOST,
 		port: Number(process.env.DB_PORT),
 		username: process.env.DB_USER,
 		password: process.env.DB_PASS,
@@ -82,18 +66,13 @@ export const initDatabase = async (): Promise<Database> => {
 			ssl: {
 				require: true,
 				rejectUnauthorized: false,
-				// Preserve the hostname for SNI when resolving to a raw IPv4 address
-				...(configuredHost ? { servername: configuredHost } : {}),
 			},
 		};
 	}
 
 	console.log('=== Final Connection Config ===');
-	console.log('Connecting to host:', resolvedHost);
+	console.log('Connecting to host:', process.env.DB_HOST);
 	console.log('SSL enabled:', !sslDisabled);
-	if (!sslDisabled && configuredHost) {
-		console.log('SSL SNI servername:', configuredHost);
-	}
 	console.log('===============================');
 
 	const sequelize = new Sequelize(sequelizeOptions);
