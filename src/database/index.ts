@@ -34,6 +34,18 @@ export interface Database {
 }
 
 export const initDatabase = async (): Promise<Database> => {
+	// Log all database environment variables for debugging
+	console.log('=== Database Configuration ===');
+	console.log('DB_HOST:', process.env.DB_HOST);
+	console.log('DB_PORT:', process.env.DB_PORT);
+	console.log('DB_NAME:', process.env.DB_NAME);
+	console.log('DB_USER:', process.env.DB_USER ? `${process.env.DB_USER.substring(0, 15)}...` : 'NOT SET');
+	console.log('DB_PASS:', process.env.DB_PASS ? '[SET]' : '[NOT SET]');
+	console.log('DB_FORCE_IPV4:', process.env.DB_FORCE_IPV4);
+	console.log('DB_SSL_DISABLED:', process.env.DB_SSL_DISABLED);
+	console.log('NODE_ENV:', process.env.NODE_ENV);
+	console.log('==============================');
+
 	const configuredHost = process.env.DB_HOST;
 	let resolvedHost = configuredHost;
 
@@ -42,9 +54,9 @@ export const initDatabase = async (): Promise<Database> => {
 		try {
 			const { address } = await lookup(configuredHost, { family: 4 });
 			resolvedHost = address;
-			console.log(`Resolved ${configuredHost} to IPv4: ${address}`);
+			console.log(`✓ Resolved ${configuredHost} to IPv4: ${address}`);
 		} catch (error) {
-			console.warn('Failed to resolve IPv4 address for DB host, falling back to configured host.', error);
+			console.warn('✗ Failed to resolve IPv4 address for DB host, falling back to configured host.', error);
 		}
 	}
 
@@ -75,6 +87,14 @@ export const initDatabase = async (): Promise<Database> => {
 			},
 		};
 	}
+
+	console.log('=== Final Connection Config ===');
+	console.log('Connecting to host:', resolvedHost);
+	console.log('SSL enabled:', !sslDisabled);
+	if (!sslDisabled && configuredHost) {
+		console.log('SSL SNI servername:', configuredHost);
+	}
+	console.log('===============================');
 
 	const sequelize = new Sequelize(sequelizeOptions);
 
