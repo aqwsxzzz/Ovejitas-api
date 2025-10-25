@@ -1,4 +1,4 @@
-import { Options, Sequelize } from 'sequelize';
+import { Sequelize } from 'sequelize';
 import { initUserModel, UserModel } from '../resources/user/user.model';
 import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
 import { FarmMemberModel, initFarmMemberModel } from '../resources/farm-member/farm-member.model';
@@ -33,49 +33,43 @@ export interface Database {
 }
 
 export const initDatabase = async (): Promise<Database> => {
-	// Log all database environment variables for debugging
-	console.log('=== Database Configuration ===');
-	console.log('DB_HOST:', process.env.DB_HOST);
-	console.log('DB_PORT:', process.env.DB_PORT);
-	console.log('DB_NAME:', process.env.DB_NAME);
-	console.log('DB_USER:', process.env.DB_USER ? `${process.env.DB_USER.substring(0, 15)}...` : 'NOT SET');
-	console.log('DB_PASS:', process.env.DB_PASS ? '[SET]' : '[NOT SET]');
-	console.log('DB_SSL_DISABLED:', process.env.DB_SSL_DISABLED);
-	console.log('NODE_ENV:', process.env.NODE_ENV);
-	console.log('==============================');
+	let sequelize: Sequelize;
 
-	const sequelizeOptions: Options = {
-		dialect: 'postgres',
-		host: process.env.DB_HOST,
-		port: Number(process.env.DB_PORT),
-		username: process.env.DB_USER,
-		password: process.env.DB_PASS,
-		database: process.env.DB_NAME,
-		pool: {
-			max: 5,
-			min: 0,
-			acquire: 30000,
-			idle: 10000,
-		},
-	};
-
-	const sslDisabled = process.env.DB_SSL_DISABLED === 'true';
-
-	if (!sslDisabled) {
-		sequelizeOptions.dialectOptions = {
-			ssl: {
-				require: true,
-				rejectUnauthorized: false,
+	// Use DATABASE_URL if available (production), otherwise use individual params (local)
+	if (process.env.DATABASE_URL) {
+		console.log('📦 Using DATABASE_URL connection string');
+		sequelize = new Sequelize(process.env.DATABASE_URL, {
+			dialect: 'postgres',
+			dialectOptions: {
+				ssl: {
+					require: true,
+					rejectUnauthorized: false,
+				},
 			},
-		};
+			pool: {
+				max: 5,
+				min: 0,
+				acquire: 30000,
+				idle: 10000,
+			},
+		});
+	} else {
+		console.log('🔧 Using individual connection parameters (local)');
+		sequelize = new Sequelize({
+			dialect: 'postgres',
+			host: process.env.DB_HOST,
+			port: Number(process.env.DB_PORT),
+			username: process.env.DB_USER,
+			password: process.env.DB_PASS,
+			database: process.env.DB_NAME,
+			pool: {
+				max: 5,
+				min: 0,
+				acquire: 30000,
+				idle: 10000,
+			},
+		});
 	}
-
-	console.log('=== Final Connection Config ===');
-	console.log('Connecting to host:', process.env.DB_HOST);
-	console.log('SSL enabled:', !sslDisabled);
-	console.log('===============================');
-
-	const sequelize = new Sequelize(sequelizeOptions);
 
 	const User = initUserModel(sequelize);
 	const Farm = initFarmModel(sequelize);
