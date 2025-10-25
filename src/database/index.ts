@@ -42,7 +42,7 @@ export const initDatabase = async (): Promise<Database> => {
 		database: process.env.DB_NAME,
 		pool: {
 			max: 5,
-			min: 0,
+			min: 1, // Keep at least 1 connection alive to prevent pool exhaustion
 			acquire: 30000,
 			idle: 10000,
 		},
@@ -50,14 +50,19 @@ export const initDatabase = async (): Promise<Database> => {
 
 	const sslDisabled = process.env.DB_SSL_DISABLED === 'true';
 
-	if (!sslDisabled) {
-		sequelizeOptions.dialectOptions = {
-			ssl: {
-				require: true,
-				rejectUnauthorized: false,
-			},
-		};
-	}
+	// Configure dialect options with keepAlive and SSL
+	sequelizeOptions.dialectOptions = {
+		keepAlive: true,
+		keepAliveInitialDelayMs: 0,
+		...(sslDisabled
+			? {}
+			: {
+				ssl: {
+					require: true,
+					rejectUnauthorized: false,
+				},
+			}),
+	};
 
 	const sequelize = new Sequelize(sequelizeOptions);
 
