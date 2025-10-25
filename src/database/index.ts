@@ -33,36 +33,20 @@ export interface Database {
 }
 
 export const initDatabase = async (): Promise<Database> => {
-	let sequelize: Sequelize;
-
-	// Use DATABASE_URL if available (production), otherwise use individual params (local)
-	if (process.env.DATABASE_URL) {
-		console.log('📦 Using DATABASE_URL connection string');
-		sequelize = new Sequelize(process.env.DATABASE_URL, {
-			pool: {
-				max: 5,
-				min: 0,
-				acquire: 30000,
-				idle: 10000,
-			},
-		});
-	} else {
-		console.log('🔧 Using individual connection parameters (local)');
-		sequelize = new Sequelize({
-			dialect: 'postgres',
-			host: process.env.DB_HOST,
-			port: Number(process.env.DB_PORT),
-			username: process.env.DB_USER,
-			password: process.env.DB_PASS,
-			database: process.env.DB_NAME,
-			pool: {
-				max: 5,
-				min: 0,
-				acquire: 30000,
-				idle: 10000,
-			},
-		});
-	}
+	const sequelize = new Sequelize({
+		dialect: 'postgres',
+		host: process.env.DB_HOST,
+		port: Number(process.env.DB_PORT),
+		username: process.env.DB_USER,
+		password: process.env.DB_PASS,
+		database: process.env.DB_NAME,
+		pool: {
+			max: 5,
+			min: 0,
+			acquire: 30000,
+			idle: 10000,
+		},
+	});
 
 	const User = initUserModel(sequelize);
 	const Farm = initFarmModel(sequelize);
