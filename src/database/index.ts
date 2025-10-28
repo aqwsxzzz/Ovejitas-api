@@ -1,4 +1,3 @@
-import { lookup } from 'dns/promises';
 import { Options, Sequelize } from 'sequelize';
 import { initUserModel, UserModel } from '../resources/user/user.model';
 import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
@@ -34,23 +33,9 @@ export interface Database {
 }
 
 export const initDatabase = async (): Promise<Database> => {
-	const configuredHost = process.env.DB_HOST;
-	let resolvedHost = configuredHost;
-
-	// Force IPv4 resolution if enabled (required for Render + Supabase)
-	if (process.env.DB_FORCE_IPV4 === 'true' && configuredHost) {
-		try {
-			const { address } = await lookup(configuredHost, { family: 4 });
-			resolvedHost = address;
-			console.log(`Resolved ${configuredHost} to IPv4: ${address}`);
-		} catch (error) {
-			console.warn('Failed to resolve IPv4 address for DB host, falling back to configured host.', error);
-		}
-	}
-
 	const sequelizeOptions: Options = {
 		dialect: 'postgres',
-		host: resolvedHost,
+		host: process.env.DB_HOST,
 		port: Number(process.env.DB_PORT),
 		username: process.env.DB_USER,
 		password: process.env.DB_PASS,
@@ -62,20 +47,6 @@ export const initDatabase = async (): Promise<Database> => {
 			idle: 10000,
 		},
 	};
-
-	const sslDisabled = process.env.DB_SSL_DISABLED === 'true';
-
-	if (!sslDisabled) {
-		sequelizeOptions.dialectOptions = {
-			ssl: {
-				require: true,
-				rejectUnauthorized: false,
-				// Preserve the hostname for SNI when resolving to a raw IPv4 address
-				...(configuredHost ? { servername: configuredHost } : {}),
-			},
-		};
-	}
-
 	const sequelize = new Sequelize(sequelizeOptions);
 
 	const User = initUserModel(sequelize);
