@@ -1,4 +1,4 @@
-import { Sequelize } from 'sequelize';
+import {  Sequelize } from 'sequelize';
 import { initUserModel, UserModel } from '../resources/user/user.model';
 import { FarmModel, initFarmModel } from '../resources/farm/farm.model';
 import { FarmMemberModel, initFarmMemberModel } from '../resources/farm-member/farm-member.model';
