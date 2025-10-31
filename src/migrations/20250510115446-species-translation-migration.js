@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Migration to remove the name column from species and create species_translation table.
@@ -7,11 +7,9 @@
 
 module.exports = {
 	up: async (queryInterface, Sequelize) => {
-		// Remove the name column from species
-		await queryInterface.removeColumn("species", "name");
 
 		// Create species_translation table
-		await queryInterface.createTable("species_translation", {
+		await queryInterface.createTable('species_translation', {
 			id: {
 				type: Sequelize.INTEGER.UNSIGNED,
 				autoIncrement: true,
@@ -22,10 +20,10 @@ module.exports = {
 				type: Sequelize.INTEGER.UNSIGNED,
 				allowNull: false,
 				references: {
-					model: "species",
-					key: "id",
+					model: 'species',
+					key: 'id',
 				},
-				onDelete: "CASCADE",
+				onDelete: 'CASCADE',
 			},
 			language_code: {
 				type: Sequelize.STRING(5),
@@ -38,30 +36,25 @@ module.exports = {
 			created_at: {
 				type: Sequelize.DATE,
 				allowNull: false,
-				defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+				defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
 			},
 			updated_at: {
 				type: Sequelize.DATE,
 				allowNull: false,
-				defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+				defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
 			},
 		});
 		// Add unique constraint for (species_id, language_code)
-		await queryInterface.addConstraint("species_translation", {
-			fields: ["species_id", "language_code"],
-			type: "unique",
-			name: "unique_species_language",
+		await queryInterface.addConstraint('species_translation', {
+			fields: ['species_id', 'language_code'],
+			type: 'unique',
+			name: 'unique_species_language',
 		});
 	},
 
 	down: async (queryInterface, Sequelize) => {
 		// Drop species_translation table
-		await queryInterface.dropTable("species_translation");
-		// Add the name column back to species
-		await queryInterface.addColumn("species", "name", {
-			type: Sequelize.STRING,
-			allowNull: false,
-			unique: true,
-		});
+		await queryInterface.dropTable('species_translation');
+
 	},
 };
