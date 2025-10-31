@@ -33,20 +33,15 @@ export interface Database {
 }
 
 export const initDatabase = async (): Promise<Database> => {
-	const sequelize = process.env.DATABASE_URL
-		? new Sequelize(process.env.DATABASE_URL, {
-			dialect: 'postgres',
-			logging: false,
-		})
-		: new Sequelize({
-			dialect: 'postgres',
-			host: process.env.DB_HOST,
-			port: Number(process.env.DB_PORT),
-			username: process.env.DB_USER,
-			password: process.env.DB_PASS,
-			database: process.env.DB_NAME,
-			logging: false,
-		});
+	const sequelize =   new Sequelize({
+		dialect: 'postgres',
+		host: process.env.DB_HOST,
+		port: Number(process.env.DB_PORT),
+		username: process.env.DB_USER,
+		password: process.env.DB_PASS,
+		database: process.env.DB_NAME,
+		logging: false,
+	});
 
 	const User = initUserModel(sequelize);
 	const Farm = initFarmModel(sequelize);

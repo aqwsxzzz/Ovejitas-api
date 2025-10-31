@@ -3,25 +3,30 @@ require('dotenv').config();
 
 module.exports = {
 	development: {
-		use_env_variable: 'DATABASE_URL',
-		dialect: 'postgres',
-		logging: process.env.NODE_ENV !== 'production',
-		dialectOptions: process.env.DATABASE_URL?.includes('supabase')
-			? { ssl: { require: true, rejectUnauthorized: false } }
-			: {},
-	},
-	test: {
-		dialect: 'postgres',
 		username: process.env.DB_USER || 'user',
 		password: process.env.DB_PASS || 'password',
-		database: process.env.DB_NAME || 'database_test',
+		database: process.env.DB_NAME || 'database',
 		host: process.env.DB_HOST || 'localhost',
-		logging: false,
-	},
-	production: {
-		use_env_variable: 'DATABASE_URL',
+		port: Number(process.env.DB_PORT) || 5432,
 		dialect: 'postgres',
+		logging: process.env.NODE_ENV !== 'production',
+
+	},
+
+	production: {
+		dialect: 'postgres',
+		username: process.env.DB_USER,
+		password: process.env.DB_PASS,
+		database: process.env.DB_NAME,
+		host: process.env.DB_HOST,
+		port: Number(process.env.DB_PORT),
+		dialect: process.env.DB_DIALECT,
 		logging: false,
-		dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+		dialectOptions: {
+			ssl: {
+				require: true,
+				rejectUnauthorized: false,
+			},
+		},
 	},
 };
