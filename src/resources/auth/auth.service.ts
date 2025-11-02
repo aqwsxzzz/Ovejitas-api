@@ -83,8 +83,19 @@ export class AuthService extends BaseService {
 		return user;
 	}
 
-	async health(): Promise<string> {
-		return 'healthy';
+	async health(): Promise<{ status: string; database: string; timestamp: string }> {
+		try {
+			// Actually verify database connectivity with a simple query
+			await this.db.sequelize.authenticate();
+
+			return {
+				status: 'healthy',
+				database: 'connected',
+				timestamp: new Date().toISOString(),
+			};
+		} catch (error) {
+			throw new Error(`Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		}
 	}
 
 	private async  handleInvitationSignUp(body: UserSignupInput,   transaction: Transaction) {

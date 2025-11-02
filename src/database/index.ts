@@ -41,6 +41,21 @@ export const initDatabase = async (): Promise<Database> => {
 		password: process.env.DB_PASS,
 		database: process.env.DB_NAME,
 		logging: false,
+		pool: {
+			max: 10, // Maximum number of connections in pool
+			min: 2, // Minimum number of connections in pool
+			acquire: 30000, // Maximum time (ms) to get connection before throwing error
+			idle: 10000, // Maximum time (ms) connection can be idle before being released
+			evict: 10000, // Time interval (ms) to run eviction to release idle connections
+		},
+		retry: {
+			max: 3, // Maximum retry attempts for failed connections
+		},
+		dialectOptions: {
+			connectTimeout: 60000, // Connection timeout in ms
+			keepAlive: true, // Enable TCP keep-alive
+			keepAliveInitialDelayMillis: 10000, // Initial delay before keep-alive probes
+		},
 	});
 
 	const User = initUserModel(sequelize);
