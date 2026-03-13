@@ -1,36 +1,37 @@
 meta {
   name: List Breeds
   type: http
-  seq: 1
+  seq: 2
 }
 
 get {
-  url: http://localhost:8080/api/v1/breeds?speciesId=AdWNDqgV&order=name:asc
+  url: http://localhost:8080/api/v1/breeds?speciesId=AdWNDqgV&include=translations&language=en
   body: none
   auth: none
 }
 
 params:query {
   speciesId: AdWNDqgV
-  order: name:asc
+  include: translations
+  language: en
 }
 
 docs {
   # List Breeds
-  
-  Retrieves all breeds filtered by species ID with optional sorting.
-  
+
+  Retrieves all breeds filtered by species ID with optional translation support.
+
   ## Query Parameters
-  
+
   - `speciesId` (string, required): Encoded species ID to filter breeds
+  - `include` (string, optional): Comma-separated list of relations to include (e.g., `translations`)
+  - `language` (string, optional): Language code to filter translations (e.g., "en", "es"). Only applies when `include=translations`
   - `order` (string, optional): Sorting order for results
-    - Available fields: `name`, `id`, `createdAt`
-    - Format: `field:direction` (e.g., `name:asc`, `createdAt:desc`)
-    - Multiple sorts: `name:asc,createdAt:desc`
-    - Default: `name:asc`
-  
+    - Available fields: `id`, `createdAt`
+    - Format: `field:direction` (e.g., `id:asc`, `createdAt:desc`)
+
   ## Response
-  
+
   **Success (200)**:
   ```json
   {
@@ -39,17 +40,19 @@ docs {
     "data": [
       {
         "id": "encoded_breed_id",
-        "name": "Holstein",
         "speciesId": "encoded_species_id",
         "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z"
-      },
-      {
-        "id": "encoded_breed_id_2",
-        "name": "Jersey",
-        "speciesId": "encoded_species_id",
-        "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z"
+        "updatedAt": "2024-01-01T00:00:00.000Z",
+        "translations": [
+          {
+            "id": "encoded_translation_id",
+            "breedId": "encoded_breed_id",
+            "language": "en",
+            "name": "Suffolk",
+            "createdAt": "2024-01-01T00:00:00.000Z",
+            "updatedAt": "2024-01-01T00:00:00.000Z"
+          }
+        ]
       }
     ],
     "meta": {
@@ -57,16 +60,15 @@ docs {
     }
   }
   ```
-  
+
   **Error Responses**:
-  - `400`: Invalid speciesId parameter
-  
+  - `400`: Invalid speciesId or query parameters
+
   ## Notes
-  
-  - Default ordering is alphabetically by name (ascending)
-  - Species ID must be a valid encoded ID
+
+  - Without `include=translations`, breeds are returned without translation data
+  - When `language` is provided with `include=translations`, only translations for that language are returned
+  - Without `language`, all translations are returned
   - Returns empty array if no breeds found for the species
   - All IDs are encoded using hashids for security
-  - Invalid order parameters will return a 400 error
-  - Sorting is case-sensitive for string fields
 }

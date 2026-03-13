@@ -48,10 +48,19 @@ export class AnimalSerializer {
 		if (animal.breed) {
 			result.breed = {
 				id: encodeId(animal.breed.id),
-				name: animal.breed.name,
 				createdAt: animal.breed.createdAt,
 				updatedAt: animal.breed.updatedAt,
 				speciesId: encodeId(animal.breed.speciesId),
+				...(animal.breed.translations && {
+					translations: animal.breed.translations.map(t => ({
+						id: encodeId(t.id),
+						language: t.language,
+						name: t.name,
+						createdAt: t.createdAt,
+						updatedAt: t.updatedAt,
+						breedId: encodeId(t.breedId),
+					})),
+				}),
 			};
 		}
 

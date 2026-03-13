@@ -9,6 +9,10 @@ import {
 	SpeciesTranslationModel,
 } from '../resources/species-translation/species-translation.model';
 import { BreedModel, initBreedModel } from '../resources/breed/breed.model';
+import {
+	BreedTranslationModel,
+	initBreedTranslationModel,
+} from '../resources/breed-translation/breed-translation.model';
 import { AnimalModel, initAnimalModel } from '../resources/animal/animal.model';
 import {
 	AnimalMeasurementModel,
@@ -26,6 +30,7 @@ export interface Database {
 		Species: typeof SpeciesModel;
 		SpeciesTranslation: typeof SpeciesTranslationModel;
 		Breed: typeof BreedModel;
+		BreedTranslation: typeof BreedTranslationModel;
 		Animal: typeof AnimalModel;
 		AnimalMeasurement: typeof AnimalMeasurementModel;
 		Expense: typeof ExpenseModel;
@@ -65,6 +70,7 @@ export const initDatabase = async (): Promise<Database> => {
 	const SpeciesTranslation = initSpeciesTranslationModel(sequelize);
 	const Species = initSpeciesModel(sequelize);
 	const Breed = initBreedModel(sequelize);
+	const BreedTranslation = initBreedTranslationModel(sequelize);
 	const Animal = initAnimalModel(sequelize);
 	const AnimalMeasurement = initAnimalMeasurementModel(sequelize);
 	const Expense = initExpenseModel(sequelize);
@@ -83,6 +89,10 @@ export const initDatabase = async (): Promise<Database> => {
 	// Breed & Species
 	Species.hasMany(Breed, { foreignKey: 'speciesId', as: 'breeds' });
 	Breed.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
+
+	// Breed & BreedTranslation
+	Breed.hasMany(BreedTranslation, { foreignKey: 'breedId', as: 'translations' });
+	BreedTranslation.belongsTo(Breed, { foreignKey: 'breedId', as: 'breed' });
 
 	// Animal associations
 	Animal.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
@@ -115,6 +125,7 @@ export const initDatabase = async (): Promise<Database> => {
 			Species,
 			SpeciesTranslation,
 			Breed,
+			BreedTranslation,
 			Animal,
 			AnimalMeasurement,
 			Expense,

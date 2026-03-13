@@ -16,27 +16,29 @@ headers {
 
 body:json {
   {
-    "speciesId": "NArJeWyE",
-    "name": "Holstein"
+    "speciesId": "AdWNDqgV",
+    "name": "Dorper",
+    "language": "en"
   }
 }
 
 docs {
   # Create Breed
-  
-  Creates a new breed for a specific animal species.
-  
+
+  Creates a new breed for a specific animal species with an initial translation.
+
   ## Authentication
-  
+
   **Required**: JWT cookie from login endpoint
-  
+
   ## Request Body
-  
-  - `name` (string, required): Name of the breed
+
   - `speciesId` (string, required): Encoded ID of the species this breed belongs to
-  
+  - `name` (string, required): Name of the breed in the specified language
+  - `language` (string, required): Language code (2 characters, e.g., "en", "es")
+
   ## Response
-  
+
   **Success (201)**:
   ```json
   {
@@ -44,24 +46,34 @@ docs {
     "message": "Success",
     "data": {
       "id": "encoded_breed_id",
-      "speciesId": "encoded_species_id", 
-      "name": "Holstein",
+      "speciesId": "encoded_species_id",
       "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "translations": [
+        {
+          "id": "encoded_translation_id",
+          "breedId": "encoded_breed_id",
+          "language": "en",
+          "name": "Dorper",
+          "createdAt": "2024-01-01T00:00:00.000Z",
+          "updatedAt": "2024-01-01T00:00:00.000Z"
+        }
+      ]
     },
     "meta": {
       "timestamp": "2024-01-01T00:00:00.000Z"
     }
   }
   ```
-  
+
   **Error Responses**:
-  - `400`: Invalid request body (missing name or speciesId)
-  - `409`: Breed name already exists for this species
-  
+  - `400`: Invalid request body (missing name, speciesId, or language)
+  - `409`: Breed translation already exists for this language
+
   ## Notes
-  
-  - Breed names must be unique within each species
+
+  - Creates both the breed record and its initial translation in one call
+  - Use the breed-translations endpoint to add translations in other languages
   - The speciesId must be a valid encoded species ID
   - All IDs in response are encoded using hashids for security
   - Requires authentication to create breeds
