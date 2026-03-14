@@ -121,17 +121,9 @@ module.exports = {
 		});
 
 		// Add indexes for better query performance
-		await queryInterface.addIndex('expenses', ['farm_id', 'date'], {
-			name: 'idx_expenses_farm_date',
-		});
-
-		await queryInterface.addIndex('expenses', ['farm_id', 'category'], {
-			name: 'idx_expenses_farm_category',
-		});
-
-		await queryInterface.addIndex('expenses', ['date'], {
-			name: 'idx_expenses_date',
-		});
+		await queryInterface.sequelize.query('CREATE INDEX IF NOT EXISTS "idx_expenses_farm_date" ON "expenses" ("farm_id", "date")');
+		await queryInterface.sequelize.query('CREATE INDEX IF NOT EXISTS "idx_expenses_farm_category" ON "expenses" ("farm_id", "category")');
+		await queryInterface.sequelize.query('CREATE INDEX IF NOT EXISTS "idx_expenses_date" ON "expenses" ("date")');
 	},
 
 	down: async (queryInterface) => {
