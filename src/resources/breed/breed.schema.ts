@@ -1,7 +1,8 @@
 import { Type, Static } from '@sinclair/typebox';
-import { createPostEndpointSchema, createGetEndpointSchema } from '../../utils/schema-builder';
+import { createPostEndpointSchema, createListEndpointSchema } from '../../utils/schema-builder';
 import { BreedTranslationResponseSchema } from '../breed-translation/breed-translation.schema';
 import { UserLanguage } from '../user/user.schema';
+import { PaginationQueryProps } from '../../utils/pagination';
 
 const BreedSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
@@ -41,6 +42,7 @@ const BreedQuerySchema = Type.Object({
 	order: Type.Optional(Type.String()),
 	include: Type.Optional(Type.String()),
 	language: Type.Optional(Type.Enum(UserLanguage)),
+	...PaginationQueryProps,
 }, {
 	$id: 'breedQuery',
 	additionalProperties: false,
@@ -58,7 +60,7 @@ export const createBreedSchema = createPostEndpointSchema({
 	errorCodes: [400, 409],
 });
 
-export const getBreedsSchema = createGetEndpointSchema({
+export const getBreedsSchema = createListEndpointSchema({
 	querystring: BreedQuerySchema,
 	dataSchema: Type.Array(BreedResponseSchema),
 	errorCodes: [400],

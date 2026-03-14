@@ -3,6 +3,7 @@ import { AnimalCreate, AnimalUpdate, AnimalBulkCreate, AnimalInclude, AnimalPara
 import { AnimalSerializer } from './animal.serializer';
 import { decodeId } from '../../utils/id-hash-util';
 import { UserLanguage } from '../user/user.schema';
+import { parsePagination } from '../../utils/pagination';
 
 const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
@@ -10,12 +11,18 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 		try {
 			const { include, language } = request.query;
 			const farmId = request.lastVisitedFarmId;
-			const filters = fastify.animalService.extractFilterParams(request.query );
+			const filters = fastify.animalService.extractFilterParams(request.query);
+			const pagination = parsePagination(request.query);
 
-			const animals = await fastify.animalService.getAnimals(farmId, language, include, filters);
+			const result = await fastify.animalService.getAnimals(farmId, language, include, filters, pagination ?? undefined);
 
-			const serializedAnimals = AnimalSerializer.serializeMany(animals!);
+			if (pagination && result && !Array.isArray(result)) {
+				const serializedAnimals = AnimalSerializer.serializeMany(result.rows);
+				return reply.successWithPagination(serializedAnimals, result.pagination);
+			}
 
+			const animals = Array.isArray(result) ? result : result?.rows ?? [];
+			const serializedAnimals = AnimalSerializer.serializeMany(animals);
 			reply.success(serializedAnimals);
 		} catch (error) {
 			fastify.handleDbError(error, reply);

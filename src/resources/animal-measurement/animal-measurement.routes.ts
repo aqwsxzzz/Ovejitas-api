@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { AnimalMeasurementParams, AnimalMeasurementDeleteParams, AnimalMeasurementCreate, listAnimalMeasurementsSchema, createAnimalMeasurementSchema, deleteAnimalMeasurementSchema, AnimalMeasurementQuery } from './animal-measurement.schema';
 import { decodeId } from '../../utils/id-hash-util';
 import { AnimalMeasurementSerializer } from './animal-measurement.serializer';
+import { parsePagination } from '../../utils/pagination';
 
 const animalMeasurementRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	// Routes now use the decorated service instead of creating a new instance
@@ -10,8 +11,16 @@ const animalMeasurementRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
 		try {
 			const { animalId } = request.params;
 			const { measurementType } = request.query;
+			const pagination = parsePagination(request.query);
 
-			const measurements = await fastify.animalMeasurementService.getAnimalMeasurements(decodeId(animalId)!, '', { measurementType: measurementType as string });
+			const result = await fastify.animalMeasurementService.getAnimalMeasurements(decodeId(animalId)!, '', { measurementType: measurementType as string }, pagination ?? undefined);
+
+			if (pagination && !Array.isArray(result)) {
+				const serializedMeasurements = AnimalMeasurementSerializer.serializeMany(result.rows);
+				return reply.successWithPagination(serializedMeasurements, result.pagination);
+			}
+
+			const measurements = Array.isArray(result) ? result : result.rows;
 			const serializedMeasurements = AnimalMeasurementSerializer.serializeMany(measurements);
 			reply.success(serializedMeasurements);
 		} catch (error) {

@@ -3,10 +3,12 @@ import {
 	createFarmMemberSchema,
 	FarmMemberCreateInput,
 	FarmMemberFarmParams,
+	FarmMemberListQuery,
 	getFarmMembersSchema,
 } from './farm-member.schema';
 import { FarmMemberSerializer } from './farm-member.serializer';
 import { decodeId } from '../../utils/id-hash-util';
+import { parsePagination } from '../../utils/pagination';
 
 const farmMemberRoutes: FastifyPluginAsync = async (fastify) => {
 	fastify.post('/', {
@@ -26,7 +28,7 @@ const farmMemberRoutes: FastifyPluginAsync = async (fastify) => {
 	fastify.get('/:farmId/members', {
 		schema: getFarmMembersSchema,
 		preHandler: fastify.authenticate,
-	}, async (request: FastifyRequest<{ Params: FarmMemberFarmParams }>, reply) => {
+	}, async (request: FastifyRequest<{ Params: FarmMemberFarmParams; Querystring: FarmMemberListQuery }>, reply) => {
 		try {
 			const { farmId } = request.params;
 			const decodedFarmId = decodeId(farmId);
@@ -38,9 +40,16 @@ const farmMemberRoutes: FastifyPluginAsync = async (fastify) => {
 				});
 			}
 
-			const farmMembers = await fastify.farmMemberService.getFarmMembersWithUsers(decodedFarmId);
-			const serializedMembers = FarmMemberSerializer.serializeMany(farmMembers);
+			const pagination = parsePagination(request.query);
+			const result = await fastify.farmMemberService.getFarmMembersWithUsers(decodedFarmId, pagination ?? undefined);
 
+			if (pagination && !Array.isArray(result)) {
+				const serializedMembers = FarmMemberSerializer.serializeMany(result.rows);
+				return reply.successWithPagination(serializedMembers, result.pagination);
+			}
+
+			const members = Array.isArray(result) ? result : result.rows;
+			const serializedMembers = FarmMemberSerializer.serializeMany(members);
 			reply.success(serializedMembers, 'Farm members retrieved successfully');
 		} catch (error) {
 			fastify.handleDbError(error, reply);

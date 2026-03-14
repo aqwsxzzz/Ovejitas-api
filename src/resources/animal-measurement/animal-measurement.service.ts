@@ -4,6 +4,7 @@ import { OrderParser, TypedOrderConfig } from '../../utils/order-parser';
 import { AnimalMeasurementModel } from './animal-measurement.model';
 import { AnimalMeasurementCreate, AnimalMeasurementType, AnimalMeasurementUnit } from './animal-measurement.schema';
 import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
+import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 
 export class AnimalMeasurementService extends BaseService {
 	private static readonly ALLOWED_ORDERS = OrderParser.createConfig({
@@ -23,12 +24,16 @@ export class AnimalMeasurementService extends BaseService {
 		[AnimalMeasurementType.Temperature]: [AnimalMeasurementUnit.Celsius],
 	};
 
-	async getAnimalMeasurements(animalId: number, order?: string, filters?: Record<string, string>): Promise<AnimalMeasurementModel[]> {
+	async getAnimalMeasurements(animalId: number, order?: string, filters?: Record<string, string>, pagination?: PaginationParams): Promise<AnimalMeasurementModel[] | PaginatedResult<AnimalMeasurementModel>> {
 		const ordering = this.parseOrder(order, AnimalMeasurementService.ALLOWED_ORDERS);
 		const filterWhere = this.parseFilters(filters, AnimalMeasurementService.ALLOWED_FILTERS);
 
 		const findOptions: FindOptions = { where: { animalId, ...filterWhere } };
 		findOptions.order = ordering;
+
+		if (pagination) {
+			return this.findAllPaginated(this.db.models.AnimalMeasurement, findOptions, pagination);
+		}
 
 		return await this.db.models.AnimalMeasurement.findAll(findOptions);
 	}

@@ -8,6 +8,7 @@ import {
 	listInvitationsSchema,
 } from './invitation.schema';
 import { InvitationSerializer } from './invitation.serializer';
+import { parsePagination } from '../../utils/pagination';
 
 const invitationRoutes: FastifyPluginAsync = async (fastify) => {
 	// Create Invitation
@@ -44,7 +45,15 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
 	}, async (request: FastifyRequest<{ Querystring: ListInvitationParams }>, reply) => {
 		try {
 			const data = request.query;
-			const invitations = await fastify.invitationService.listInvitations(data);
+			const pagination = parsePagination(request.query);
+			const result = await fastify.invitationService.listInvitations(data, pagination ?? undefined);
+
+			if (pagination && !Array.isArray(result)) {
+				const serializedInvitations = InvitationSerializer.serializeMany(result.rows);
+				return reply.successWithPagination(serializedInvitations, result.pagination);
+			}
+
+			const invitations = Array.isArray(result) ? result : result.rows;
 			const serializedInvitations = InvitationSerializer.serializeMany(invitations);
 			reply.success(serializedInvitations);
 		} catch (error) {

@@ -1,6 +1,7 @@
 import { SpeciesResponse, SpeciesResponseSchema } from './../species/species.schema';
 import { Static, Type } from '@sinclair/typebox';
-import { createGetEndpointSchema, createPostEndpointSchema, createUpdateEndpointSchema, createDeleteEndpointSchema } from '../../utils/schema-builder';
+import { createGetEndpointSchema, createListEndpointSchema, createPostEndpointSchema, createUpdateEndpointSchema, createDeleteEndpointSchema } from '../../utils/schema-builder';
+import { PaginationQueryProps } from '../../utils/pagination';
 import { BreedResponse, BreedResponseSchema } from '../breed/breed.schema';
 import { AnimalMeasurementResponse, AnimalMeasurementResponseSchema } from '../animal-measurement/animal-measurement.schema';
 import { AnimalModel } from './animal.model';
@@ -166,6 +167,7 @@ export const AnimalIncludeSchema = Type.Object({
 	include: Type.Optional(Type.String()),
 	language: Type.Enum(UserLanguage),
 	sex: Type.Optional(Type.Enum(AnimalSex)),
+	...PaginationQueryProps,
 });
 
 export const AnimalParamsSchema = Type.Object({
@@ -186,7 +188,7 @@ export const createAnimalSchema = createPostEndpointSchema({
 	errorCodes: [400, 409],
 });
 
-export const listAnimalSchema = createGetEndpointSchema({
+export const listAnimalSchema = createListEndpointSchema({
 	querystring: AnimalIncludeSchema,
 	dataSchema: Type.Array(AnimalResponseSchema),
 	errorCodes: [404],

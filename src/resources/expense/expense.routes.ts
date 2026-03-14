@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { ExpenseCreate, ExpenseUpdate, ExpenseQuery, ExpenseParams, createExpenseSchema, listExpensesSchema, getExpenseSchema, updateExpenseSchema, deleteExpenseSchema } from './expense.schema';
 import { ExpenseSerializer } from './expense.serializer';
 import { decodeId } from '../../utils/id-hash-util';
+import { parsePagination } from '../../utils/pagination';
 
 const expenseRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
@@ -12,7 +13,15 @@ const expenseRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	}, async (request: FastifyRequest<{ Querystring: ExpenseQuery }>, reply) => {
 		try {
 			const farmId = request.lastVisitedFarmId;
-			const expenses = await fastify.expenseService.getExpenses(farmId, request.query);
+			const pagination = parsePagination(request.query);
+			const result = await fastify.expenseService.getExpenses(farmId, request.query, pagination ?? undefined);
+
+			if (pagination && !Array.isArray(result)) {
+				const serializedExpenses = ExpenseSerializer.serializeMany(result.rows);
+				return reply.successWithPagination(serializedExpenses, result.pagination);
+			}
+
+			const expenses = Array.isArray(result) ? result : result.rows;
 			const serializedExpenses = ExpenseSerializer.serializeMany(expenses);
 			reply.success(serializedExpenses);
 		} catch (error) {

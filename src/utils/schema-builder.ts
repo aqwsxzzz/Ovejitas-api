@@ -142,3 +142,38 @@ export const createDeleteEndpointSchema = (config: Omit<EndpointSchemaConfig, 's
 		dataSchema: Type.Null(),
 	});
 };
+
+/**
+ * Creates a list endpoint schema with optional pagination in meta
+ * Used for GET endpoints that return arrays and support pagination
+ */
+export const createListEndpointSchema = (config: Omit<EndpointSchemaConfig, 'body' | 'successCode'> & { dataSchema: TSchema }) => {
+	const schema: Record<string, TSchema | Record<string, TSchema>> = {};
+
+	if (config.params) schema.params = config.params;
+	if (config.querystring) schema.querystring = config.querystring;
+
+	schema.response = {};
+
+	schema.response[200] = Type.Object({
+		status: Type.String(),
+		message: Type.String(),
+		data: config.dataSchema,
+		meta: Type.Optional(Type.Object({
+			timestamp: Type.String(),
+			pagination: Type.Optional(Type.Object({
+				page: Type.Integer(),
+				limit: Type.Integer(),
+				total: Type.Integer(),
+				totalPages: Type.Integer(),
+			})),
+		})),
+	});
+
+	const errorCodes = config.errorCodes || [400];
+	errorCodes.forEach(code => {
+		schema.response[code] = CommonErrorResponses[code];
+	});
+
+	return schema;
+};

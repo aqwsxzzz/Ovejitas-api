@@ -6,6 +6,7 @@ import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
 import { FindOptions, Op, Transaction, QueryTypes } from 'sequelize';
 import { UserLanguage } from '../user/user.schema';
 import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
+import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 
 export class AnimalService extends BaseService {
 
@@ -64,7 +65,7 @@ export class AnimalService extends BaseService {
 		},
 	};
 
-	async getAnimals(farmId: number, language: UserLanguage, includeParam?: string, filters?: Record<string, string>): Promise<AnimalModel[] | null> {
+	async getAnimals(farmId: number, language: UserLanguage, includeParam?: string, filters?: Record<string, string>, pagination?: PaginationParams): Promise<AnimalModel[] | PaginatedResult<AnimalModel> | null> {
 
 		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 		const filterWhere = this.parseFilters(filters, AnimalService.ALLOWED_FILTERS);
@@ -81,6 +82,10 @@ export class AnimalService extends BaseService {
 			},
 			include: includes,
 		};
+
+		if (pagination) {
+			return this.findAllPaginated(this.db.models.Animal, findOptions, pagination);
+		}
 
 		return this.db.models.Animal.findAll(findOptions);
 	}

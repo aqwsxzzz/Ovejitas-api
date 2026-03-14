@@ -1,9 +1,10 @@
 import { Static, Type } from '@sinclair/typebox';
 import {
-	createGetEndpointSchema,
+	createListEndpointSchema,
 	createPostEndpointSchema,
 	createDeleteEndpointSchema,
 } from '../../utils/schema-builder';
+import { PaginationQueryProps } from '../../utils/pagination';
 
 export enum AnimalMeasurementType {
 	Weight = 'weight',
@@ -55,6 +56,7 @@ const AnimalMeasurementParamsSchema = Type.Object({
 
 const AnimalMeasurementQuerySchema = Type.Object({
 	measurementType: Type.Optional(Type.Enum(AnimalMeasurementType)),
+	...PaginationQueryProps,
 }, {
 	$id: 'animalMeasurementQuery',
 	additionalProperties: false,
@@ -86,7 +88,7 @@ const AnimalMeasurementCreateSchema = Type.Object(
 	},
 );
 
-export const listAnimalMeasurementsSchema = createGetEndpointSchema({
+export const listAnimalMeasurementsSchema = createListEndpointSchema({
 	params: AnimalMeasurementParamsSchema,
 	dataSchema: Type.Array(AnimalMeasurementResponseSchema),
 	errorCodes: [404],

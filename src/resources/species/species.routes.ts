@@ -9,6 +9,7 @@ import {
 } from './species.schema';
 import { SpeciesSerializer } from './species.serializer';
 import { decodeId } from '../../utils/id-hash-util';
+import { parsePagination } from '../../utils/pagination';
 
 const speciesRoutes: FastifyPluginAsync = async (fastify) => {
 	fastify.post('/', {
@@ -31,7 +32,15 @@ const speciesRoutes: FastifyPluginAsync = async (fastify) => {
 	}, async (request: FastifyRequest<{ Querystring: SpeciesQueryString }>, reply) => {
 		try {
 			const { include, order, language } = request.query;
-			const species = await fastify.speciesService.getAllSpecies(include, order, language);
+			const pagination = parsePagination(request.query);
+			const result = await fastify.speciesService.getAllSpecies(include, order, language, pagination ?? undefined);
+
+			if (pagination && !Array.isArray(result)) {
+				const serializedSpecies = SpeciesSerializer.serializeMany(result.rows);
+				return reply.successWithPagination(serializedSpecies, result.pagination);
+			}
+
+			const species = Array.isArray(result) ? result : result.rows;
 			const serializedSpecies = SpeciesSerializer.serializeMany(species);
 			reply.success(serializedSpecies);
 		} catch (error) {

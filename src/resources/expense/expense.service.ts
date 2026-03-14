@@ -4,6 +4,7 @@ import { ExpenseCreate, ExpenseUpdate, ExpenseQuery, ExpenseCategory, PaymentMet
 import { decodeId } from '../../utils/id-hash-util';
 import { FindOptions, Transaction } from 'sequelize';
 import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
+import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 
 export class ExpenseService extends BaseService {
 
@@ -13,15 +14,35 @@ export class ExpenseService extends BaseService {
 		status: FilterConfigBuilder.enum('status', Object.values(ExpenseStatus)),
 	};
 
-	async getExpenses(farmId: number, query?: ExpenseQuery): Promise<ExpenseModel[]> {
+	async getExpenses(farmId: number, query?: ExpenseQuery, pagination?: PaginationParams): Promise<ExpenseModel[] | PaginatedResult<ExpenseModel>> {
 
-		const filterWhere = this.parseFilters(query, ExpenseService.ALLOWED_FILTERS);
+		const filterParams = query ? this.extractFilterParams(query as Record<string, unknown>) : undefined;
+		const filterWhere = this.parseFilters(filterParams, ExpenseService.ALLOWED_FILTERS);
 		const findOptions: FindOptions = {
 			where: {
 				farmId,
 				...filterWhere,
 			},
 		};
+
+		if (pagination) {
+			const { rows, count } = await this.db.sequelize.models.Expense.findAndCountAll({
+				...findOptions,
+				limit: pagination.limit,
+				offset: pagination.offset,
+				distinct: true,
+			});
+
+			return {
+				rows: rows as ExpenseModel[],
+				pagination: {
+					page: pagination.page,
+					limit: pagination.limit,
+					total: count,
+					totalPages: Math.ceil(count / pagination.limit),
+				},
+			};
+		}
 
 		const expenses = await this.db.sequelize.models.Expense.findAll(findOptions) as ExpenseModel[];
 		return expenses;

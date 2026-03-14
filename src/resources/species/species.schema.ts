@@ -1,8 +1,9 @@
 
 import {  Static, Type } from '@sinclair/typebox';
-import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createGetEndpointSchema, createListEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 import { SpeciesTranslationResponseSchema } from '../species-translation/species-translation.schema';
 import { UserLanguage } from '../user/user.schema';
+import { PaginationQueryProps } from '../../utils/pagination';
 
 const SpeciesSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
@@ -43,6 +44,7 @@ const SpeciesQuerystringSchema = Type.Object({
 	include: Type.Optional(Type.String()),
 	order: Type.Optional(Type.String()),
 	language: (Type.Enum(UserLanguage)),
+	...PaginationQueryProps,
 }, {
 	$id: 'speciesQuerystring',
 	additionalProperties: false,
@@ -66,7 +68,7 @@ export const getSpeciesSchema = createGetEndpointSchema({
 	errorCodes: [404],
 });
 
-export const listSpeciesSchema = createGetEndpointSchema({
+export const listSpeciesSchema = createListEndpointSchema({
 	querystring: SpeciesQuerystringSchema,
 	dataSchema: Type.Array(SpeciesResponseSchema),
 	errorCodes: [404],
