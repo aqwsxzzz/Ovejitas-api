@@ -8,7 +8,11 @@
     "start": "node build/index.js",
     "dev": "nodemon --config nodemon.json",
     "docker:dev": "nodemon --config nodemon.json",
-    "dev:seed": "node src/scripts/dev-seed.js"
+    "dev:seed": "node src/scripts/dev-seed.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:db:create": "npx sequelize-cli db:create",
+    "test:db:migrate": "npx sequelize-cli db:migrate"
   },
   "keywords": [],
   "author": "",
@@ -40,7 +44,9 @@
     "globals": "^16.3.0",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.37.0"
+    "typescript-eslint": "^8.37.0",
+    "vitest": "^3.2.4"
   }
 }

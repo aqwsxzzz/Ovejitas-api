@@ -13,6 +13,17 @@ module.exports = {
 		seederStorage: 'sequelize',
 	},
 
+	test: {
+		username: process.env.DB_USER || 'username',
+		password: process.env.DB_PASS || 'password',
+		database: process.env.DB_NAME || 'ovejitas_test',
+		host: process.env.DB_HOST || 'localhost',
+		port: Number(process.env.DB_PORT) || 5432,
+		dialect: 'postgres',
+		logging: false,
+		seederStorage: 'sequelize',
+	},
+
 	production: {
 		dialect: 'postgres',
 		username: process.env.DB_USER,

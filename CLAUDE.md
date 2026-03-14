@@ -159,7 +159,7 @@ docs:
   deployment: docs/production-deployment.md
   api_testing: little-sheep/ (Bruno collection)
 
-no_test_framework: true
+test_framework: vitest
 
 docker:
   rule: ALWAYS run commands inside Docker containers, never on host
