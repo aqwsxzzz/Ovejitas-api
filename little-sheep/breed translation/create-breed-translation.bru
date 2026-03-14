@@ -1,0 +1,78 @@
+meta {
+  name: Create Breed Translation
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/v1/breed-translations
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "breedId": "AdWNDqgV",
+    "language": "es",
+    "name": "Suffolk"
+  }
+}
+
+docs {
+  # Create Breed Translation
+
+  Creates a new translation for an existing breed in a specific language.
+
+  ## Authentication
+
+  **Required**: JWT cookie from login endpoint
+
+  ## Request Body
+
+  - `breedId` (string, required): Encoded ID of the breed to add translation for
+  - `language` (string, required): Language code (2 characters, e.g., "en", "es")
+  - `name` (string, required): Breed name in the specified language (minimum 1 character)
+
+  ## Response
+
+  **Success (201)**:
+  ```json
+  {
+    "status": "success",
+    "message": "Success",
+    "data": {
+      "id": "encoded_translation_id",
+      "breedId": "encoded_breed_id",
+      "language": "es",
+      "name": "Suffolk",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    "meta": {
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+
+  **Error Responses**:
+  - `400`: Invalid request body (missing fields, invalid language code, or invalid breedId)
+  - `409`: Translation already exists for this breed and language combination
+
+  ## Notes
+
+  - Each breed can only have one translation per language
+  - Language code must be a valid 2-character code (e.g., "en", "es")
+  - The breedId must be a valid encoded breed ID
+  - All IDs in response are encoded using hashids for security
+  - Requires authentication to create translations
+
+  ## Internationalization Workflow
+
+  1. **Create Breed**: Use POST `/api/v1/breeds` with `name`, `language`, and `speciesId` to create a breed with its initial translation
+  2. **Add Translations**: Use this endpoint to add translations in other languages
+  3. **Query with Translations**: Use GET `/api/v1/breeds?speciesId=X&include=translations&language=en` to get breeds with filtered translations
+}

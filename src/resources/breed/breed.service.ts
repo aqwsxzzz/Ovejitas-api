@@ -1,15 +1,14 @@
-import { BreedUpdate } from './breed.schema';
 import { BaseService } from '../../services/base.service';
 import { BreedModel } from './breed.model';
+import { BreedTranslationModel } from '../breed-translation/breed-translation.model';
+import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
 import { OrderParser, TypedOrderConfig } from '../../utils/order-parser';
 import { FindOptions } from 'sequelize';
+import { UserLanguage } from '../user/user.schema';
 
 export class BreedService extends BaseService {
 
 	private static readonly ALLOWED_ORDERS = OrderParser.createConfig({
-		name: {
-			attribute: 'name',
-		},
 		id: {
 			attribute: 'id',
 		},
@@ -18,36 +17,38 @@ export class BreedService extends BaseService {
 		},
 	} satisfies TypedOrderConfig);
 
-	async createBreed({ name, speciesId }:{ name: string, speciesId: number }): Promise<BreedModel> {
-		return await this.db.models.Breed.create({ name, speciesId });
+	private static readonly ALLOWED_INCLUDES = IncludeParser.createConfig({
+		translations: {
+			model: 'BreedTranslation' as const,
+			as: 'translations',
+			attributes: ['id', 'breedId', 'language', 'name', 'createdAt', 'updatedAt'],
+		},
+	} satisfies TypedIncludeConfig);
+
+	async createBreed({ name, language, speciesId }: { name: string; language: string; speciesId: number }): Promise<{ breed: BreedModel; translation: BreedTranslationModel }> {
+		const breed = await this.db.models.Breed.create({ speciesId });
+		const translation = await this.db.models.BreedTranslation.create({
+			breedId: breed.id,
+			language,
+			name,
+		});
+		return { breed, translation };
 	}
 
-	async getBreedsBySpecies(speciesId: number, order?: string): Promise<BreedModel[]> {
+	async getBreedsBySpecies(speciesId: number, order?: string, includeParam?: string, language?: UserLanguage): Promise<BreedModel[]> {
 		const findOptions: FindOptions = {
 			where: { speciesId },
 		};
 
+		let includes = this.parseIncludes(includeParam, BreedService.ALLOWED_INCLUDES);
+
+		if (includeParam?.includes('translations') && language) {
+			includes = this.filterTranslationsByLanguage(includes, language);
+		}
+
+		findOptions.include = includes;
 		findOptions.order = this.parseOrder(order, BreedService.ALLOWED_ORDERS);
 
 		return await this.db.models.Breed.findAll(findOptions);
-	}
-
-	async updateBreed(id: number, data: BreedUpdate): Promise<BreedModel> {
-
-		const [affectedCount] = await this.db.models.Breed.update(data, {
-			where: { id },
-		});
-
-		if (affectedCount === 0) {
-			throw new Error('Breed not found');
-		}
-
-		const updatedBreed = await this.db.models.Breed.findByPk(id);
-		if (!updatedBreed) {
-			throw new Error('Breed not found after update');
-		}
-
-		return updatedBreed;
-
 	}
 }

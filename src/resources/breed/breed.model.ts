@@ -6,7 +6,6 @@ type BreedCreationAttributes = Omit<Breed, 'id' | 'createdAt' | 'updatedAt'>;
 export class BreedModel extends Model<Breed, BreedCreationAttributes> {
 	declare id: number;
 	declare speciesId: number;
-	declare name: string;
 	declare createdAt: string;
 	declare updatedAt: string;
 }
@@ -28,11 +27,6 @@ export const initBreedModel = (sequelize: Sequelize) => BreedModel.init({
 		},
 		onDelete: 'CASCADE',
 	},
-	name: {
-		type: DataTypes.STRING,
-		allowNull: false,
-		field: 'name',
-	},
 	createdAt: {
 		type: DataTypes.DATE,
 		allowNull: false,
@@ -50,10 +44,4 @@ export const initBreedModel = (sequelize: Sequelize) => BreedModel.init({
 	tableName: 'breeds',
 	modelName: 'Breed',
 	timestamps: true,
-	indexes: [
-		{
-			unique: true,
-			fields: ['species_id', 'name'],
-		},
-	],
 });

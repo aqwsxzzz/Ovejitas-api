@@ -5,6 +5,7 @@ import { AnimalService } from '../src/resources/animal/animal.service';
 import { AnimalMeasurementService } from '../src/resources/animal-measurement/animal-measurement.service';
 import { AuthService } from '../src/resources/auth/auth.service';
 import { BreedService } from '../src/resources/breed/breed.service';
+import { BreedTranslationService } from '../src/resources/breed-translation/breed-translation.service';
 import { FarmService } from '../src/resources/farm/farm.service';
 import { FarmMemberService } from '../src/resources/farm-member/farm-member.service';
 import { InvitationService } from '../src/resources/invitation/invitation.service';
@@ -24,6 +25,7 @@ declare module 'fastify' {
 		animalMeasurementService: AnimalMeasurementService;
 		authService: AuthService;
 		breedService: BreedService;
+		breedTranslationService: BreedTranslationService;
 		farmService: FarmService;
 		farmMemberService: FarmMemberService;
 		invitationService: InvitationService;

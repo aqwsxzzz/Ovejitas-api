@@ -7,6 +7,7 @@ import { AnimalModel } from './animal.model';
 import { SpeciesModel } from '../species/species.model';
 import { SpeciesTranslationModel } from '../species-translation/species-translation.model';
 import { BreedModel } from '../breed/breed.model';
+import { BreedTranslationModel } from '../breed-translation/breed-translation.model';
 import { AnimalMeasurementModel } from '../animal-measurement/animal-measurement.model';
 import { UserLanguage } from '../user/user.schema';
 
@@ -39,7 +40,9 @@ export type AnimalWithPossibleIncludes = AnimalModel & {
 	species?: SpeciesModel & {
 		translations?: SpeciesTranslationModel[];
 	};
-	breed?: BreedModel;
+	breed?: BreedModel & {
+		translations?: BreedTranslationModel[];
+	};
 	father?: AnimalModel;
 	mother?: AnimalModel;
 	measurements?: AnimalMeasurementModel[];

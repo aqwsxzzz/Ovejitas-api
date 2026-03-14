@@ -25,7 +25,14 @@ export class AnimalService extends BaseService {
 		breed: {
 			model: 'Breed' as const,
 			as: 'breed',
-			attributes: ['id', 'name', 'createdAt', 'updatedAt', 'speciesId'],
+			attributes: ['id', 'createdAt', 'updatedAt', 'speciesId'],
+			nested: {
+				translations: {
+					model: 'BreedTranslation' as const,
+					as: 'translations',
+					attributes: ['id', 'breedId', 'language', 'name', 'createdAt', 'updatedAt'],
+				},
+			},
 		},
 		father: {
 			model: 'Animal' as const,
@@ -62,8 +69,8 @@ export class AnimalService extends BaseService {
 		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 		const filterWhere = this.parseFilters(filters, AnimalService.ALLOWED_FILTERS);
 
-		// Filter species translations by language if species and translations are included
-		if (includeParam?.includes('species.translations')) {
+		// Filter translations by language if included
+		if (includeParam?.includes('species.translations') || includeParam?.includes('breed.translations')) {
 			includes = this.filterTranslationsByLanguage(includes, language);
 		}
 
@@ -125,8 +132,8 @@ export class AnimalService extends BaseService {
 
 		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 
-		// Filter species translations by language if species and translations are included
-		if (includeParam?.includes('species.translations')) {
+		// Filter translations by language if included
+		if (includeParam?.includes('species.translations') || includeParam?.includes('breed.translations')) {
 			includes = this.filterTranslationsByLanguage(includes, language);
 		}
 
