@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node build/index.js",
     "dev": "nodemon --config nodemon.json",
-    "docker:dev": "nodemon --config nodemon.json"
+    "docker:dev": "nodemon --config nodemon.json",
+    "dev:seed": "node src/scripts/dev-seed.js"
   },
   "keywords": [],
   "author": "",
