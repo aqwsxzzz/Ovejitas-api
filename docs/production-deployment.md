@@ -58,7 +58,7 @@ NODE_ENV=production
 ALLOWED_ORIGINS=https://your-frontend-domain.com,https://www.your-frontend-domain.com
 
 # Server Configuration
-PORT=8080
+PORT=8081
 HOST=0.0.0.0
 ```
 
@@ -170,7 +170,7 @@ For local development with Docker:
 
 ```bash
 DB_HOST=postgres
-DB_PORT=5432
+DB_PORT=5436
 DB_NAME=sheep
 DB_USER=postgres
 DB_PASS=postgres

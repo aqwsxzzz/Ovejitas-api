@@ -1,18 +1,11 @@
 #!/bin/sh
+set -e
 
-# Run migrations
-npx sequelize-cli db:migrate --migrations-path src/migrations --config src/database/sequelize-config.js
+echo "Running migrations..."
+npx sequelize-cli db:migrate
 
-# Check if the database has already been seeded
-if [ ! -f /app/.seeded ]; then
-  echo "Seeding database..."
-  npx sequelize-cli db:seed:all --seeders-path src/seeders --config src/database/sequelize-config.js
+echo "Running seeders..."
+npx sequelize-cli db:seed:all
 
-  # Mark as seeded
-  touch /app/.seeded
-else
-  echo "Database already seeded. Skipping..."
-fi
-
-# Start the app
-npx nodemon --config nodemon.json --legacy-watch
+echo "Starting app..."
+exec npx nodemon --config nodemon.json --legacy-watch

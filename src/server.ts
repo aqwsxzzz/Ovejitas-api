@@ -121,7 +121,8 @@ server.setErrorHandler((error, _request, reply) => {
 
 const start = async () => {
 	try {
-		await server.listen({ port: 8080, host: '0.0.0.0' });
+		const port = Number(process.env.PORT) || 8081;
+		await server.listen({ port, host: '0.0.0.0' });
 		console.log(`Server is running at ${server.server.address()}`);
 
 		console.log('📋 Registered routes:');

@@ -3,7 +3,7 @@ import { AnimalModel } from './animal.model';
 import { AnimalBulkCreate, AnimalCreate, AnimalReproductiveStatus, AnimalSex, AnimalStatus, AnimalUpdate } from './animal.schema';
 import { decodeId, encodeId } from '../../utils/id-hash-util';
 import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
-import { FindOptions, Transaction, QueryTypes } from 'sequelize';
+import { FindOptions, Op, Transaction, QueryTypes } from 'sequelize';
 import { UserLanguage } from '../user/user.schema';
 import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
 
@@ -163,7 +163,7 @@ export class AnimalService extends BaseService {
 			}
 
 			await this.validateBreedSpeciesMatch(breedId, speciesId, transaction);
-			await this.validateTagNumberUniqueness(data.tagNumber, farmId, speciesId, transaction);
+			await this.validateTagNumberUniqueness(data.tagNumber, farmId, speciesId, transaction, id);
 
 			const createData = { ...rest, breedId, speciesId, fatherId, motherId, name: data.name || '', ...(birthDate ? { birthDate } : {}), ...(acquisitionDate ? { acquisitionDate } : {}) };
 
@@ -415,9 +415,13 @@ export class AnimalService extends BaseService {
 		}
 	}
 
-	private async validateTagNumberUniqueness(tagNumber: string, farmId: number, speciesId: number, transaction:Transaction): Promise<void> {
+	private async validateTagNumberUniqueness(tagNumber: string, farmId: number, speciesId: number, transaction: Transaction, excludeId?: number): Promise<void> {
+		const where: Record<string, unknown> = { tagNumber, farmId, speciesId };
+		if (excludeId) {
+			where.id = { [Op.ne]: excludeId };
+		}
 		const existing = await this.db.models.Animal.findOne({
-			where: { tagNumber, farmId, speciesId },
+			where,
 			transaction,
 		});
 		if (existing) {
