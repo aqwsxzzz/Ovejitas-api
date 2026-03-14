@@ -1,66 +1,69 @@
-"use strict";
+'use strict';
 
 module.exports = {
 	up: async (queryInterface, Sequelize) => {
+		const [existing] = await queryInterface.sequelize.query(
+			'SELECT id FROM breeds LIMIT 1;',
+		);
+		if (existing.length > 0) return;
+
 		const now = new Date();
 
-		// Insert breeds (base table, no name)
-		const breeds = [
-			// sheep (species_id: 1)
-			{ species_id: 1, created_at: now, updated_at: now },
-			{ species_id: 1, created_at: now, updated_at: now },
-			{ species_id: 1, created_at: now, updated_at: now },
-			// cattle (species_id: 2)
-			{ species_id: 2, created_at: now, updated_at: now },
-			{ species_id: 2, created_at: now, updated_at: now },
-			{ species_id: 2, created_at: now, updated_at: now },
-			// goat (species_id: 3)
-			{ species_id: 3, created_at: now, updated_at: now },
-			{ species_id: 3, created_at: now, updated_at: now },
-			{ species_id: 3, created_at: now, updated_at: now },
-			// pig (species_id: 4)
-			{ species_id: 4, created_at: now, updated_at: now },
-			{ species_id: 4, created_at: now, updated_at: now },
-			{ species_id: 4, created_at: now, updated_at: now },
-		];
-		await queryInterface.bulkInsert("breeds", breeds, {});
+		// Look up species IDs by English name
+		const [speciesRows] = await queryInterface.sequelize.query(
+			`SELECT s.id, st.name
+			 FROM species s
+			 JOIN species_translation st ON st.species_id = s.id
+			 WHERE st.language_code = 'en'
+			 ORDER BY s.id ASC;`,
+		);
 
-		// Insert breed translations (en + es)
-		const breedTranslations = [
-			// sheep breeds (breed_id: 1-3)
-			{ breed_id: 1, language_code: "en", name: "Suffolk", created_at: now, updated_at: now },
-			{ breed_id: 1, language_code: "es", name: "Suffolk", created_at: now, updated_at: now },
-			{ breed_id: 2, language_code: "en", name: "Merino", created_at: now, updated_at: now },
-			{ breed_id: 2, language_code: "es", name: "Merino", created_at: now, updated_at: now },
-			{ breed_id: 3, language_code: "en", name: "Other", created_at: now, updated_at: now },
-			{ breed_id: 3, language_code: "es", name: "Otro", created_at: now, updated_at: now },
-			// cattle breeds (breed_id: 4-6)
-			{ breed_id: 4, language_code: "en", name: "Holstein", created_at: now, updated_at: now },
-			{ breed_id: 4, language_code: "es", name: "Holstein", created_at: now, updated_at: now },
-			{ breed_id: 5, language_code: "en", name: "Angus", created_at: now, updated_at: now },
-			{ breed_id: 5, language_code: "es", name: "Angus", created_at: now, updated_at: now },
-			{ breed_id: 6, language_code: "en", name: "Other", created_at: now, updated_at: now },
-			{ breed_id: 6, language_code: "es", name: "Otro", created_at: now, updated_at: now },
-			// goat breeds (breed_id: 7-9)
-			{ breed_id: 7, language_code: "en", name: "Boer", created_at: now, updated_at: now },
-			{ breed_id: 7, language_code: "es", name: "Boer", created_at: now, updated_at: now },
-			{ breed_id: 8, language_code: "en", name: "Saanen", created_at: now, updated_at: now },
-			{ breed_id: 8, language_code: "es", name: "Saanen", created_at: now, updated_at: now },
-			{ breed_id: 9, language_code: "en", name: "Other", created_at: now, updated_at: now },
-			{ breed_id: 9, language_code: "es", name: "Otro", created_at: now, updated_at: now },
-			// pig breeds (breed_id: 10-12)
-			{ breed_id: 10, language_code: "en", name: "Yorkshire", created_at: now, updated_at: now },
-			{ breed_id: 10, language_code: "es", name: "Yorkshire", created_at: now, updated_at: now },
-			{ breed_id: 11, language_code: "en", name: "Duroc", created_at: now, updated_at: now },
-			{ breed_id: 11, language_code: "es", name: "Duroc", created_at: now, updated_at: now },
-			{ breed_id: 12, language_code: "en", name: "Other", created_at: now, updated_at: now },
-			{ breed_id: 12, language_code: "es", name: "Otro", created_at: now, updated_at: now },
+		const speciesMap = {};
+		for (const row of speciesRows) {
+			speciesMap[row.name] = row.id;
+		}
+
+		const breedData = [
+			{ species: 'Sheep', breeds: [{ en: 'Suffolk', es: 'Suffolk' }, { en: 'Merino', es: 'Merino' }, { en: 'Other', es: 'Otro' }] },
+			{ species: 'Cattle', breeds: [{ en: 'Holstein', es: 'Holstein' }, { en: 'Angus', es: 'Angus' }, { en: 'Other', es: 'Otro' }] },
+			{ species: 'Goat', breeds: [{ en: 'Boer', es: 'Boer' }, { en: 'Saanen', es: 'Saanen' }, { en: 'Other', es: 'Otro' }] },
+			{ species: 'Pig', breeds: [{ en: 'Yorkshire', es: 'Yorkshire' }, { en: 'Duroc', es: 'Duroc' }, { en: 'Other', es: 'Otro' }] },
 		];
-		await queryInterface.bulkInsert("breed_translation", breedTranslations, {});
+
+		for (const group of breedData) {
+			const speciesId = speciesMap[group.species];
+
+			// Insert breed rows for this species
+			const breedRows = group.breeds.map(() => ({
+				species_id: speciesId,
+				created_at: now,
+				updated_at: now,
+			}));
+			await queryInterface.bulkInsert('breeds', breedRows);
+
+			// Query back the IDs we just inserted
+			const [insertedBreeds] = await queryInterface.sequelize.query(
+				`SELECT id FROM breeds
+				 WHERE species_id = ${speciesId}
+				 ORDER BY id ASC;`,
+			);
+
+			// Build translations using actual IDs
+			const translations = [];
+			for (let i = 0; i < group.breeds.length; i++) {
+				const breedId = insertedBreeds[i].id;
+				const breed = group.breeds[i];
+				translations.push(
+					{ breed_id: breedId, language_code: 'en', name: breed.en, created_at: now, updated_at: now },
+					{ breed_id: breedId, language_code: 'es', name: breed.es, created_at: now, updated_at: now },
+				);
+			}
+			await queryInterface.bulkInsert('breed_translation', translations);
+		}
 	},
 
 	down: async (queryInterface, Sequelize) => {
-		await queryInterface.bulkDelete("breed_translation", null, {});
-		await queryInterface.bulkDelete("breeds", null, {});
+		await queryInterface.bulkDelete('breed_translation', null, {});
+		await queryInterface.bulkDelete('breeds', null, {});
 	},
 };

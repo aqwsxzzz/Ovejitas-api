@@ -32,7 +32,7 @@ COPY --from=build /app/build ./build
 COPY --from=build /app/node_modules ./node_modules
 
 # Expose the application port
-EXPOSE 8080
+EXPOSE ${PORT:-8081}
 
 # Command to run the application
 CMD ["node", "build/index.js"]
@@ -52,7 +52,7 @@ RUN npm install
 COPY . .
 
 # Expose the application port
-EXPOSE 8080
+EXPOSE ${PORT:-8081}
 
 # Command to run the application with nodemon for development
 CMD ["npm", "run", "dev"]

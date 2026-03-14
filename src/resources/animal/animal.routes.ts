@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { AnimalCreate, AnimalBulkCreate, AnimalInclude, AnimalParams, createAnimalSchema, listAnimalSchema, getAnimalByIdSchema, bulkCreateAnimalSchema, getAnimalDashboardSchema, deleteAnimalSchema } from './animal.schema';
+import { AnimalCreate, AnimalUpdate, AnimalBulkCreate, AnimalInclude, AnimalParams, createAnimalSchema, listAnimalSchema, getAnimalByIdSchema, bulkCreateAnimalSchema, getAnimalDashboardSchema, updateAnimalSchema, deleteAnimalSchema } from './animal.schema';
 import { AnimalSerializer } from './animal.serializer';
 import { decodeId } from '../../utils/id-hash-util';
 import { UserLanguage } from '../user/user.schema';
@@ -83,6 +83,29 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 			const serializedData = AnimalSerializer.serializeDashboard(dashboardData);
 
 			reply.success(serializedData);
+		} catch (error) {
+			fastify.handleDbError(error, reply);
+		}
+	});
+
+	fastify.put('/:id', { schema: updateAnimalSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Params: AnimalParams; Body: AnimalUpdate}>, reply) => {
+		try {
+			const { id } = request.params;
+			const farmId = request.lastVisitedFarmId;
+			const animalId = decodeId(id);
+
+			if (!animalId) {
+				return reply.error('Invalid animal ID', 400);
+			}
+
+			const animal = await fastify.animalService.updateAnimal(animalId, farmId, request.body);
+
+			if (!animal) {
+				return reply.error('Animal not found', 404);
+			}
+
+			const serializedAnimal = AnimalSerializer.serialize(animal);
+			reply.success(serializedAnimal);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

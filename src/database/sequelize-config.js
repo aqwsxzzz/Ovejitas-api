@@ -10,7 +10,7 @@ module.exports = {
 		port: Number(process.env.DB_PORT) || 5432,
 		dialect: 'postgres',
 		logging: process.env.NODE_ENV !== 'production',
-
+		seederStorage: 'sequelize',
 	},
 
 	production: {
@@ -22,6 +22,7 @@ module.exports = {
 		port: Number(process.env.DB_PORT),
 		dialect: process.env.DB_DIALECT,
 		logging: false,
+		seederStorage: 'sequelize',
 		dialectOptions: {
 			ssl: {
 				require: true,
