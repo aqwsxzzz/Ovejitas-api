@@ -31,7 +31,7 @@ describe('Species endpoints', () => {
 			expect(response.statusCode).toBe(401);
 		});
 
-		it('returns all species without pagination', async () => {
+		it('returns all species with default pagination', async () => {
 			const auth = await createAuthenticatedUser(app);
 			cookie = auth.cookie;
 
@@ -48,6 +48,10 @@ describe('Species endpoints', () => {
 			expect(response.statusCode).toBe(200);
 			expect(body.status).toBe('success');
 			expect(body.data).toHaveLength(2);
+			expect(body.meta.pagination).toBeDefined();
+			expect(body.meta.pagination.page).toBe(1);
+			expect(body.meta.pagination.limit).toBe(20);
+			expect(body.meta.pagination.total).toBe(2);
 		});
 
 		it('returns paginated results with meta when page and limit are provided', async () => {

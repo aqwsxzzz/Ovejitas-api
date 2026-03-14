@@ -33,16 +33,9 @@ const speciesRoutes: FastifyPluginAsync = async (fastify) => {
 		try {
 			const { include, order, language } = request.query;
 			const pagination = parsePagination(request.query);
-			const result = await fastify.speciesService.getAllSpecies(include, order, language, pagination ?? undefined);
-
-			if (pagination && !Array.isArray(result)) {
-				const serializedSpecies = SpeciesSerializer.serializeMany(result.rows);
-				return reply.successWithPagination(serializedSpecies, result.pagination);
-			}
-
-			const species = Array.isArray(result) ? result : result.rows;
-			const serializedSpecies = SpeciesSerializer.serializeMany(species);
-			reply.success(serializedSpecies);
+			const result = await fastify.speciesService.getAllSpecies(include, order, language, pagination);
+			const serializedSpecies = SpeciesSerializer.serializeMany(result.rows);
+			reply.successWithPagination(serializedSpecies, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

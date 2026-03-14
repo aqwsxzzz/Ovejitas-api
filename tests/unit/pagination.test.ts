@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { parsePagination } from '../../src/utils/pagination';
 
 describe('parsePagination', () => {
-	it('returns null when no page or limit params are provided', () => {
+	it('returns defaults when no page or limit params are provided', () => {
 		const result = parsePagination({});
-		expect(result).toBeNull();
+		expect(result).toEqual({ page: 1, limit: 20, offset: 0 });
 	});
 
-	it('returns null when params are unrelated to pagination', () => {
+	it('returns defaults when params are unrelated to pagination', () => {
 		const result = parsePagination({ include: 'translations', order: 'id:asc' });
-		expect(result).toBeNull();
+		expect(result).toEqual({ page: 1, limit: 20, offset: 0 });
 	});
 
 	it('calculates correct offset for page 1', () => {

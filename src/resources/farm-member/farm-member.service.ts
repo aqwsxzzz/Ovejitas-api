@@ -10,7 +10,7 @@ export class FarmMemberService extends BaseService {
 		return farmMember;
 	}
 
-	async getFarmMembersWithUsers(farmId: number, pagination?: PaginationParams): Promise<FarmMemberWithUser[] | PaginatedResult<FarmMemberWithUser>> {
+	async getFarmMembersWithUsers(farmId: number, pagination: PaginationParams): Promise<PaginatedResult<FarmMemberWithUser>> {
 		const findOptions = {
 			where: { farmId },
 			include: [{
@@ -20,26 +20,21 @@ export class FarmMemberService extends BaseService {
 			}],
 		};
 
-		if (pagination) {
-			const { rows, count } = await this.db.models.FarmMember.findAndCountAll({
-				...findOptions,
+		const { rows, count } = await this.db.models.FarmMember.findAndCountAll({
+			...findOptions,
+			limit: pagination.limit,
+			offset: pagination.offset,
+			distinct: true,
+		});
+
+		return {
+			rows: rows as unknown as FarmMemberWithUser[],
+			pagination: {
+				page: pagination.page,
 				limit: pagination.limit,
-				offset: pagination.offset,
-				distinct: true,
-			});
-
-			return {
-				rows: rows as unknown as FarmMemberWithUser[],
-				pagination: {
-					page: pagination.page,
-					limit: pagination.limit,
-					total: count,
-					totalPages: Math.ceil(count / pagination.limit),
-				},
-			};
-		}
-
-		const farmMembers = await this.db.models.FarmMember.findAll(findOptions);
-		return farmMembers as unknown as FarmMemberWithUser[];
+				total: count,
+				totalPages: Math.ceil(count / pagination.limit),
+			},
+		};
 	}
 }

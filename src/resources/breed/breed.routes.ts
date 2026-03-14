@@ -17,17 +17,10 @@ const breedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 				order,
 				include,
 				language as UserLanguage | undefined,
-				pagination ?? undefined,
+				pagination,
 			);
-
-			if (pagination && !Array.isArray(result)) {
-				const serializedBreeds = result.rows.map(breed => BreedSerializer.serialize(breed));
-				return reply.successWithPagination(serializedBreeds, result.pagination);
-			}
-
-			const breeds = Array.isArray(result) ? result : result.rows;
-			const serializedBreeds = breeds.map(breed => BreedSerializer.serialize(breed));
-			reply.success(serializedBreeds);
+			const serializedBreeds = result.rows.map(breed => BreedSerializer.serialize(breed));
+			reply.successWithPagination(serializedBreeds, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

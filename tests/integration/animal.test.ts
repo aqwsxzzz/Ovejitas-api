@@ -31,7 +31,7 @@ describe('Animal endpoints', () => {
 			expect(response.statusCode).toBe(401);
 		});
 
-		it('returns animals for the authenticated user farm', async () => {
+		it('returns animals with default pagination', async () => {
 			const { user, cookie } = await createAuthenticatedUser(app);
 			const { speciesId } = await createSpecies(app);
 			const { breedId } = await createBreed(app, speciesId);
@@ -48,6 +48,8 @@ describe('Animal endpoints', () => {
 			expect(response.statusCode).toBe(200);
 			expect(body.status).toBe('success');
 			expect(body.data).toHaveLength(2);
+			expect(body.meta.pagination).toBeDefined();
+			expect(body.meta.pagination.total).toBe(2);
 		});
 
 		it('returns paginated results when page and limit provided', async () => {

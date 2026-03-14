@@ -41,16 +41,9 @@ const farmMemberRoutes: FastifyPluginAsync = async (fastify) => {
 			}
 
 			const pagination = parsePagination(request.query);
-			const result = await fastify.farmMemberService.getFarmMembersWithUsers(decodedFarmId, pagination ?? undefined);
-
-			if (pagination && !Array.isArray(result)) {
-				const serializedMembers = FarmMemberSerializer.serializeMany(result.rows);
-				return reply.successWithPagination(serializedMembers, result.pagination);
-			}
-
-			const members = Array.isArray(result) ? result : result.rows;
-			const serializedMembers = FarmMemberSerializer.serializeMany(members);
-			reply.success(serializedMembers, 'Farm members retrieved successfully');
+			const result = await fastify.farmMemberService.getFarmMembersWithUsers(decodedFarmId, pagination);
+			const serializedMembers = FarmMemberSerializer.serializeMany(result.rows);
+			reply.successWithPagination(serializedMembers, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

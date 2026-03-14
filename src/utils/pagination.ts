@@ -21,13 +21,9 @@ export interface PaginatedResult<T> {
 	pagination: PaginationMeta;
 }
 
-export function parsePagination(query: Record<string, unknown>): PaginationParams | null {
+export function parsePagination(query: Record<string, unknown>): PaginationParams {
 	const page = Number(query.page);
 	const limit = Number(query.limit);
-
-	if (!query.page && !query.limit) {
-		return null;
-	}
 
 	const resolvedPage = page > 0 ? page : 1;
 	const resolvedLimit = limit > 0 ? Math.min(limit, 100) : 20;

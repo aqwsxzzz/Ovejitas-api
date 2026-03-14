@@ -38,7 +38,7 @@ export class SpeciesService extends BaseService {
 		return { species, translation };
 	}
 
-	async getAllSpecies(includeParam?: string, order?: string, language?: UserLanguage, pagination?: PaginationParams): Promise<SpeciesModel[] | PaginatedResult<SpeciesModel>> {
+	async getAllSpecies(includeParam?: string, order?: string, language?: UserLanguage, pagination?: PaginationParams): Promise<PaginatedResult<SpeciesModel>> {
 		const findOptions: FindOptions = {};
 
 		let includes = this.parseIncludes(includeParam, SpeciesService.ALLOWED_INCLUDES);
@@ -52,11 +52,7 @@ export class SpeciesService extends BaseService {
 
 		findOptions.order = this.parseOrder(order, SpeciesService.ALLOWED_ORDERS);
 
-		if (pagination) {
-			return this.findAllPaginated(this.db.models.Species, findOptions, pagination);
-		}
-
-		return await this.db.models.Species.findAll(findOptions);
+		return this.findAllPaginated(this.db.models.Species, findOptions, pagination!);
 	}
 
 	async getSpeciesById(id: number,language: UserLanguage, includeParam?: string ): Promise<SpeciesModel | null> {

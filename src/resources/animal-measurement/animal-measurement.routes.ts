@@ -12,17 +12,9 @@ const animalMeasurementRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
 			const { animalId } = request.params;
 			const { measurementType } = request.query;
 			const pagination = parsePagination(request.query);
-
-			const result = await fastify.animalMeasurementService.getAnimalMeasurements(decodeId(animalId)!, '', { measurementType: measurementType as string }, pagination ?? undefined);
-
-			if (pagination && !Array.isArray(result)) {
-				const serializedMeasurements = AnimalMeasurementSerializer.serializeMany(result.rows);
-				return reply.successWithPagination(serializedMeasurements, result.pagination);
-			}
-
-			const measurements = Array.isArray(result) ? result : result.rows;
-			const serializedMeasurements = AnimalMeasurementSerializer.serializeMany(measurements);
-			reply.success(serializedMeasurements);
+			const result = await fastify.animalMeasurementService.getAnimalMeasurements(decodeId(animalId)!, '', { measurementType: measurementType as string }, pagination);
+			const serializedMeasurements = AnimalMeasurementSerializer.serializeMany(result.rows);
+			reply.successWithPagination(serializedMeasurements, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

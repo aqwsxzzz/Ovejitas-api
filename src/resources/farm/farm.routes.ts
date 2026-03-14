@@ -37,16 +37,9 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 	}, async (request: FastifyRequest<{ Querystring: FarmListQuery }>, reply) => {
 		try {
 			const pagination = parsePagination(request.query);
-			const result = await fastify.farmService.getFarms(request.user!.id, pagination ?? undefined);
-
-			if (pagination && !Array.isArray(result)) {
-				const serializedFarms = FarmSerializer.serializeMany(result.rows);
-				return reply.successWithPagination(serializedFarms, result.pagination);
-			}
-
-			const farms = Array.isArray(result) ? result : result.rows;
-			const serializedFarms = farms.map(FarmSerializer.serialize);
-			reply.success(serializedFarms, 'Farms retrieved successfully');
+			const result = await fastify.farmService.getFarms(request.user!.id, pagination);
+			const serializedFarms = FarmSerializer.serializeMany(result.rows);
+			reply.successWithPagination(serializedFarms, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

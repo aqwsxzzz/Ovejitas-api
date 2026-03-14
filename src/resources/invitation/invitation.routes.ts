@@ -46,16 +46,9 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
 		try {
 			const data = request.query;
 			const pagination = parsePagination(request.query);
-			const result = await fastify.invitationService.listInvitations(data, pagination ?? undefined);
-
-			if (pagination && !Array.isArray(result)) {
-				const serializedInvitations = InvitationSerializer.serializeMany(result.rows);
-				return reply.successWithPagination(serializedInvitations, result.pagination);
-			}
-
-			const invitations = Array.isArray(result) ? result : result.rows;
-			const serializedInvitations = InvitationSerializer.serializeMany(invitations);
-			reply.success(serializedInvitations);
+			const result = await fastify.invitationService.listInvitations(data, pagination);
+			const serializedInvitations = InvitationSerializer.serializeMany(result.rows);
+			reply.successWithPagination(serializedInvitations, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

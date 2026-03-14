@@ -65,7 +65,7 @@ export class AnimalService extends BaseService {
 		},
 	};
 
-	async getAnimals(farmId: number, language: UserLanguage, includeParam?: string, filters?: Record<string, string>, pagination?: PaginationParams): Promise<AnimalModel[] | PaginatedResult<AnimalModel> | null> {
+	async getAnimals(farmId: number, language: UserLanguage, includeParam?: string, filters?: Record<string, string>, pagination?: PaginationParams): Promise<PaginatedResult<AnimalModel>> {
 
 		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
 		const filterWhere = this.parseFilters(filters, AnimalService.ALLOWED_FILTERS);
@@ -83,11 +83,7 @@ export class AnimalService extends BaseService {
 			include: includes,
 		};
 
-		if (pagination) {
-			return this.findAllPaginated(this.db.models.Animal, findOptions, pagination);
-		}
-
-		return this.db.models.Animal.findAll(findOptions);
+		return this.findAllPaginated(this.db.models.Animal, findOptions, pagination!);
 	}
 
 	async createAnimal({ data, language }: { data: AnimalCreate & { farmId: number }, language: UserLanguage }): Promise<AnimalModel | null> {

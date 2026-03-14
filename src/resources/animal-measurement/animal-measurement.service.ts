@@ -24,18 +24,14 @@ export class AnimalMeasurementService extends BaseService {
 		[AnimalMeasurementType.Temperature]: [AnimalMeasurementUnit.Celsius],
 	};
 
-	async getAnimalMeasurements(animalId: number, order?: string, filters?: Record<string, string>, pagination?: PaginationParams): Promise<AnimalMeasurementModel[] | PaginatedResult<AnimalMeasurementModel>> {
+	async getAnimalMeasurements(animalId: number, order?: string, filters?: Record<string, string>, pagination?: PaginationParams): Promise<PaginatedResult<AnimalMeasurementModel>> {
 		const ordering = this.parseOrder(order, AnimalMeasurementService.ALLOWED_ORDERS);
 		const filterWhere = this.parseFilters(filters, AnimalMeasurementService.ALLOWED_FILTERS);
 
 		const findOptions: FindOptions = { where: { animalId, ...filterWhere } };
 		findOptions.order = ordering;
 
-		if (pagination) {
-			return this.findAllPaginated(this.db.models.AnimalMeasurement, findOptions, pagination);
-		}
-
-		return await this.db.models.AnimalMeasurement.findAll(findOptions);
+		return this.findAllPaginated(this.db.models.AnimalMeasurement, findOptions, pagination!);
 	}
 
 	async createAnimalMeasurement({ animalId, data, userId }: {

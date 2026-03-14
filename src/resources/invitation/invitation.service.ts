@@ -90,7 +90,7 @@ export class InvitationService extends BaseService {
 	}
 
 	// List Invitations
-	async listInvitations(data: ListInvitationParams, pagination?: PaginationParams): Promise<InvitationModel[] | PaginatedResult<InvitationModel>> {
+	async listInvitations(data: ListInvitationParams, pagination: PaginationParams): Promise<PaginatedResult<InvitationModel>> {
 		const { farmId, status, email } = data;
 		const decodedFarmId = decodeId(farmId!);
 
@@ -106,11 +106,7 @@ export class InvitationService extends BaseService {
 			},
 		};
 
-		if (pagination) {
-			return this.findAllPaginated(this.db.models.Invitation, findOptions, pagination);
-		}
-
-		return await this.db.models.Invitation.findAll(findOptions);
+		return this.findAllPaginated(this.db.models.Invitation, findOptions, pagination);
 	}
 
 	private  async  isAlreadyMemberOrInvited(email: string, farmId: number) {

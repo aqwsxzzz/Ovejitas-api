@@ -30,7 +30,7 @@ describe('Expense endpoints', () => {
 			expect(response.statusCode).toBe(401);
 		});
 
-		it('returns expenses for the authenticated user farm', async () => {
+		it('returns expenses with default pagination', async () => {
 			const { user, cookie } = await createAuthenticatedUser(app);
 			await createExpense(app, user.farmId, user.id, { amount: 100, category: 'feed' });
 			await createExpense(app, user.farmId, user.id, { amount: 200, category: 'veterinary' });
@@ -45,6 +45,8 @@ describe('Expense endpoints', () => {
 			expect(response.statusCode).toBe(200);
 			expect(body.status).toBe('success');
 			expect(body.data).toHaveLength(2);
+			expect(body.meta.pagination).toBeDefined();
+			expect(body.meta.pagination.total).toBe(2);
 		});
 
 		it('returns paginated results', async () => {

@@ -13,17 +13,9 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 			const farmId = request.lastVisitedFarmId;
 			const filters = fastify.animalService.extractFilterParams(request.query);
 			const pagination = parsePagination(request.query);
-
-			const result = await fastify.animalService.getAnimals(farmId, language, include, filters, pagination ?? undefined);
-
-			if (pagination && result && !Array.isArray(result)) {
-				const serializedAnimals = AnimalSerializer.serializeMany(result.rows);
-				return reply.successWithPagination(serializedAnimals, result.pagination);
-			}
-
-			const animals = Array.isArray(result) ? result : result?.rows ?? [];
-			const serializedAnimals = AnimalSerializer.serializeMany(animals);
-			reply.success(serializedAnimals);
+			const result = await fastify.animalService.getAnimals(farmId, language, include, filters, pagination);
+			const serializedAnimals = AnimalSerializer.serializeMany(result.rows);
+			reply.successWithPagination(serializedAnimals, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

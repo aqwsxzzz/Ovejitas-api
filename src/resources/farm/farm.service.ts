@@ -13,43 +13,30 @@ export class FarmService extends BaseService {
 		return farm;
 	}
 
-	async getFarms(userId: number, pagination?: PaginationParams): Promise<FarmModel[] | PaginatedResult<FarmModel>> {
-		if (pagination) {
-			const { rows, count } = await this.db.models.FarmMember.findAndCountAll({
-				where: { userId },
-				include: [{
-					model: FarmModel,
-					as: 'farm',
-					required: true,
-				}],
-				limit: pagination.limit,
-				offset: pagination.offset,
-				distinct: true,
-			});
-
-			const farms = (rows as unknown as FarmMemberWithFarm[]).map(member => member.farm);
-
-			return {
-				rows: farms,
-				pagination: {
-					page: pagination.page,
-					limit: pagination.limit,
-					total: count,
-					totalPages: Math.ceil(count / pagination.limit),
-				},
-			};
-		}
-
-		const farmMembers = await this.db.models.FarmMember.findAll({
+	async getFarms(userId: number, pagination: PaginationParams): Promise<PaginatedResult<FarmModel>> {
+		const { rows, count } = await this.db.models.FarmMember.findAndCountAll({
 			where: { userId },
 			include: [{
 				model: FarmModel,
 				as: 'farm',
 				required: true,
 			}],
-		}) as FarmMemberWithFarm[];
+			limit: pagination.limit,
+			offset: pagination.offset,
+			distinct: true,
+		});
 
-		return farmMembers.map(member => member.farm);
+		const farms = (rows as unknown as FarmMemberWithFarm[]).map(member => member.farm);
+
+		return {
+			rows: farms,
+			pagination: {
+				page: pagination.page,
+				limit: pagination.limit,
+				total: count,
+				totalPages: Math.ceil(count / pagination.limit),
+			},
+		};
 	}
 
 	async getFarm(farmId: number): Promise<FarmModel> {

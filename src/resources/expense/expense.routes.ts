@@ -14,16 +14,9 @@ const expenseRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 		try {
 			const farmId = request.lastVisitedFarmId;
 			const pagination = parsePagination(request.query);
-			const result = await fastify.expenseService.getExpenses(farmId, request.query, pagination ?? undefined);
-
-			if (pagination && !Array.isArray(result)) {
-				const serializedExpenses = ExpenseSerializer.serializeMany(result.rows);
-				return reply.successWithPagination(serializedExpenses, result.pagination);
-			}
-
-			const expenses = Array.isArray(result) ? result : result.rows;
-			const serializedExpenses = ExpenseSerializer.serializeMany(expenses);
-			reply.success(serializedExpenses);
+			const result = await fastify.expenseService.getExpenses(farmId, request.query, pagination);
+			const serializedExpenses = ExpenseSerializer.serializeMany(result.rows);
+			reply.successWithPagination(serializedExpenses, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}
