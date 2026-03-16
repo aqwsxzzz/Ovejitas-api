@@ -8,4 +8,4 @@ echo "Running seeders..."
 npx sequelize-cli db:seed:all
 
 echo "Starting app..."
-exec node build/index.js
+exec node build/server.js
