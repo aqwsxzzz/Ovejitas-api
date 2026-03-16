@@ -58,7 +58,7 @@ export const initDatabase = async (): Promise<Database> => {
 			dialectOptions: {
 				ssl: {
 					require: true,
-					rejectUnauthorized: true,
+					rejectUnauthorized: false,
 				},
 			},
 		}),

@@ -45,7 +45,7 @@ COOKIE_DOMAIN=.yourdomain.com
 
 ## SSL/TLS Configuration
 
-- **Production**: SSL is automatically enabled with `rejectUnauthorized: true` when `NODE_ENV=production`. Render's managed PostgreSQL uses valid certificates, so strict verification works out of the box.
+- **Production**: SSL is automatically enabled when `NODE_ENV=production`. Render's managed PostgreSQL uses self-signed certificates, so `rejectUnauthorized` is set to `false`.
 - **Local Development**: No SSL is configured, since the local Docker PostgreSQL doesn't use it.
 
 ## Connection Pool Configuration
