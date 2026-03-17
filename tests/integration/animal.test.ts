@@ -93,6 +93,162 @@ describe('Animal endpoints', () => {
 		});
 	});
 
+	describe('GET /api/v1/animals/search', () => {
+		it('returns 401 when not authenticated', async () => {
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?q=test&language=en',
+			});
+
+			expect(response.statusCode).toBe(401);
+		});
+
+		it('returns 400 when q parameter is missing', async () => {
+			const { cookie } = await createAuthenticatedUser(app);
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?language=en',
+				headers: { cookie },
+			});
+
+			expect(response.statusCode).toBe(400);
+		});
+
+		it('matches animals by name', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'S-001', name: 'Dolly' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'S-002', name: 'Molly' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'S-003', name: 'Berta' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?q=olly&language=en',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.status).toBe('success');
+			expect(body.data).toHaveLength(2);
+		});
+
+		it('matches animals by tagNumber', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'TAG-100', name: 'Alpha' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'TAG-200', name: 'Beta' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'OTHER-001', name: 'Gamma' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?q=TAG&language=en',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data).toHaveLength(2);
+		});
+
+		it('matches animals by groupName', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'G-001', groupName: 'Barn A' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'G-002', groupName: 'Barn B' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'G-003', groupName: 'Pasture' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?q=barn&language=en',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data).toHaveLength(2);
+		});
+
+		it('is case-insensitive', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'CI-001', name: 'DOLLY' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?q=dolly&language=en',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data).toHaveLength(1);
+		});
+
+		it('combines search with sex filter', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'SF-001', name: 'Dolly', sex: 'female' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'SF-002', name: 'Dollar', sex: 'male' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?q=dol&sex=female&language=en',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].tagNumber).toBe('SF-001');
+		});
+
+		it('returns paginated search results', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'P-001', name: 'Sheep One' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'P-002', name: 'Sheep Two' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'P-003', name: 'Sheep Three' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?q=sheep&language=en&page=1&limit=2',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data).toHaveLength(2);
+			expect(body.meta.pagination.total).toBe(3);
+			expect(body.meta.pagination.totalPages).toBe(2);
+		});
+
+		it('returns empty results when no matches found', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'NM-001', name: 'Dolly' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/search?q=zzzznotfound&language=en',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data).toHaveLength(0);
+			expect(body.meta.pagination.total).toBe(0);
+		});
+	});
+
 	describe('POST /api/v1/animals', () => {
 		it('returns 401 when not authenticated with valid body', async () => {
 			const response = await app.inject({
