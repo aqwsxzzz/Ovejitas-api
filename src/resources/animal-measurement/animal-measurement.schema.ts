@@ -1,6 +1,7 @@
 import { Static, Type } from '@sinclair/typebox';
 import {
 	createListEndpointSchema,
+	createGetEndpointSchema,
 	createPostEndpointSchema,
 	createDeleteEndpointSchema,
 } from '../../utils/schema-builder';
@@ -67,8 +68,21 @@ const AnimalMeasurementDeleteParamsSchema = Type.Object({
 	measurementId: Type.String(),
 });
 
+export const AnimalMeasurementWithDeltaResponseSchema = Type.Object(
+	{
+		...AnimalMeasurementResponseSchema.properties,
+		change: Type.Union([Type.Number(), Type.Null()]),
+		changePercent: Type.Union([Type.Number(), Type.Null()]),
+	},
+	{
+		$id: 'animalMeasurementWithDeltaResponse',
+		additionalProperties: false,
+	},
+);
+
 export type AnimalMeasurement = Static<typeof AnimalMeasurementSchema>;
 export type AnimalMeasurementResponse = Static<typeof AnimalMeasurementResponseSchema>;
+export type AnimalMeasurementWithDeltaResponse = Static<typeof AnimalMeasurementWithDeltaResponseSchema>;
 export type AnimalMeasurementParams = Static<typeof AnimalMeasurementParamsSchema>;
 export type AnimalMeasurementDeleteParams = Static<typeof AnimalMeasurementDeleteParamsSchema>;
 export type AnimalMeasurementCreate = Static<typeof AnimalMeasurementCreateSchema>;
@@ -90,9 +104,15 @@ const AnimalMeasurementCreateSchema = Type.Object(
 
 export const listAnimalMeasurementsSchema = createListEndpointSchema({
 	params: AnimalMeasurementParamsSchema,
-	dataSchema: Type.Array(AnimalMeasurementResponseSchema),
+	dataSchema: Type.Array(AnimalMeasurementWithDeltaResponseSchema),
 	errorCodes: [404],
 	querystring: AnimalMeasurementQuerySchema,
+});
+
+export const latestAnimalMeasurementsSchema = createGetEndpointSchema({
+	params: AnimalMeasurementParamsSchema,
+	dataSchema: Type.Array(AnimalMeasurementResponseSchema),
+	errorCodes: [404],
 });
 
 export const createAnimalMeasurementSchema = createPostEndpointSchema({

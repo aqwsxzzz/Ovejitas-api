@@ -77,6 +77,28 @@ export async function createAnimal(
 	};
 }
 
+export async function createMeasurement(
+	app: FastifyInstance,
+	animalId: number,
+	measuredBy: number,
+	overrides?: { measurementType?: string; value?: number; unit?: string; measuredAt?: string; notes?: string },
+): Promise<{ measurementId: number; encodedMeasurementId: string }> {
+	const measurement = await app.db.models.AnimalMeasurement.create({
+		animalId,
+		measurementType: overrides?.measurementType ?? 'weight',
+		value: overrides?.value ?? 50.0,
+		unit: overrides?.unit ?? 'kg',
+		measuredAt: overrides?.measuredAt ?? new Date().toISOString(),
+		measuredBy,
+		notes: overrides?.notes,
+	});
+
+	return {
+		measurementId: measurement.dataValues.id,
+		encodedMeasurementId: encodeId(measurement.dataValues.id),
+	};
+}
+
 export async function createExpense(
 	app: FastifyInstance,
 	farmId: number,
