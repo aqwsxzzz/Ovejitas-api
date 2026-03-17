@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { AnimalCreate, AnimalUpdate, AnimalBulkCreate, AnimalInclude, AnimalSearchQuery, AnimalParams, createAnimalSchema, listAnimalSchema, searchAnimalSchema, getAnimalByIdSchema, bulkCreateAnimalSchema, getAnimalDashboardSchema, updateAnimalSchema, deleteAnimalSchema } from './animal.schema';
+import { AnimalCreate, AnimalUpdate, AnimalBulkCreate, AnimalInclude, AnimalSearchQuery, AnimalParams, createAnimalSchema, listAnimalSchema, searchAnimalSchema, getAnimalByIdSchema, bulkCreateAnimalSchema, getAnimalDashboardSchema, getAnimalStatsSchema, updateAnimalSchema, deleteAnimalSchema } from './animal.schema';
 import { AnimalSerializer } from './animal.serializer';
 import { decodeId } from '../../utils/id-hash-util';
 import { UserLanguage } from '../user/user.schema';
@@ -31,6 +31,16 @@ const animalRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 			const result = await fastify.animalService.searchAnimals(farmId, q, language, include, filters, pagination);
 			const serializedAnimals = AnimalSerializer.serializeMany(result.rows);
 			reply.successWithPagination(serializedAnimals, result.pagination);
+		} catch (error) {
+			fastify.handleDbError(error, reply);
+		}
+	});
+
+	fastify.get('/stats', { schema: getAnimalStatsSchema, preHandler: fastify.authenticate }, async (request, reply) => {
+		try {
+			const farmId = request.lastVisitedFarmId;
+			const stats = await fastify.animalService.getAnimalStats(farmId);
+			reply.success(stats);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

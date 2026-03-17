@@ -249,6 +249,65 @@ describe('Animal endpoints', () => {
 		});
 	});
 
+	describe('GET /api/v1/animals/stats', () => {
+		it('returns 401 when not authenticated', async () => {
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/stats',
+			});
+
+			expect(response.statusCode).toBe(401);
+		});
+
+		it('returns total count and lastSevenDays count', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'ST-001' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'ST-002' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'ST-003' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/stats',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.status).toBe('success');
+			expect(body.data.total).toBe(3);
+			expect(body.data.lastSevenDays).toBe(3);
+		});
+
+		it('lastSevenDays only counts animals created within 7 days', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+
+			// Create a recent animal (within 7 days — default created_at is now)
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'REC-001' });
+
+			// Create an old animal by directly updating created_at
+			const { animalId } = await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'OLD-001' });
+			await app.db.models.Animal.update(
+				{ createdAt: new Date('2020-01-01') },
+				{ where: { id: animalId }, silent: true },
+			);
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/stats',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data.total).toBe(2);
+			expect(body.data.lastSevenDays).toBe(1);
+		});
+	});
+
 	describe('POST /api/v1/animals', () => {
 		it('returns 401 when not authenticated with valid body', async () => {
 			const response = await app.inject({
