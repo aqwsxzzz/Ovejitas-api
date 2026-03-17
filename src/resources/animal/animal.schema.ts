@@ -170,6 +170,15 @@ export const AnimalIncludeSchema = Type.Object({
 	...PaginationQueryProps,
 });
 
+export const AnimalSearchQuerySchema = Type.Object({
+	q: Type.String({ minLength: 1 }),
+	include: Type.Optional(Type.String()),
+	language: Type.Enum(UserLanguage),
+	sex: Type.Optional(Type.Enum(AnimalSex)),
+	speciesId: Type.Optional(Type.String()),
+	...PaginationQueryProps,
+});
+
 export const AnimalParamsSchema = Type.Object({
 	id: Type.String(),
 });
@@ -180,6 +189,7 @@ export type AnimalResponse = Static<typeof AnimalResponseSchema>;
 export type AnimalUpdate = Static<typeof AnimalUpdateSchema>;
 export type AnimalParams = Static<typeof AnimalParamsSchema>;
 export type AnimalInclude = Static<typeof AnimalIncludeSchema>;
+export type AnimalSearchQuery = Static<typeof AnimalSearchQuerySchema>;
 export type AnimalBulkCreate = Static<typeof AnimalBulkCreateSchema>;
 
 export const createAnimalSchema = createPostEndpointSchema({
@@ -192,6 +202,12 @@ export const listAnimalSchema = createListEndpointSchema({
 	querystring: AnimalIncludeSchema,
 	dataSchema: Type.Array(AnimalResponseSchema),
 	errorCodes: [404],
+});
+
+export const searchAnimalSchema = createListEndpointSchema({
+	querystring: AnimalSearchQuerySchema,
+	dataSchema: Type.Array(AnimalResponseSchema),
+	errorCodes: [400],
 });
 
 export const getAnimalByIdSchema = createGetEndpointSchema({

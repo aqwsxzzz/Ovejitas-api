@@ -86,6 +86,36 @@ export class AnimalService extends BaseService {
 		return this.findAllPaginated(this.db.models.Animal, findOptions, pagination!);
 	}
 
+	async searchAnimals(farmId: number, searchTerm: string, language: UserLanguage, includeParam?: string, filters?: Record<string, string>, pagination?: PaginationParams): Promise<PaginatedResult<AnimalModel>> {
+		let includes = this.parseIncludes(includeParam, AnimalService.ALLOWED_INCLUDES);
+		const filterWhere = this.parseFilters(filters, AnimalService.ALLOWED_FILTERS);
+
+		if (includeParam?.includes('species.translations') || includeParam?.includes('breed.translations')) {
+			includes = this.filterTranslationsByLanguage(includes, language);
+		}
+
+		const searchWhere = {
+			[Op.or]: [
+				{ name: { [Op.iLike]: `%${searchTerm}%` } },
+				{ tagNumber: { [Op.iLike]: `%${searchTerm}%` } },
+				{ groupName: { [Op.iLike]: `%${searchTerm}%` } },
+			],
+		};
+
+		const findOptions: FindOptions = {
+			where: {
+				[Op.and]: [
+					{ farmId },
+					searchWhere,
+					filterWhere,
+				],
+			},
+			include: includes,
+		};
+
+		return this.findAllPaginated(this.db.models.Animal, findOptions, pagination!);
+	}
+
 	async createAnimal({ data, language }: { data: AnimalCreate & { farmId: number }, language: UserLanguage }): Promise<AnimalModel | null> {
 		return this.db.sequelize.transaction(async (transaction) => {
 			const { breedId, speciesId, fatherId, motherId } = await this.decodeAnimalIds(data);
