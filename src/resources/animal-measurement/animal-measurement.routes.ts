@@ -1,11 +1,21 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { AnimalMeasurementParams, AnimalMeasurementDeleteParams, AnimalMeasurementCreate, listAnimalMeasurementsSchema, createAnimalMeasurementSchema, deleteAnimalMeasurementSchema, AnimalMeasurementQuery } from './animal-measurement.schema';
+import { AnimalMeasurementParams, AnimalMeasurementDeleteParams, AnimalMeasurementCreate, listAnimalMeasurementsSchema, latestAnimalMeasurementsSchema, createAnimalMeasurementSchema, deleteAnimalMeasurementSchema, AnimalMeasurementQuery } from './animal-measurement.schema';
 import { decodeId } from '../../utils/id-hash-util';
 import { AnimalMeasurementSerializer } from './animal-measurement.serializer';
 import { parsePagination } from '../../utils/pagination';
 
 const animalMeasurementRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-	// Routes now use the decorated service instead of creating a new instance
+
+	fastify.get('/animals/:animalId/measurements/latest', { schema: latestAnimalMeasurementsSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Params: AnimalMeasurementParams}>, reply) => {
+		try {
+			const { animalId } = request.params;
+			const measurements = await fastify.animalMeasurementService.getLatestMeasurements(decodeId(animalId)!);
+			const serialized = AnimalMeasurementSerializer.serializeMany(measurements);
+			reply.success(serialized);
+		} catch (error) {
+			fastify.handleDbError(error, reply);
+		}
+	});
 
 	fastify.get('/animals/:animalId/measurements', { schema: listAnimalMeasurementsSchema, preHandler: fastify.authenticate }, async (request: FastifyRequest<{Params: AnimalMeasurementParams, Querystring: AnimalMeasurementQuery}>, reply) => {
 		try {
@@ -13,7 +23,9 @@ const animalMeasurementRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
 			const { measurementType } = request.query;
 			const pagination = parsePagination(request.query);
 			const result = await fastify.animalMeasurementService.getAnimalMeasurements(decodeId(animalId)!, '', { measurementType: measurementType as string }, pagination);
-			const serializedMeasurements = AnimalMeasurementSerializer.serializeMany(result.rows);
+			const serializedMeasurements = measurementType
+				? AnimalMeasurementSerializer.serializeManyWithDeltas(result.rows)
+				: AnimalMeasurementSerializer.serializeMany(result.rows).map(m => ({ ...m, change: null, changePercent: null }));
 			reply.successWithPagination(serializedMeasurements, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);

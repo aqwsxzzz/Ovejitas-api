@@ -34,6 +34,25 @@ export class AnimalMeasurementService extends BaseService {
 		return this.findAllPaginated(this.db.models.AnimalMeasurement, findOptions, pagination!);
 	}
 
+	async getLatestMeasurements(animalId: number): Promise<AnimalMeasurementModel[]> {
+		const measurements = await this.db.models.AnimalMeasurement.findAll({
+			where: { animalId },
+			order: [['measuredAt', 'DESC']],
+		});
+
+		const seen = new Set<AnimalMeasurementType>();
+		const latest: AnimalMeasurementModel[] = [];
+
+		for (const measurement of measurements) {
+			if (!seen.has(measurement.measurementType)) {
+				seen.add(measurement.measurementType);
+				latest.push(measurement);
+			}
+		}
+
+		return latest;
+	}
+
 	async createAnimalMeasurement({ animalId, data, userId }: {
 		animalId: number;
 		data: AnimalMeasurementCreate;
