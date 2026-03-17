@@ -59,7 +59,7 @@ export async function createAnimal(
 	farmId: number,
 	speciesId: number,
 	breedId: number,
-	overrides?: { tagNumber?: string; name?: string; sex?: string },
+	overrides?: { tagNumber?: string; name?: string; sex?: string; groupName?: string },
 ): Promise<{ animalId: number; encodedAnimalId: string }> {
 	const animal = await app.db.models.Animal.create({
 		farmId,
@@ -68,6 +68,7 @@ export async function createAnimal(
 		tagNumber: overrides?.tagNumber ?? `TAG-${Date.now()}`,
 		name: overrides?.name ?? 'Test Animal',
 		sex: overrides?.sex ?? 'unknown',
+		...(overrides?.groupName ? { groupName: overrides.groupName } : {}),
 	});
 
 	return {
