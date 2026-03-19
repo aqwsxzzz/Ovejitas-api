@@ -5,6 +5,8 @@ import { createInvitationToken } from '../../utils/token-util';
 import { FarmMemberRole } from '../farm-member/farm-member.schema';
 import { InvitationStatus, InvitationAcceptInput, InvitationCreateInput, ListInvitationParams } from './invitation.schema';
 import { FilterConfig, FilterConfigBuilder } from '../../utils/filter-parser';
+import { PaginatedResult, PaginationParams } from '../../utils/pagination';
+import { InvitationModel } from './invitation.model';
 
 const MAX_FREE_USER_FARMS = 2;
 const INVITATION_EXPIRY_DAYS = 7;
@@ -88,7 +90,7 @@ export class InvitationService extends BaseService {
 	}
 
 	// List Invitations
-	async listInvitations(data: ListInvitationParams) {
+	async listInvitations(data: ListInvitationParams, pagination: PaginationParams): Promise<PaginatedResult<InvitationModel>> {
 		const { farmId, status, email } = data;
 		const decodedFarmId = decodeId(farmId!);
 
@@ -104,9 +106,7 @@ export class InvitationService extends BaseService {
 			},
 		};
 
-		const invitations = await this.db.models.Invitation.findAll(findOptions);
-
-		return invitations;
+		return this.findAllPaginated(this.db.models.Invitation, findOptions, pagination);
 	}
 
 	private  async  isAlreadyMemberOrInvited(email: string, farmId: number) {

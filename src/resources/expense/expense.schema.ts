@@ -1,10 +1,12 @@
 import { Static, Type } from '@sinclair/typebox';
 import {
 	createGetEndpointSchema,
+	createListEndpointSchema,
 	createPostEndpointSchema,
 	createUpdateEndpointSchema,
 	createDeleteEndpointSchema,
 } from '../../utils/schema-builder';
+import { PaginationQueryProps } from '../../utils/pagination';
 
 export enum ExpenseCategory {
 	Feed = 'feed',
@@ -142,6 +144,7 @@ const ExpenseQuerySchema = Type.Object(
 		category: Type.Optional(Type.Enum(ExpenseCategory)),
 		paymentMethod: Type.Optional(Type.Enum(PaymentMethod)),
 		status: Type.Optional(Type.Enum(ExpenseStatus)),
+		...PaginationQueryProps,
 	},
 	{
 		$id: 'expenseQuery',
@@ -160,7 +163,7 @@ export type ExpenseUpdate = Static<typeof ExpenseUpdateSchema>;
 export type ExpenseQuery = Static<typeof ExpenseQuerySchema>;
 export type ExpenseParams = Static<typeof ExpenseParamsSchema>;
 
-export const listExpensesSchema = createGetEndpointSchema({
+export const listExpensesSchema = createListEndpointSchema({
 	querystring: ExpenseQuerySchema,
 	dataSchema: Type.Array(ExpenseResponseSchema),
 	errorCodes: [404],

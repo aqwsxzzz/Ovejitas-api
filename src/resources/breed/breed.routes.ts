@@ -3,6 +3,7 @@ import { BreedCreate, BreedQuery, createBreedSchema, getBreedsSchema } from './b
 import { decodeId } from '../../utils/id-hash-util';
 import { BreedSerializer } from './breed.serializer';
 import { UserLanguage } from '../user/user.schema';
+import { parsePagination } from '../../utils/pagination';
 
 const breedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
@@ -10,14 +11,16 @@ const breedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 		try {
 			const { speciesId, order, include, language } = request.query;
 			const decodedSpeciesId = decodeId(speciesId);
-			const breeds = await fastify.breedService.getBreedsBySpecies(
+			const pagination = parsePagination(request.query);
+			const result = await fastify.breedService.getBreedsBySpecies(
 				decodedSpeciesId!,
 				order,
 				include,
 				language as UserLanguage | undefined,
+				pagination,
 			);
-			const serializedBreeds = breeds.map(breed => BreedSerializer.serialize(breed));
-			reply.success(serializedBreeds);
+			const serializedBreeds = result.rows.map(breed => BreedSerializer.serialize(breed));
+			reply.successWithPagination(serializedBreeds, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

@@ -1,7 +1,8 @@
 import { Static, Type } from '@sinclair/typebox';
 import { FarmMemberModel  } from './farm-member.model';
-import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createGetEndpointSchema, createListEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 import { FarmModel } from '../farm/farm.model';
+import { PaginationQueryProps } from '../../utils/pagination';
 
 export enum FarmMemberRole {
 	OWNER = 'owner',
@@ -111,8 +112,18 @@ export const getFarmMemberSchema = createGetEndpointSchema({
 	errorCodes: [404],
 });
 
-export const getFarmMembersSchema = createGetEndpointSchema({
+const FarmMemberListQuerySchema = Type.Object({
+	...PaginationQueryProps,
+}, {
+	$id: 'farmMemberListQuery',
+	additionalProperties: false,
+});
+
+export type FarmMemberListQuery = Static<typeof FarmMemberListQuerySchema>;
+
+export const getFarmMembersSchema = createListEndpointSchema({
 	params: FarmMemberFarmParamsSchema,
+	querystring: FarmMemberListQuerySchema,
 	dataSchema: FarmMemberListResponseSchema,
 	errorCodes: [404],
 });

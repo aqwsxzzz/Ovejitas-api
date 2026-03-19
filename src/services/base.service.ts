@@ -1,8 +1,10 @@
+import { FindOptions, Model, ModelStatic } from 'sequelize';
 import { Database } from '../database';
 import { IncludeParser, IncludeConfig, SequelizeIncludeObject } from '../utils/include-parser';
 import { OrderConfig, OrderParser, SequelizeOrderItem } from '../utils/order-parser';
 import { UserLanguage } from '../resources/user/user.schema';
 import { FilterConfig, FilterParser, SequelizeWhereOptions } from '../utils/filter-parser';
+import { PaginatedResult, PaginationParams } from '../utils/pagination';
 
 export abstract class BaseService {
 	protected db: Database;
@@ -101,6 +103,36 @@ export abstract class BaseService {
 		}
 
 		return combined;
+	}
+
+	/**
+   * Executes a paginated findAndCountAll query
+   * @param model - The Sequelize model to query
+   * @param findOptions - Sequelize find options (where, include, order, etc.)
+   * @param pagination - Pagination parameters (page, limit, offset)
+   * @returns Paginated result with rows and pagination metadata
+   */
+	protected async findAllPaginated<T extends Model>(
+		model: ModelStatic<T>,
+		findOptions: FindOptions,
+		pagination: PaginationParams,
+	): Promise<PaginatedResult<T>> {
+		const { rows, count } = await model.findAndCountAll({
+			...findOptions,
+			limit: pagination.limit,
+			offset: pagination.offset,
+			distinct: true,
+		});
+
+		return {
+			rows,
+			pagination: {
+				page: pagination.page,
+				limit: pagination.limit,
+				total: count,
+				totalPages: Math.ceil(count / pagination.limit),
+			},
+		};
 	}
 
 	/**

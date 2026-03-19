@@ -5,6 +5,7 @@ import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
 import { OrderParser, TypedOrderConfig } from '../../utils/order-parser';
 import { FindOptions } from 'sequelize';
 import { UserLanguage } from '../user/user.schema';
+import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 
 export class BreedService extends BaseService {
 
@@ -35,7 +36,7 @@ export class BreedService extends BaseService {
 		return { breed, translation };
 	}
 
-	async getBreedsBySpecies(speciesId: number, order?: string, includeParam?: string, language?: UserLanguage): Promise<BreedModel[]> {
+	async getBreedsBySpecies(speciesId: number, order?: string, includeParam?: string, language?: UserLanguage, pagination?: PaginationParams): Promise<PaginatedResult<BreedModel>> {
 		const findOptions: FindOptions = {
 			where: { speciesId },
 		};
@@ -49,6 +50,6 @@ export class BreedService extends BaseService {
 		findOptions.include = includes;
 		findOptions.order = this.parseOrder(order, BreedService.ALLOWED_ORDERS);
 
-		return await this.db.models.Breed.findAll(findOptions);
+		return this.findAllPaginated(this.db.models.Breed, findOptions, pagination!);
 	}
 }

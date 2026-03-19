@@ -1,5 +1,6 @@
 import { Static, Type } from '@sinclair/typebox';
-import { createDeleteEndpointSchema, createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createDeleteEndpointSchema, createGetEndpointSchema, createListEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { PaginationQueryProps } from '../../utils/pagination';
 
 export const FarmSchema = Type.Object({
 	id: Type.Integer({ minimum: 1 }),
@@ -36,11 +37,19 @@ const FarmResponseSchema = Type.Object({
 	additionalProperties: false,
 });
 
+const FarmListQuerySchema = Type.Object({
+	...PaginationQueryProps,
+}, {
+	$id: 'farmListQuery',
+	additionalProperties: false,
+});
+
 export type Farm = Static<typeof FarmSchema>;
 export type FarmCreateInput = Static<typeof FarmCreateSchema>;
 export type FarmUpdateInput = Static<typeof FarmUpdateSchema>;
 export type FarmResponse = Static<typeof FarmResponseSchema>;
 export type FarmParams = Static<typeof FarmParamsSchema>;
+export type FarmListQuery = Static<typeof FarmListQuerySchema>;
 
 export const createFarmSchema = createPostEndpointSchema({
 	body: FarmCreateSchema,
@@ -58,6 +67,12 @@ export const updateFarmSchema = createPostEndpointSchema({
 export const getFarmSchema = createGetEndpointSchema({
 	params: FarmParamsSchema,
 	dataSchema: FarmResponseSchema,
+	errorCodes: [404],
+});
+
+export const listFarmsSchema = createListEndpointSchema({
+	querystring: FarmListQuerySchema,
+	dataSchema: Type.Array(FarmResponseSchema),
 	errorCodes: [404],
 });
 

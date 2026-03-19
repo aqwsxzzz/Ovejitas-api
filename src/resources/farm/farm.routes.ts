@@ -3,13 +3,16 @@ import {
 	createFarmSchema,
 	deleteFarmSchema,
 	FarmCreateInput,
+	FarmListQuery,
 	FarmParams,
 	FarmUpdateInput,
 	getFarmSchema,
+	listFarmsSchema,
 	updateFarmSchema,
 } from './farm.schema';
 import { FarmSerializer } from './farm.serializer';
 import { decodeId } from '../../utils/id-hash-util';
+import { parsePagination } from '../../utils/pagination';
 
 const farmRoutes: FastifyPluginAsync = async (fastify) => {
 	// Create Farm
@@ -29,12 +32,14 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Get Farms
 	fastify.get('/', {
+		schema: listFarmsSchema,
 		preHandler: fastify.authenticate,
-	}, async (request, reply) => {
+	}, async (request: FastifyRequest<{ Querystring: FarmListQuery }>, reply) => {
 		try {
-			const farms = await fastify.farmService.getFarms(request.user!.id);
-			const serializedFarms = farms.map(FarmSerializer.serialize);
-			reply.success(serializedFarms, 'Farms retrieved successfully');
+			const pagination = parsePagination(request.query);
+			const result = await fastify.farmService.getFarms(request.user!.id, pagination);
+			const serializedFarms = FarmSerializer.serializeMany(result.rows);
+			reply.successWithPagination(serializedFarms, result.pagination);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}

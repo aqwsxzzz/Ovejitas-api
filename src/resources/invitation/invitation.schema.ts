@@ -1,6 +1,7 @@
 import { Static, Type } from '@sinclair/typebox';
-import { createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createListEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
 import { FarmMemberRole } from '../farm-member/farm-member.schema';
+import { PaginationQueryProps } from '../../utils/pagination';
 
 export enum InvitationStatus {
 	PENDING = 'pending',
@@ -50,6 +51,7 @@ const ListInvitationParamsSchema = Type.Object({
 	farmId: Type.String(),
 	status: Type.Optional(Type.Enum(InvitationStatus)),
 	email: Type.Optional(Type.String()),
+	...PaginationQueryProps,
 });
 
 export type Invitation = Static<typeof InvitationSchema>;
@@ -69,7 +71,7 @@ export const acceptInvitationSchema = createPostEndpointSchema({
 	errorCodes: [400, 404],
 });
 
-export const listInvitationsSchema = createGetEndpointSchema({
+export const listInvitationsSchema = createListEndpointSchema({
 	querystring: ListInvitationParamsSchema,
 	dataSchema: Type.Array(InvitationResponseSchema),
 	errorCodes: [400, 404],

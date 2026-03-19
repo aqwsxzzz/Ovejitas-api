@@ -1,6 +1,7 @@
 import { BaseService } from '../../services/base.service';
 import { FarmMemberModel } from './farm-member.model';
 import { FarmMemberCreateInput, FarmMemberWithUser } from './farm-member.schema';
+import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 
 export class FarmMemberService extends BaseService {
 
@@ -9,15 +10,31 @@ export class FarmMemberService extends BaseService {
 		return farmMember;
 	}
 
-	async getFarmMembersWithUsers(farmId: number): Promise<FarmMemberWithUser[]> {
-		const farmMembers = await this.db.models.FarmMember.findAll({
+	async getFarmMembersWithUsers(farmId: number, pagination: PaginationParams): Promise<PaginatedResult<FarmMemberWithUser>> {
+		const findOptions = {
 			where: { farmId },
 			include: [{
 				model: this.db.models.User,
 				as: 'user',
 				attributes: ['id', 'displayName', 'email'],
 			}],
+		};
+
+		const { rows, count } = await this.db.models.FarmMember.findAndCountAll({
+			...findOptions,
+			limit: pagination.limit,
+			offset: pagination.offset,
+			distinct: true,
 		});
-		return farmMembers as unknown as FarmMemberWithUser[];
+
+		return {
+			rows: rows as unknown as FarmMemberWithUser[],
+			pagination: {
+				page: pagination.page,
+				limit: pagination.limit,
+				total: count,
+				totalPages: Math.ceil(count / pagination.limit),
+			},
+		};
 	}
 }

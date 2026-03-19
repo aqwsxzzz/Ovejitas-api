@@ -2,6 +2,7 @@ import { BaseService } from '../../services/base.service';
 import { FarmMemberRole, FarmMemberWithFarm } from '../farm-member/farm-member.schema';
 import { FarmModel } from './farm.model';
 import { FarmCreateInput, FarmUpdateInput } from './farm.schema';
+import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 
 export class FarmService extends BaseService {
 
@@ -12,18 +13,30 @@ export class FarmService extends BaseService {
 		return farm;
 	}
 
-	async getFarms(userId: number): Promise<FarmModel[]> {
-		const farmMembers = await this.db.models.FarmMember.findAll({
+	async getFarms(userId: number, pagination: PaginationParams): Promise<PaginatedResult<FarmModel>> {
+		const { rows, count } = await this.db.models.FarmMember.findAndCountAll({
 			where: { userId },
 			include: [{
 				model: FarmModel,
 				as: 'farm',
 				required: true,
 			}],
-		}) as FarmMemberWithFarm[];
+			limit: pagination.limit,
+			offset: pagination.offset,
+			distinct: true,
+		});
 
-		return farmMembers.map(member => member.farm);
+		const farms = (rows as unknown as FarmMemberWithFarm[]).map(member => member.farm);
 
+		return {
+			rows: farms,
+			pagination: {
+				page: pagination.page,
+				limit: pagination.limit,
+				total: count,
+				totalPages: Math.ceil(count / pagination.limit),
+			},
+		};
 	}
 
 	async getFarm(farmId: number): Promise<FarmModel> {
