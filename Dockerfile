@@ -1,7 +1,7 @@
 # ---- Dev stage (used by docker-compose) ----
 FROM node:20-slim AS dev
 WORKDIR /app
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 
