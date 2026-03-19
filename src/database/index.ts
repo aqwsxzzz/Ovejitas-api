@@ -38,7 +38,9 @@ export interface Database {
 }
 
 export const initDatabase = async (): Promise<Database> => {
-	const sequelize =   new Sequelize({
+	const isProduction = process.env.NODE_ENV === 'production';
+
+	const sequelize = new Sequelize({
 		dialect: 'postgres',
 		host: process.env.DB_HOST,
 		port: Number(process.env.DB_PORT),
@@ -47,20 +49,19 @@ export const initDatabase = async (): Promise<Database> => {
 		database: process.env.DB_NAME,
 		logging: false,
 		pool: {
-			max: 10, // Maximum number of connections in pool
-			min: 2, // Minimum number of connections in pool
-			acquire: 30000, // Maximum time (ms) to get connection before throwing error
-			idle: 10000, // Maximum time (ms) connection can be idle before being released
-			evict: 10000, // Time interval (ms) to run eviction to release idle connections
+			max: 5,
+			min: 0,
+			acquire: 30000,
+			idle: 10000,
 		},
-		retry: {
-			max: 3, // Maximum retry attempts for failed connections
-		},
-		dialectOptions: {
-			connectTimeout: 60000, // Connection timeout in ms
-			keepAlive: true, // Enable TCP keep-alive
-			keepAliveInitialDelayMillis: 10000, // Initial delay before keep-alive probes
-		},
+		...(isProduction && {
+			dialectOptions: {
+				ssl: {
+					require: true,
+					rejectUnauthorized: false,
+				},
+			},
+		}),
 	});
 
 	const User = initUserModel(sequelize);

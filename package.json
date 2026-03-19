@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js",
+    "start": "node build/server.js",
     "dev": "nodemon --config nodemon.json",
     "docker:dev": "nodemon --config nodemon.json",
     "dev:seed": "node src/scripts/dev-seed.js",
@@ -32,6 +32,7 @@
     "nodemon": "^3.1.10",
     "pg": "^8.15.6",
     "sequelize": "^6.37.7",
+    "sequelize-cli": "^6.6.5",
     "sequelize-fastify": "^2.0.0"
   },
   "devDependencies": {
