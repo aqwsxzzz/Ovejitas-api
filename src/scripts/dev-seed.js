@@ -11,6 +11,7 @@
  *   - 15 animals across all species/breeds
  *   - 40+ measurements (weight, height, temperature) per animal
  *   - 15+ expenses across categories
+ *   - 2 chicken flocks with flock events and egg collections
  */
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -270,6 +271,115 @@ async function main() {
 		expenseCount++;
 	}
 	console.log(`Created ${expenseCount} expenses`);
+
+	// --- Flocks (Chicken) ---
+	const chickenSpeciesId = species['Chicken'];
+	const chickenBreeds = {};
+	for (const [key, id] of Object.entries(breeds)) {
+		if (key.startsWith('Chicken:')) {
+			chickenBreeds[key.replace('Chicken:', '')] = id;
+		}
+	}
+
+	const flockDefs = [
+		{
+			name: 'Layer Flock A',
+			breedKey: 'Leghorn',
+			flockType: 'layers',
+			initialCount: 50,
+			currentCount: 47,
+			startDate: '2025-10-01',
+			acquisitionType: 'purchased',
+			houseName: 'Coop 1',
+			ageAtAcquisitionWeeks: 18,
+			notes: 'First batch of laying hens',
+		},
+		{
+			name: 'Dual Purpose Flock B',
+			breedKey: 'Rhode Island Red',
+			flockType: 'dual_purpose',
+			initialCount: 30,
+			currentCount: 28,
+			startDate: '2025-11-15',
+			acquisitionType: 'purchased',
+			houseName: 'Coop 2',
+			ageAtAcquisitionWeeks: 16,
+			notes: 'Mixed use flock for eggs and meat',
+		},
+	];
+
+	const flockIds = [];
+	for (const f of flockDefs) {
+		const flock = await queryOne(
+			`INSERT INTO flocks (farm_id, species_id, breed_id, name, flock_type, initial_count, current_count, status, start_date, acquisition_type, house_name, age_at_acquisition_weeks, notes, created_at, updated_at)
+			 VALUES (:farmId, :speciesId, :breedId, :name, :flockType, :initialCount, :currentCount, 'active', :startDate, :acquisitionType, :houseName, :ageAtAcquisitionWeeks, :notes, :now, :now)
+			 RETURNING id`,
+			{
+				farmId, speciesId: chickenSpeciesId, breedId: chickenBreeds[f.breedKey],
+				name: f.name, flockType: f.flockType, initialCount: f.initialCount,
+				currentCount: f.currentCount, startDate: f.startDate,
+				acquisitionType: f.acquisitionType, houseName: f.houseName,
+				ageAtAcquisitionWeeks: f.ageAtAcquisitionWeeks, notes: f.notes, now,
+			},
+		);
+		flockIds.push({ id: flock.id, ...f });
+	}
+	console.log(`Created ${flockIds.length} flocks`);
+
+	// --- Flock Events ---
+	const flockEventDefs = [
+		// Layer Flock A: 50 initial → -2 mortality → -1 cull = 47 current
+		{ flockIdx: 0, eventType: 'mortality', count: 2, date: '2025-11-10', reason: 'Predator attack' },
+		{ flockIdx: 0, eventType: 'cull', count: 1, date: '2025-12-05', reason: 'Sick hen, not recovering' },
+		// Dual Purpose Flock B: 30 initial → -1 mortality → -1 sale = 28 current
+		{ flockIdx: 1, eventType: 'mortality', count: 1, date: '2025-12-20', reason: 'Unknown cause' },
+		{ flockIdx: 1, eventType: 'sale', count: 1, date: '2026-01-15', reason: 'Rooster sold to neighbor' },
+	];
+
+	for (const e of flockEventDefs) {
+		await query(
+			`INSERT INTO flock_events (flock_id, event_type, count, date, reason, recorded_by, created_at, updated_at)
+			 VALUES (:flockId, :eventType, :count, :date, :reason, :userId, :now, :now)`,
+			{
+				flockId: flockIds[e.flockIdx].id, eventType: e.eventType,
+				count: e.count, date: e.date, reason: e.reason, userId, now,
+			},
+		);
+	}
+	console.log(`Created ${flockEventDefs.length} flock events`);
+
+	// --- Egg Collections ---
+	// Generate 14 days of egg data for each flock
+	const eggCollections = [];
+	for (let daysAgo = 14; daysAgo >= 1; daysAgo--) {
+		const date = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000)
+			.toISOString().split('T')[0];
+
+		// Layer Flock A: ~85-92% lay rate (47 hens)
+		const flockAEggs = 40 + Math.floor(Math.random() * 4);
+		const flockABroken = Math.random() < 0.3 ? Math.floor(Math.random() * 3) : 0;
+		eggCollections.push({
+			flockId: flockIds[0].id, date, totalEggs: flockAEggs,
+			brokenEggs: flockABroken, notes: null,
+		});
+
+		// Dual Purpose Flock B: ~60-75% lay rate (28 hens)
+		const flockBEggs = 17 + Math.floor(Math.random() * 4);
+		const flockBBroken = Math.random() < 0.2 ? Math.floor(Math.random() * 2) : 0;
+		eggCollections.push({
+			flockId: flockIds[1].id, date, totalEggs: flockBEggs,
+			brokenEggs: flockBBroken, notes: null,
+		});
+	}
+
+	for (const ec of eggCollections) {
+		await query(
+			`INSERT INTO egg_collections (flock_id, date, total_eggs, broken_eggs, collected_by, notes, created_at, updated_at)
+			 VALUES (:flockId, :date, :totalEggs, :brokenEggs, :userId, :notes, :now, :now)`,
+			{ flockId: ec.flockId, date: ec.date, totalEggs: ec.totalEggs, brokenEggs: ec.brokenEggs, userId, notes: ec.notes, now },
+		);
+	}
+	console.log(`Created ${eggCollections.length} egg collections`);
 
 	console.log('\nDev seed complete!');
 	console.log('Login: testuser@test.com / Password1');
