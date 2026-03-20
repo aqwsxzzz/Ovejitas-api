@@ -13,6 +13,9 @@ import { SpeciesService } from '../src/resources/species/species.service';
 import { SpeciesTranslationService } from '../src/resources/species-translation/species-translation.service';
 import { UserService } from '../src/resources/user/user.service';
 import { ExpenseService } from '../src/resources/expense/expense.service';
+import { FlockService } from '../src/resources/flock/flock.service';
+import { FlockEventService } from '../src/resources/flock-event/flock-event.service';
+import { EggCollectionService } from '../src/resources/egg-collection/egg-collection.service';
 
 declare module 'fastify' {
 	interface FastifyInstance {
@@ -33,6 +36,9 @@ declare module 'fastify' {
 		speciesTranslationService: SpeciesTranslationService;
 		userService: UserService;
 		expenseService: ExpenseService;
+		flockService: FlockService;
+		flockEventService: FlockEventService;
+		eggCollectionService: EggCollectionService;
 
 		// Helpers
 		handleDbError: (error: unknown, reply: FastifyReply) => void;
