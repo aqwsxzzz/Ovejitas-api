@@ -1,6 +1,6 @@
 import { BaseService } from '../../services/base.service';
 import { AnimalModel } from './animal.model';
-import { AnimalBulkCreate, AnimalCreate, AnimalReproductiveStatus, AnimalSex, AnimalStatus, AnimalUpdate } from './animal.schema';
+import { AnimalBulkCreate, AnimalCreate, AnimalReproductiveStatus, AnimalSex, AnimalStatsResponse, AnimalStatus, AnimalUpdate } from './animal.schema';
 import { decodeId, encodeId } from '../../utils/id-hash-util';
 import { IncludeParser, TypedIncludeConfig } from '../../utils/include-parser';
 import { FindOptions, Op, Transaction, QueryTypes } from 'sequelize';
@@ -254,6 +254,30 @@ export class AnimalService extends BaseService {
 				name: result.speciesName || '',
 			},
 		}));
+	}
+
+	async getAnimalStats(farmId: number): Promise<AnimalStatsResponse> {
+		interface StatsResult {
+			total: string;
+			lastSevenDays: string;
+		}
+
+		const [result] = await this.db.sequelize.query<StatsResult>(
+			`SELECT
+				COUNT(*) as "total",
+				COUNT(*) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as "lastSevenDays"
+			FROM animals a
+			WHERE a.farm_id = :farmId`,
+			{
+				replacements: { farmId },
+				type: QueryTypes.SELECT,
+			},
+		);
+
+		return {
+			total: parseInt(result.total),
+			lastSevenDays: parseInt(result.lastSevenDays),
+		};
 	}
 
 	async deleteAnimal(id: number, farmId: number): Promise<boolean> {

@@ -271,3 +271,19 @@ export const deleteAnimalSchema = createDeleteEndpointSchema({
 	params: AnimalParamsSchema,
 	errorCodes: [400, 404],
 });
+
+// Stats schemas
+export const AnimalStatsResponseSchema = Type.Object({
+	total: Type.Integer(),
+	lastSevenDays: Type.Integer(),
+}, {
+	$id: 'animalStatsResponse',
+	additionalProperties: false,
+});
+
+export type AnimalStatsResponse = Static<typeof AnimalStatsResponseSchema>;
+
+export const getAnimalStatsSchema = createGetEndpointSchema({
+	dataSchema: AnimalStatsResponseSchema,
+	errorCodes: [400],
+});
