@@ -249,6 +249,72 @@ describe('Animal endpoints', () => {
 		});
 	});
 
+	describe('GET /api/v1/animals/stats', () => {
+		it('returns 401 when not authenticated', async () => {
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/stats',
+			});
+
+			expect(response.statusCode).toBe(401);
+		});
+
+		it('returns total and lastSevenDays counts', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'ST-001' });
+			await createAnimal(app, user.farmId, speciesId, breedId, { tagNumber: 'ST-002' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/stats',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.status).toBe('success');
+			expect(body.data.total).toBe(2);
+			expect(body.data.lastSevenDays).toBe(2);
+		});
+
+		it('returns zero counts when farm has no animals', async () => {
+			const { cookie } = await createAuthenticatedUser(app);
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/stats',
+				headers: { cookie },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data.total).toBe(0);
+			expect(body.data.lastSevenDays).toBe(0);
+		});
+
+		it('only counts animals from the authenticated user farm', async () => {
+			const { user: user1, cookie: cookie1 } = await createAuthenticatedUser(app);
+			const { user: user2 } = await createAuthenticatedUser(app);
+			const { speciesId } = await createSpecies(app);
+			const { breedId } = await createBreed(app, speciesId);
+			await createAnimal(app, user1.farmId, speciesId, breedId, { tagNumber: 'F1-001' });
+			await createAnimal(app, user2.farmId, speciesId, breedId, { tagNumber: 'F2-001' });
+			await createAnimal(app, user2.farmId, speciesId, breedId, { tagNumber: 'F2-002' });
+
+			const response = await app.inject({
+				method: 'GET',
+				url: '/api/v1/animals/stats',
+				headers: { cookie: cookie1 },
+			});
+
+			const body = response.json();
+			expect(response.statusCode).toBe(200);
+			expect(body.data.total).toBe(1);
+		});
+	});
+
 	describe('POST /api/v1/animals', () => {
 		it('returns 401 when not authenticated with valid body', async () => {
 			const response = await app.inject({
