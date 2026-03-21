@@ -99,22 +99,25 @@ export async function createMeasurement(
 	};
 }
 
-export async function createExpense(
+export async function createFinancialTransaction(
 	app: FastifyInstance,
 	farmId: number,
+	speciesId: number,
 	createdBy: number,
-	overrides?: { amount?: number; category?: string; date?: string },
-): Promise<{ expenseId: number; encodedExpenseId: string }> {
-	const expense = await app.db.models.Expense.create({
+	overrides?: { type?: string; amount?: number; description?: string; date?: string },
+): Promise<{ transactionId: number; encodedTransactionId: string }> {
+	const transaction = await app.db.models.FinancialTransaction.create({
 		farmId,
+		speciesId,
 		createdBy,
+		type: overrides?.type ?? 'expense',
 		date: overrides?.date ?? '2025-01-15',
 		amount: overrides?.amount ?? 100.00,
-		category: overrides?.category ?? 'feed',
+		description: overrides?.description,
 	});
 
 	return {
-		expenseId: expense.dataValues.id,
-		encodedExpenseId: encodeId(expense.dataValues.id),
+		transactionId: transaction.dataValues.id,
+		encodedTransactionId: encodeId(transaction.dataValues.id),
 	};
 }
