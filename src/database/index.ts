@@ -18,7 +18,7 @@ import {
 	AnimalMeasurementModel,
 	initAnimalMeasurementModel,
 } from '../resources/animal-measurement/animal-measurement.model';
-import { ExpenseModel, initExpenseModel } from '../resources/expense/expense.model';
+import { FinancialTransactionModel, initFinancialTransactionModel } from '../resources/financial-transaction/financial-transaction.model';
 
 export interface Database {
 	sequelize: Sequelize;
@@ -33,7 +33,7 @@ export interface Database {
 		BreedTranslation: typeof BreedTranslationModel;
 		Animal: typeof AnimalModel;
 		AnimalMeasurement: typeof AnimalMeasurementModel;
-		Expense: typeof ExpenseModel;
+		FinancialTransaction: typeof FinancialTransactionModel;
 	};
 }
 
@@ -74,7 +74,7 @@ export const initDatabase = async (): Promise<Database> => {
 	const BreedTranslation = initBreedTranslationModel(sequelize);
 	const Animal = initAnimalModel(sequelize);
 	const AnimalMeasurement = initAnimalMeasurementModel(sequelize);
-	const Expense = initExpenseModel(sequelize);
+	const FinancialTransaction = initFinancialTransactionModel(sequelize);
 
 	// associations
 	// Farm & FarmMembers
@@ -108,13 +108,11 @@ export const initDatabase = async (): Promise<Database> => {
 	AnimalMeasurement.belongsTo(UserModel, { foreignKey: 'measuredBy', as: 'measurer' });
 	Animal.hasMany(AnimalMeasurement, { foreignKey: 'animalId', as: 'measurements' });
 
-	// Expense associations
-	Expense.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
-	Expense.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
-	Expense.belongsTo(Breed, { foreignKey: 'breedId', as: 'breed' });
-	Expense.belongsTo(Animal, { foreignKey: 'animalId', as: 'animal' });
-	Expense.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
-	FarmModel.hasMany(Expense, { foreignKey: 'farmId', as: 'expenses' });
+	// FinancialTransaction associations
+	FinancialTransaction.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FinancialTransaction.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
+	FinancialTransaction.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
+	FarmModel.hasMany(FinancialTransaction, { foreignKey: 'farmId', as: 'financialTransactions' });
 
 	const db: Database = {
 		sequelize,
@@ -129,7 +127,7 @@ export const initDatabase = async (): Promise<Database> => {
 			BreedTranslation,
 			Animal,
 			AnimalMeasurement,
-			Expense,
+			FinancialTransaction,
 		},
 	};
 
