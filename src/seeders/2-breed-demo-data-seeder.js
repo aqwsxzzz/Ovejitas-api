@@ -28,6 +28,7 @@ module.exports = {
 			{ species: 'Cattle', breeds: [{ en: 'Holstein', es: 'Holstein' }, { en: 'Angus', es: 'Angus' }, { en: 'Other', es: 'Otro' }] },
 			{ species: 'Goat', breeds: [{ en: 'Boer', es: 'Boer' }, { en: 'Saanen', es: 'Saanen' }, { en: 'Other', es: 'Otro' }] },
 			{ species: 'Pig', breeds: [{ en: 'Yorkshire', es: 'Yorkshire' }, { en: 'Duroc', es: 'Duroc' }, { en: 'Other', es: 'Otro' }] },
+			{ species: 'Chicken', breeds: [{ en: 'Leghorn', es: 'Leghorn' }, { en: 'Rhode Island Red', es: 'Rhode Island Red' }, { en: 'Plymouth Rock', es: 'Plymouth Rock' }, { en: 'Other', es: 'Otro' }] },
 		];
 
 		for (const group of breedData) {

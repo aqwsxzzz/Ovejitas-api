@@ -99,6 +99,48 @@ export async function createMeasurement(
 	};
 }
 
+export async function createFlock(
+	app: FastifyInstance,
+	farmId: number,
+	speciesId: number,
+	breedId: number,
+	overrides?: {
+		name?: string;
+		flockType?: string;
+		initialCount?: number;
+		status?: string;
+		startDate?: string;
+		acquisitionType?: string;
+		endDate?: string;
+		houseName?: string;
+		ageAtAcquisitionWeeks?: number;
+		notes?: string;
+	},
+): Promise<{ flockId: number; encodedFlockId: string }> {
+	const initialCount = overrides?.initialCount ?? 100;
+	const flock = await app.db.models.Flock.create({
+		farmId,
+		speciesId,
+		breedId,
+		name: overrides?.name ?? `Flock-${Date.now()}`,
+		flockType: overrides?.flockType ?? 'general',
+		initialCount,
+		currentCount: initialCount,
+		status: overrides?.status ?? 'active',
+		startDate: overrides?.startDate ?? '2025-01-01',
+		acquisitionType: overrides?.acquisitionType ?? 'purchased',
+		...(overrides?.endDate ? { endDate: overrides.endDate } : {}),
+		...(overrides?.houseName ? { houseName: overrides.houseName } : {}),
+		...(overrides?.ageAtAcquisitionWeeks !== undefined ? { ageAtAcquisitionWeeks: overrides.ageAtAcquisitionWeeks } : {}),
+		...(overrides?.notes ? { notes: overrides.notes } : {}),
+	});
+
+	return {
+		flockId: flock.dataValues.id,
+		encodedFlockId: encodeId(flock.dataValues.id),
+	};
+}
+
 export async function createExpense(
 	app: FastifyInstance,
 	farmId: number,
