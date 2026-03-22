@@ -120,13 +120,11 @@ export const initDatabase = async (): Promise<Database> => {
 	AnimalMeasurement.belongsTo(UserModel, { foreignKey: 'measuredBy', as: 'measurer' });
 	Animal.hasMany(AnimalMeasurement, { foreignKey: 'animalId', as: 'measurements' });
 
-	// Expense associations
-	Expense.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
-	Expense.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
-	Expense.belongsTo(Breed, { foreignKey: 'breedId', as: 'breed' });
-	Expense.belongsTo(Animal, { foreignKey: 'animalId', as: 'animal' });
-	Expense.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
-	FarmModel.hasMany(Expense, { foreignKey: 'farmId', as: 'expenses' });
+	// FinancialTransaction associations
+	FinancialTransaction.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FinancialTransaction.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
+	FinancialTransaction.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
+	FarmModel.hasMany(FinancialTransaction, { foreignKey: 'farmId', as: 'financialTransactions' });
 
 	// Flock associations
 	Flock.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
