@@ -141,7 +141,7 @@ export async function createFlock(
 	};
 }
 
-export async function createExpense(
+export async function createFinancialTransaction(
 	app: FastifyInstance,
 	farmId: number,
 	speciesId: number,

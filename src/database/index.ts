@@ -18,7 +18,10 @@ import {
 	AnimalMeasurementModel,
 	initAnimalMeasurementModel,
 } from '../resources/animal-measurement/animal-measurement.model';
-import { ExpenseModel, initExpenseModel } from '../resources/expense/expense.model';
+import {
+	FinancialTransactionModel,
+	initFinancialTransactionModel,
+} from '../resources/financial-transaction/financial-transaction.model';
 import { FlockModel, initFlockModel } from '../resources/flock/flock.model';
 import { FlockEventModel, initFlockEventModel } from '../resources/flock-event/flock-event.model';
 import {
@@ -39,7 +42,7 @@ export interface Database {
 		BreedTranslation: typeof BreedTranslationModel;
 		Animal: typeof AnimalModel;
 		AnimalMeasurement: typeof AnimalMeasurementModel;
-		Expense: typeof ExpenseModel;
+		FinancialTransaction: typeof FinancialTransactionModel;
 		Flock: typeof FlockModel;
 		FlockEvent: typeof FlockEventModel;
 		EggCollection: typeof EggCollectionModel;
@@ -83,7 +86,7 @@ export const initDatabase = async (): Promise<Database> => {
 	const BreedTranslation = initBreedTranslationModel(sequelize);
 	const Animal = initAnimalModel(sequelize);
 	const AnimalMeasurement = initAnimalMeasurementModel(sequelize);
-	const Expense = initExpenseModel(sequelize);
+	const FinancialTransaction = initFinancialTransactionModel(sequelize);
 	const Flock = initFlockModel(sequelize);
 	const FlockEvent = initFlockEventModel(sequelize);
 	const EggCollection = initEggCollectionModel(sequelize);
@@ -157,7 +160,7 @@ export const initDatabase = async (): Promise<Database> => {
 			BreedTranslation,
 			Animal,
 			AnimalMeasurement,
-			Expense,
+			FinancialTransaction,
 			Flock,
 			FlockEvent,
 			EggCollection,

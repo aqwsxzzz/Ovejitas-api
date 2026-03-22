@@ -85,7 +85,7 @@ const financialTransactionRoutes: FastifyPluginAsync = async (fastify: FastifyIn
 			});
 
 			const serialized = FinancialTransactionSerializer.serialize(transaction);
-			reply.success(serialized);
+			reply.created(serialized);
 		} catch (error) {
 			fastify.handleDbError(error, reply);
 		}
