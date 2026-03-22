@@ -99,22 +99,67 @@ export async function createMeasurement(
 	};
 }
 
-export async function createExpense(
+export async function createFlock(
 	app: FastifyInstance,
 	farmId: number,
-	createdBy: number,
-	overrides?: { amount?: number; category?: string; date?: string },
-): Promise<{ expenseId: number; encodedExpenseId: string }> {
-	const expense = await app.db.models.Expense.create({
+	speciesId: number,
+	breedId: number,
+	overrides?: {
+		name?: string;
+		flockType?: string;
+		initialCount?: number;
+		status?: string;
+		startDate?: string;
+		acquisitionType?: string;
+		endDate?: string;
+		houseName?: string;
+		ageAtAcquisitionWeeks?: number;
+		notes?: string;
+	},
+): Promise<{ flockId: number; encodedFlockId: string }> {
+	const initialCount = overrides?.initialCount ?? 100;
+	const flock = await app.db.models.Flock.create({
 		farmId,
-		createdBy,
-		date: overrides?.date ?? '2025-01-15',
-		amount: overrides?.amount ?? 100.00,
-		category: overrides?.category ?? 'feed',
+		speciesId,
+		breedId,
+		name: overrides?.name ?? `Flock-${Date.now()}`,
+		flockType: overrides?.flockType ?? 'general',
+		initialCount,
+		currentCount: initialCount,
+		status: overrides?.status ?? 'active',
+		startDate: overrides?.startDate ?? '2025-01-01',
+		acquisitionType: overrides?.acquisitionType ?? 'purchased',
+		...(overrides?.endDate ? { endDate: overrides.endDate } : {}),
+		...(overrides?.houseName ? { houseName: overrides.houseName } : {}),
+		...(overrides?.ageAtAcquisitionWeeks !== undefined ? { ageAtAcquisitionWeeks: overrides.ageAtAcquisitionWeeks } : {}),
+		...(overrides?.notes ? { notes: overrides.notes } : {}),
 	});
 
 	return {
-		expenseId: expense.dataValues.id,
-		encodedExpenseId: encodeId(expense.dataValues.id),
+		flockId: flock.dataValues.id,
+		encodedFlockId: encodeId(flock.dataValues.id),
+	};
+}
+
+export async function createFinancialTransaction(
+	app: FastifyInstance,
+	farmId: number,
+	speciesId: number,
+	createdBy: number,
+	overrides?: { type?: string; amount?: number; description?: string; date?: string },
+): Promise<{ transactionId: number; encodedTransactionId: string }> {
+	const transaction = await app.db.models.FinancialTransaction.create({
+		farmId,
+		speciesId,
+		createdBy,
+		type: overrides?.type ?? 'expense',
+		date: overrides?.date ?? '2025-01-15',
+		amount: overrides?.amount ?? 100.00,
+		description: overrides?.description,
+	});
+
+	return {
+		transactionId: transaction.dataValues.id,
+		encodedTransactionId: encodeId(transaction.dataValues.id),
 	};
 }

@@ -18,7 +18,16 @@ import {
 	AnimalMeasurementModel,
 	initAnimalMeasurementModel,
 } from '../resources/animal-measurement/animal-measurement.model';
-import { ExpenseModel, initExpenseModel } from '../resources/expense/expense.model';
+import {
+	FinancialTransactionModel,
+	initFinancialTransactionModel,
+} from '../resources/financial-transaction/financial-transaction.model';
+import { FlockModel, initFlockModel } from '../resources/flock/flock.model';
+import { FlockEventModel, initFlockEventModel } from '../resources/flock-event/flock-event.model';
+import {
+	EggCollectionModel,
+	initEggCollectionModel,
+} from '../resources/egg-collection/egg-collection.model';
 
 export interface Database {
 	sequelize: Sequelize;
@@ -33,7 +42,10 @@ export interface Database {
 		BreedTranslation: typeof BreedTranslationModel;
 		Animal: typeof AnimalModel;
 		AnimalMeasurement: typeof AnimalMeasurementModel;
-		Expense: typeof ExpenseModel;
+		FinancialTransaction: typeof FinancialTransactionModel;
+		Flock: typeof FlockModel;
+		FlockEvent: typeof FlockEventModel;
+		EggCollection: typeof EggCollectionModel;
 	};
 }
 
@@ -74,7 +86,10 @@ export const initDatabase = async (): Promise<Database> => {
 	const BreedTranslation = initBreedTranslationModel(sequelize);
 	const Animal = initAnimalModel(sequelize);
 	const AnimalMeasurement = initAnimalMeasurementModel(sequelize);
-	const Expense = initExpenseModel(sequelize);
+	const FinancialTransaction = initFinancialTransactionModel(sequelize);
+	const Flock = initFlockModel(sequelize);
+	const FlockEvent = initFlockEventModel(sequelize);
+	const EggCollection = initEggCollectionModel(sequelize);
 
 	// associations
 	// Farm & FarmMembers
@@ -108,13 +123,29 @@ export const initDatabase = async (): Promise<Database> => {
 	AnimalMeasurement.belongsTo(UserModel, { foreignKey: 'measuredBy', as: 'measurer' });
 	Animal.hasMany(AnimalMeasurement, { foreignKey: 'animalId', as: 'measurements' });
 
-	// Expense associations
-	Expense.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
-	Expense.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
-	Expense.belongsTo(Breed, { foreignKey: 'breedId', as: 'breed' });
-	Expense.belongsTo(Animal, { foreignKey: 'animalId', as: 'animal' });
-	Expense.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
-	FarmModel.hasMany(Expense, { foreignKey: 'farmId', as: 'expenses' });
+	// FinancialTransaction associations
+	FinancialTransaction.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FinancialTransaction.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
+	FinancialTransaction.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
+	FarmModel.hasMany(FinancialTransaction, { foreignKey: 'farmId', as: 'financialTransactions' });
+
+	// Flock associations
+	Flock.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	Flock.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
+	Flock.belongsTo(Breed, { foreignKey: 'breedId', as: 'breed' });
+	FarmModel.hasMany(Flock, { foreignKey: 'farmId', as: 'flocks' });
+	Species.hasMany(Flock, { foreignKey: 'speciesId', as: 'flocks' });
+	Breed.hasMany(Flock, { foreignKey: 'breedId', as: 'flocksByBreed' });
+
+	// FlockEvent associations
+	FlockEvent.belongsTo(Flock, { foreignKey: 'flockId', as: 'flock' });
+	FlockEvent.belongsTo(UserModel, { foreignKey: 'recordedBy', as: 'recorder' });
+	Flock.hasMany(FlockEvent, { foreignKey: 'flockId', as: 'events' });
+
+	// EggCollection associations
+	EggCollection.belongsTo(Flock, { foreignKey: 'flockId', as: 'flock' });
+	EggCollection.belongsTo(UserModel, { foreignKey: 'collectedBy', as: 'collector' });
+	Flock.hasMany(EggCollection, { foreignKey: 'flockId', as: 'eggCollections' });
 
 	const db: Database = {
 		sequelize,
@@ -129,7 +160,10 @@ export const initDatabase = async (): Promise<Database> => {
 			BreedTranslation,
 			Animal,
 			AnimalMeasurement,
-			Expense,
+			FinancialTransaction,
+			Flock,
+			FlockEvent,
+			EggCollection,
 		},
 	};
 

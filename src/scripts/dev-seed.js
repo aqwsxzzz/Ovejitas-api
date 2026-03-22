@@ -11,6 +11,7 @@
  *   - 15 animals across all species/breeds
  *   - 40+ measurements (weight, height, temperature) per animal
  *   - 15+ expenses across categories
+ *   - 2 chicken flocks with flock events and egg collections
  */
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -44,48 +45,52 @@ async function main() {
 
 	const now = new Date();
 
-	// --- Check if already seeded ---
-	const existing = await queryOne(
+	// --- User (skip if exists) ---
+	let existingUser = await queryOne(
 		"SELECT id FROM users WHERE email = 'testuser@test.com'",
 	);
-	if (existing) {
-		console.log('Dev seed data already exists. Skipping.');
-		return;
+	let userId;
+	let farmId;
+
+	if (existingUser) {
+		userId = existingUser.id;
+		const existingFarm = await queryOne(
+			'SELECT farm_id FROM farm_members WHERE user_id = :userId AND role = \'owner\' LIMIT 1',
+			{ userId },
+		);
+		farmId = existingFarm.farm_id;
+		console.log(`User already exists (id: ${userId}, farmId: ${farmId}). Skipping user/farm setup.`);
+	} else {
+		const hashedPassword = await bcrypt.hash('Password1', 10);
+		const user = await queryOne(
+			`INSERT INTO users (display_name, email, password, is_active, role, language, created_at, updated_at)
+			 VALUES ('Test User', 'testuser@test.com', :password, true, 'user', 'en', :now, :now)
+			 RETURNING id`,
+			{ password: hashedPassword, now },
+		);
+		userId = user.id;
+		console.log(`Created user (id: ${userId})`);
+
+		const farm = await queryOne(
+			`INSERT INTO farms (name, created_at, updated_at)
+			 VALUES ('Demo Farm', :now, :now)
+			 RETURNING id`,
+			{ now },
+		);
+		farmId = farm.id;
+		console.log(`Created farm (id: ${farmId})`);
+
+		await query(
+			`INSERT INTO farm_members (farm_id, user_id, role, created_at, updated_at)
+			 VALUES (:farmId, :userId, 'owner', :now, :now)`,
+			{ farmId, userId, now },
+		);
+
+		await query(
+			`UPDATE users SET last_visited_farm_id = :farmId WHERE id = :userId`,
+			{ farmId, userId },
+		);
 	}
-
-	// --- User ---
-	const hashedPassword = await bcrypt.hash('Password1', 10);
-	const user = await queryOne(
-		`INSERT INTO users (display_name, email, password, is_active, role, language, created_at, updated_at)
-		 VALUES ('Test User', 'testuser@test.com', :password, true, 'user', 'en', :now, :now)
-		 RETURNING id`,
-		{ password: hashedPassword, now },
-	);
-	const userId = user.id;
-	console.log(`Created user (id: ${userId})`);
-
-	// --- Farm ---
-	const farm = await queryOne(
-		`INSERT INTO farms (name, created_at, updated_at)
-		 VALUES ('Demo Farm', :now, :now)
-		 RETURNING id`,
-		{ now },
-	);
-	const farmId = farm.id;
-	console.log(`Created farm (id: ${farmId})`);
-
-	// --- Farm membership (owner) ---
-	await query(
-		`INSERT INTO farm_members (farm_id, user_id, role, created_at, updated_at)
-		 VALUES (:farmId, :userId, 'owner', :now, :now)`,
-		{ farmId, userId, now },
-	);
-
-	// --- Update user last_visited_farm_id ---
-	await query(
-		`UPDATE users SET last_visited_farm_id = :farmId WHERE id = :userId`,
-		{ farmId, userId },
-	);
 
 	// --- Look up species & breed IDs ---
 	const speciesRows = await query(
@@ -113,7 +118,21 @@ async function main() {
 		}
 	}
 
-	// --- Animals ---
+	// --- Animals (skip if exists) ---
+	const existingAnimals = await queryOne(
+		'SELECT COUNT(*) as count FROM animals WHERE farm_id = :farmId',
+		{ farmId },
+	);
+
+	let animalIds = [];
+	if (Number(existingAnimals.count) > 0) {
+		const rows = await query(
+			`SELECT a.id, a.tag_number as tag FROM animals a WHERE a.farm_id = :farmId`,
+			{ farmId },
+		);
+		animalIds = rows.map((r) => ({ id: r.id, tag: r.tag }));
+		console.log(`Animals already exist (${animalIds.length}). Skipping.`);
+	} else {
 	const animalDefs = [
 		// Sheep (5)
 		{ name: 'Luna', tag: 'SH-001', species: 'Sheep', breed: 'Suffolk', sex: 'female', status: 'alive', repro: 'pregnant', acq: 'purchased', birthDate: '2024-03-15' },
@@ -136,7 +155,6 @@ async function main() {
 		{ name: 'Bacon', tag: 'PI-003', species: 'Pig', breed: 'Yorkshire', sex: 'male', status: 'deceased', repro: 'other', acq: 'born', birthDate: '2024-05-15' },
 	];
 
-	const animalIds = [];
 	for (const a of animalDefs) {
 		const speciesId = species[a.species];
 		const breedId = breeds[`${a.species}:${a.breed}`];
@@ -149,8 +167,16 @@ async function main() {
 		animalIds.push({ id: animal.id, ...a });
 	}
 	console.log(`Created ${animalIds.length} animals`);
+	}
 
-	// --- Measurements ---
+	// --- Measurements (skip if exists) ---
+	const existingMeasurements = await queryOne(
+		'SELECT COUNT(*) as count FROM animal_measurements',
+	);
+
+	if (Number(existingMeasurements.count) > 0) {
+		console.log('Measurements already exist. Skipping.');
+	} else {
 	let measurementCount = 0;
 	const measurementDefs = [
 		// Sheep weights (history over time)
@@ -232,44 +258,180 @@ async function main() {
 		measurementCount++;
 	}
 	console.log(`Created ${measurementCount} measurements`);
+	}
 
-	// --- Expenses ---
-	const expenseDefs = [
-		{ date: '2025-11-15', amount: 800.00, desc: 'Sheep shearing service', category: 'labor', speciesKey: 'Sheep', vendor: 'Shear Pros', payment: 'cash', qty: 5, qtyUnit: 'hours', unitCost: 160.00, status: 'paid' },
-		{ date: '2025-12-01', amount: 1500.00, desc: 'Monthly feed supply - hay and grain', category: 'feed', speciesKey: 'Sheep', vendor: 'FarmFeed Co.', payment: 'bank_transfer', qty: 500, qtyUnit: 'kg', unitCost: 3.00, status: 'paid' },
-		{ date: '2025-12-05', amount: 350.00, desc: 'Vaccination - all sheep', category: 'veterinary', speciesKey: 'Sheep', vendor: 'Dr. Martinez', payment: 'cash', qty: 5, qtyUnit: 'doses', unitCost: 70.00, status: 'paid' },
-		{ date: '2025-12-10', amount: 2800.00, desc: 'Cattle feed - silage delivery', category: 'feed', speciesKey: 'Cattle', vendor: 'AgriSupply', payment: 'credit_card', qty: 1000, qtyUnit: 'kg', unitCost: 2.80, status: 'paid' },
-		{ date: '2025-12-15', amount: 450.00, desc: 'Deworming treatment - goats', category: 'veterinary', speciesKey: 'Goat', vendor: 'Dr. Martinez', payment: 'cash', qty: 3, qtyUnit: 'doses', unitCost: 150.00, status: 'paid' },
-		{ date: '2025-12-18', amount: 120.00, desc: 'Electricity bill - December', category: 'utilities', vendor: 'Power Co.', payment: 'bank_transfer', status: 'paid' },
-		{ date: '2025-12-20', amount: 200.00, desc: 'Fence repair materials', category: 'maintenance', vendor: 'Hardware Store', payment: 'debit_card', qty: 10, qtyUnit: 'units', unitCost: 20.00, status: 'paid' },
-		{ date: '2026-01-02', amount: 1800.00, desc: 'January feed order - mixed', category: 'feed', vendor: 'FarmFeed Co.', payment: 'bank_transfer', qty: 600, qtyUnit: 'kg', unitCost: 3.00, status: 'paid' },
-		{ date: '2026-01-10', amount: 150.00, desc: 'Transport to market', category: 'transport', vendor: 'Rural Transport', payment: 'cash', status: 'paid' },
-		{ date: '2026-01-15', amount: 500.00, desc: 'Pig feed - special mix', category: 'feed', speciesKey: 'Pig', vendor: 'FarmFeed Co.', payment: 'bank_transfer', qty: 200, qtyUnit: 'kg', unitCost: 2.50, status: 'paid' },
-		{ date: '2026-01-20', amount: 125.00, desc: 'Electricity bill - January', category: 'utilities', vendor: 'Power Co.', payment: 'bank_transfer', status: 'paid' },
-		{ date: '2026-01-25', amount: 275.00, desc: 'Hoof trimming - cattle', category: 'veterinary', speciesKey: 'Cattle', vendor: 'Dr. Martinez', payment: 'cash', qty: 4, qtyUnit: 'units', unitCost: 68.75, status: 'paid' },
-		{ date: '2026-02-01', amount: 3200.00, desc: 'New water troughs', category: 'equipment', vendor: 'Farm Equipment Ltd.', payment: 'credit_card', qty: 4, qtyUnit: 'units', unitCost: 800.00, status: 'paid' },
-		{ date: '2026-02-10', amount: 950.00, desc: 'Goat mineral supplements - bulk', category: 'feed', speciesKey: 'Goat', vendor: 'AgriSupply', payment: 'debit_card', qty: 50, qtyUnit: 'bags', unitCost: 19.00, status: 'paid' },
-		{ date: '2026-02-15', amount: 600.00, desc: 'Veterinary checkup - pending invoice', category: 'veterinary', vendor: 'Dr. Martinez', payment: null, status: 'pending' },
-		{ date: '2026-02-20', amount: 180.00, desc: 'Transport - vet visit pickup', category: 'transport', vendor: 'Rural Transport', payment: 'cash', status: 'paid' },
-		{ date: '2026-03-01', amount: 2100.00, desc: 'March feed order', category: 'feed', vendor: 'FarmFeed Co.', payment: 'bank_transfer', qty: 700, qtyUnit: 'kg', unitCost: 3.00, status: 'pending' },
+	// --- Financial Transactions (skip if exists) ---
+	const existingTransactions = await queryOne(
+		'SELECT COUNT(*) as count FROM financial_transactions WHERE farm_id = :farmId',
+		{ farmId },
+	);
+
+	if (Number(existingTransactions.count) > 0) {
+		console.log('Financial transactions already exist. Skipping.');
+	} else {
+	const transactionDefs = [
+		// Expenses — Sheep
+		{ type: 'expense', date: '2025-11-15', amount: 800.00, desc: 'Sheep shearing service', speciesKey: 'Sheep' },
+		{ type: 'expense', date: '2025-12-01', amount: 1500.00, desc: 'Monthly feed supply - hay and grain', speciesKey: 'Sheep' },
+		{ type: 'expense', date: '2025-12-05', amount: 350.00, desc: 'Vaccination - all sheep', speciesKey: 'Sheep' },
+		{ type: 'expense', date: '2026-01-10', amount: 1200.00, desc: 'Sheep feed - January', speciesKey: 'Sheep' },
+		{ type: 'expense', date: '2026-02-05', amount: 280.00, desc: 'Deworming - sheep flock', speciesKey: 'Sheep' },
+		{ type: 'expense', date: '2026-03-01', amount: 1400.00, desc: 'March feed - sheep', speciesKey: 'Sheep' },
+		// Expenses — Cattle
+		{ type: 'expense', date: '2025-12-10', amount: 2800.00, desc: 'Cattle feed - silage delivery', speciesKey: 'Cattle' },
+		{ type: 'expense', date: '2026-01-25', amount: 275.00, desc: 'Hoof trimming - cattle', speciesKey: 'Cattle' },
+		{ type: 'expense', date: '2026-02-01', amount: 3200.00, desc: 'New water troughs', speciesKey: 'Cattle' },
+		{ type: 'expense', date: '2026-02-15', amount: 600.00, desc: 'Veterinary checkup - cattle', speciesKey: 'Cattle' },
+		{ type: 'expense', date: '2026-03-10', amount: 2500.00, desc: 'Silage delivery - March', speciesKey: 'Cattle' },
+		// Expenses — Goat
+		{ type: 'expense', date: '2025-12-15', amount: 450.00, desc: 'Deworming treatment - goats', speciesKey: 'Goat' },
+		{ type: 'expense', date: '2026-02-10', amount: 950.00, desc: 'Goat mineral supplements - bulk', speciesKey: 'Goat' },
+		{ type: 'expense', date: '2026-03-05', amount: 320.00, desc: 'Goat feed - March', speciesKey: 'Goat' },
+		// Expenses — Pig
+		{ type: 'expense', date: '2026-01-15', amount: 500.00, desc: 'Pig feed - special mix', speciesKey: 'Pig' },
+		{ type: 'expense', date: '2026-02-20', amount: 380.00, desc: 'Pig supplements', speciesKey: 'Pig' },
+		{ type: 'expense', date: '2026-03-12', amount: 550.00, desc: 'Pig feed - March', speciesKey: 'Pig' },
+		// Income — Sheep
+		{ type: 'income', date: '2025-12-20', amount: 2400.00, desc: 'Wool sale - December batch', speciesKey: 'Sheep' },
+		{ type: 'income', date: '2026-01-18', amount: 1800.00, desc: 'Sold 2 lambs at market', speciesKey: 'Sheep' },
+		{ type: 'income', date: '2026-03-08', amount: 3200.00, desc: 'Wool sale - March shearing', speciesKey: 'Sheep' },
+		// Income — Cattle
+		{ type: 'income', date: '2026-01-05', amount: 5500.00, desc: 'Sold 1 steer at auction', speciesKey: 'Cattle' },
+		{ type: 'income', date: '2026-02-12', amount: 1200.00, desc: 'Milk sales - February', speciesKey: 'Cattle' },
+		{ type: 'income', date: '2026-03-15', amount: 1350.00, desc: 'Milk sales - March', speciesKey: 'Cattle' },
+		// Income — Goat
+		{ type: 'income', date: '2026-01-22', amount: 900.00, desc: 'Goat cheese sales - January', speciesKey: 'Goat' },
+		{ type: 'income', date: '2026-02-25', amount: 1100.00, desc: 'Goat cheese sales - February', speciesKey: 'Goat' },
+		{ type: 'income', date: '2026-03-18', amount: 950.00, desc: 'Goat milk sales - March', speciesKey: 'Goat' },
+		// Income — Pig
+		{ type: 'income', date: '2026-02-08', amount: 4200.00, desc: 'Sold 3 pigs at market', speciesKey: 'Pig' },
+		{ type: 'income', date: '2026-03-20', amount: 1500.00, desc: 'Pork pre-orders', speciesKey: 'Pig' },
 	];
 
-	let expenseCount = 0;
-	for (const e of expenseDefs) {
-		const speciesId = e.speciesKey ? species[e.speciesKey] : null;
+	let transactionCount = 0;
+	for (const t of transactionDefs) {
+		const speciesId = species[t.speciesKey];
 		await query(
-			`INSERT INTO expenses (farm_id, date, amount, description, category, species_id, vendor, payment_method, invoice_number, quantity, quantity_unit, unit_cost, status, created_by, created_at, updated_at)
-			 VALUES (:farmId, :date, :amount, :desc, :category, :speciesId, :vendor, :payment, NULL, :qty, :qtyUnit, :unitCost, :status, :userId, :now, :now)`,
+			`INSERT INTO financial_transactions (farm_id, type, amount, description, species_id, date, created_by, created_at, updated_at)
+			 VALUES (:farmId, :type, :amount, :desc, :speciesId, :date, :userId, :now, :now)`,
 			{
-				farmId, date: e.date, amount: e.amount, desc: e.desc, category: e.category,
-				speciesId, vendor: e.vendor || null, payment: e.payment || null,
-				qty: e.qty || null, qtyUnit: e.qtyUnit || null, unitCost: e.unitCost || null,
-				status: e.status, userId, now,
+				farmId, type: t.type, amount: t.amount, desc: t.desc,
+				speciesId, date: t.date, userId, now,
 			},
 		);
-		expenseCount++;
+		transactionCount++;
 	}
-	console.log(`Created ${expenseCount} expenses`);
+	console.log(`Created ${transactionCount} financial transactions`);
+	}
+
+	// --- Flocks (Chicken) ---
+	const chickenSpeciesId = species['Chicken'];
+	const chickenBreeds = {};
+	for (const [key, id] of Object.entries(breeds)) {
+		if (key.startsWith('Chicken:')) {
+			chickenBreeds[key.replace('Chicken:', '')] = id;
+		}
+	}
+
+	const flockDefs = [
+		{
+			name: 'Layer Flock A',
+			breedKey: 'Leghorn',
+			flockType: 'layers',
+			initialCount: 50,
+			currentCount: 47,
+			startDate: '2025-10-01',
+			acquisitionType: 'purchased',
+			houseName: 'Coop 1',
+			ageAtAcquisitionWeeks: 18,
+			notes: 'First batch of laying hens',
+		},
+		{
+			name: 'Dual Purpose Flock B',
+			breedKey: 'Rhode Island Red',
+			flockType: 'dual_purpose',
+			initialCount: 30,
+			currentCount: 28,
+			startDate: '2025-11-15',
+			acquisitionType: 'purchased',
+			houseName: 'Coop 2',
+			ageAtAcquisitionWeeks: 16,
+			notes: 'Mixed use flock for eggs and meat',
+		},
+	];
+
+	const flockIds = [];
+	for (const f of flockDefs) {
+		const flock = await queryOne(
+			`INSERT INTO flocks (farm_id, species_id, breed_id, name, flock_type, initial_count, current_count, status, start_date, acquisition_type, house_name, age_at_acquisition_weeks, notes, created_at, updated_at)
+			 VALUES (:farmId, :speciesId, :breedId, :name, :flockType, :initialCount, :currentCount, 'active', :startDate, :acquisitionType, :houseName, :ageAtAcquisitionWeeks, :notes, :now, :now)
+			 RETURNING id`,
+			{
+				farmId, speciesId: chickenSpeciesId, breedId: chickenBreeds[f.breedKey],
+				name: f.name, flockType: f.flockType, initialCount: f.initialCount,
+				currentCount: f.currentCount, startDate: f.startDate,
+				acquisitionType: f.acquisitionType, houseName: f.houseName,
+				ageAtAcquisitionWeeks: f.ageAtAcquisitionWeeks, notes: f.notes, now,
+			},
+		);
+		flockIds.push({ id: flock.id, ...f });
+	}
+	console.log(`Created ${flockIds.length} flocks`);
+
+	// --- Flock Events ---
+	const flockEventDefs = [
+		// Layer Flock A: 50 initial → -2 mortality → -1 cull = 47 current
+		{ flockIdx: 0, eventType: 'mortality', count: 2, date: '2025-11-10', reason: 'Predator attack' },
+		{ flockIdx: 0, eventType: 'cull', count: 1, date: '2025-12-05', reason: 'Sick hen, not recovering' },
+		// Dual Purpose Flock B: 30 initial → -1 mortality → -1 sale = 28 current
+		{ flockIdx: 1, eventType: 'mortality', count: 1, date: '2025-12-20', reason: 'Unknown cause' },
+		{ flockIdx: 1, eventType: 'sale', count: 1, date: '2026-01-15', reason: 'Rooster sold to neighbor' },
+	];
+
+	for (const e of flockEventDefs) {
+		await query(
+			`INSERT INTO flock_events (flock_id, event_type, count, date, reason, recorded_by, created_at, updated_at)
+			 VALUES (:flockId, :eventType, :count, :date, :reason, :userId, :now, :now)`,
+			{
+				flockId: flockIds[e.flockIdx].id, eventType: e.eventType,
+				count: e.count, date: e.date, reason: e.reason, userId, now,
+			},
+		);
+	}
+	console.log(`Created ${flockEventDefs.length} flock events`);
+
+	// --- Egg Collections ---
+	// Generate 14 days of egg data for each flock
+	const eggCollections = [];
+	for (let daysAgo = 14; daysAgo >= 1; daysAgo--) {
+		const date = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000)
+			.toISOString().split('T')[0];
+
+		// Layer Flock A: ~85-92% lay rate (47 hens)
+		const flockAEggs = 40 + Math.floor(Math.random() * 4);
+		const flockABroken = Math.random() < 0.3 ? Math.floor(Math.random() * 3) : 0;
+		eggCollections.push({
+			flockId: flockIds[0].id, date, totalEggs: flockAEggs,
+			brokenEggs: flockABroken, notes: null,
+		});
+
+		// Dual Purpose Flock B: ~60-75% lay rate (28 hens)
+		const flockBEggs = 17 + Math.floor(Math.random() * 4);
+		const flockBBroken = Math.random() < 0.2 ? Math.floor(Math.random() * 2) : 0;
+		eggCollections.push({
+			flockId: flockIds[1].id, date, totalEggs: flockBEggs,
+			brokenEggs: flockBBroken, notes: null,
+		});
+	}
+
+	for (const ec of eggCollections) {
+		await query(
+			`INSERT INTO egg_collections (flock_id, date, total_eggs, broken_eggs, collected_by, notes, created_at, updated_at)
+			 VALUES (:flockId, :date, :totalEggs, :brokenEggs, :userId, :notes, :now, :now)`,
+			{ flockId: ec.flockId, date: ec.date, totalEggs: ec.totalEggs, brokenEggs: ec.brokenEggs, userId, notes: ec.notes, now },
+		);
+	}
+	console.log(`Created ${eggCollections.length} egg collections`);
 
 	console.log('\nDev seed complete!');
 	console.log('Login: testuser@test.com / Password1');
