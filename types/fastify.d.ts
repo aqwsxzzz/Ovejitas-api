@@ -16,6 +16,7 @@ import { FinancialTransactionService } from '../src/resources/financial-transact
 import { FlockService } from '../src/resources/flock/flock.service';
 import { FlockEventService } from '../src/resources/flock-event/flock-event.service';
 import { EggCollectionService } from '../src/resources/egg-collection/egg-collection.service';
+import { WeatherService } from '../src/resources/weather/weather.service';
 
 declare module 'fastify' {
 	interface FastifyInstance {
@@ -39,6 +40,7 @@ declare module 'fastify' {
 		flockService: FlockService;
 		flockEventService: FlockEventService;
 		eggCollectionService: EggCollectionService;
+		weatherService: WeatherService;
 
 		// Helpers
 		handleDbError: (error: unknown, reply: FastifyReply) => void;
