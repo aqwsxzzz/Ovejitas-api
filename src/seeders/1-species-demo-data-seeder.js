@@ -14,18 +14,16 @@ module.exports = {
 
 		const now = new Date();
 
-		await queryInterface.bulkInsert('species', [
-			{ created_at: now, updated_at: now },
-			{ created_at: now, updated_at: now },
-			{ created_at: now, updated_at: now },
-			{ created_at: now, updated_at: now },
-			{ created_at: now, updated_at: now },
-		]);
-
-		const [rows] = await queryInterface.sequelize.query(
-			'SELECT id FROM species ORDER BY id ASC;',
+		// Chicken is created by an earlier migration, so only insert the other
+		// four species here. Capture ids directly from RETURNING to avoid
+		// colliding with the pre-existing chicken row when ordering by id.
+		const [insertedRows] = await queryInterface.sequelize.query(
+			`INSERT INTO species (created_at, updated_at)
+			 VALUES (:now, :now), (:now, :now), (:now, :now), (:now, :now)
+			 RETURNING id`,
+			{ replacements: { now } },
 		);
-		const [sheepId, cattleId, goatId, pigId, chickenId] = rows.map((r) => r.id);
+		const [sheepId, cattleId, goatId, pigId] = insertedRows.map((r) => r.id);
 
 		const speciesTranslations = [
 			{ species_id: sheepId, language_code: 'en', name: 'Sheep', created_at: now, updated_at: now },
@@ -36,8 +34,6 @@ module.exports = {
 			{ species_id: goatId, language_code: 'es', name: 'Caprino', created_at: now, updated_at: now },
 			{ species_id: pigId, language_code: 'en', name: 'Pig', created_at: now, updated_at: now },
 			{ species_id: pigId, language_code: 'es', name: 'Porcino', created_at: now, updated_at: now },
-			{ species_id: chickenId, language_code: 'en', name: 'Chicken', created_at: now, updated_at: now },
-			{ species_id: chickenId, language_code: 'es', name: 'Pollo', created_at: now, updated_at: now },
 		];
 		await queryInterface.bulkInsert('species_translation', speciesTranslations);
 	},
