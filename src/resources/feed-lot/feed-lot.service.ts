@@ -53,7 +53,7 @@ export class FeedLotService extends BaseService {
 				throw new Error('Feed type not found');
 			}
 
-			return this.db.models.FeedLot.create({
+			const lot = await this.db.models.FeedLot.create({
 				farmId,
 				feedTypeId,
 				qtyPurchased: data.qtyPurchased,
@@ -64,6 +64,22 @@ export class FeedLotService extends BaseService {
 				notes: data.notes ?? null,
 				createdBy,
 			}, { transaction });
+
+			// Auto-record the purchase as an expense in the ledger.
+			// Snapshotted at lot creation: editing the lot price later does NOT update this row.
+			const totalAmount = Number((data.qtyPurchased * data.unitPrice).toFixed(2));
+			await this.db.models.FinancialTransaction.create({
+				farmId,
+				type: 'expense',
+				amount: totalAmount,
+				description: `Feed purchase: ${feedType.name}`,
+				speciesId: null,
+				feedLotId: lot.id,
+				date: data.purchasedAt,
+				createdBy,
+			}, { transaction });
+
+			return lot;
 		});
 	}
 

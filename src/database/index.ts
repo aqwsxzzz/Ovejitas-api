@@ -149,6 +149,9 @@ export const initDatabase = async (): Promise<Database> => {
 	FinancialTransaction.belongsTo(Species, { foreignKey: 'speciesId', as: 'species' });
 	FinancialTransaction.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
 	FarmModel.hasMany(FinancialTransaction, { foreignKey: 'farmId', as: 'financialTransactions' });
+	// Phase 3: ledger back-references the source feed lot when a purchase auto-creates an expense
+	FinancialTransaction.belongsTo(FeedLot, { foreignKey: 'feedLotId', as: 'feedLot' });
+	FeedLot.hasOne(FinancialTransaction, { foreignKey: 'feedLotId', as: 'financialTransaction' });
 
 	// Flock associations
 	Flock.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
