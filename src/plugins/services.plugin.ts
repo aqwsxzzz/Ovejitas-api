@@ -18,6 +18,9 @@ import { FlockService } from '../resources/flock/flock.service';
 import { FlockEventService } from '../resources/flock-event/flock-event.service';
 import { EggCollectionService } from '../resources/egg-collection/egg-collection.service';
 import { WeatherService } from '../resources/weather/weather.service';
+import { FeedTypeService } from '../resources/feed-type/feed-type.service';
+import { FeedLotService } from '../resources/feed-lot/feed-lot.service';
+import { FeedConsumptionService } from '../resources/feed-consumption/feed-consumption.service';
 
 const servicesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	// Register all services as Fastify decorators
@@ -39,6 +42,9 @@ const servicesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	fastify.decorate('flockEventService', new FlockEventService(fastify.db));
 	fastify.decorate('eggCollectionService', new EggCollectionService(fastify.db));
 	fastify.decorate('weatherService', new WeatherService());
+	fastify.decorate('feedTypeService', new FeedTypeService(fastify.db));
+	fastify.decorate('feedLotService', new FeedLotService(fastify.db));
+	fastify.decorate('feedConsumptionService', new FeedConsumptionService(fastify.db));
 
 	fastify.log.info('Services plugin registered successfully');
 };

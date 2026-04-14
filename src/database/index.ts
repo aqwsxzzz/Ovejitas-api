@@ -28,6 +28,13 @@ import {
 	EggCollectionModel,
 	initEggCollectionModel,
 } from '../resources/egg-collection/egg-collection.model';
+import { FeedTypeModel, initFeedTypeModel } from '../resources/feed-type/feed-type.model';
+import { FeedLotModel, initFeedLotModel } from '../resources/feed-lot/feed-lot.model';
+import { FeedConsumptionModel, initFeedConsumptionModel } from '../resources/feed-consumption/feed-consumption.model';
+import {
+	FeedConsumptionLotModel,
+	initFeedConsumptionLotModel,
+} from '../resources/feed-consumption/feed-consumption-lot.model';
 
 export interface Database {
 	sequelize: Sequelize;
@@ -46,6 +53,10 @@ export interface Database {
 		Flock: typeof FlockModel;
 		FlockEvent: typeof FlockEventModel;
 		EggCollection: typeof EggCollectionModel;
+		FeedType: typeof FeedTypeModel;
+		FeedLot: typeof FeedLotModel;
+		FeedConsumption: typeof FeedConsumptionModel;
+		FeedConsumptionLot: typeof FeedConsumptionLotModel;
 	};
 }
 
@@ -90,6 +101,10 @@ export const initDatabase = async (): Promise<Database> => {
 	const Flock = initFlockModel(sequelize);
 	const FlockEvent = initFlockEventModel(sequelize);
 	const EggCollection = initEggCollectionModel(sequelize);
+	const FeedType = initFeedTypeModel(sequelize);
+	const FeedLot = initFeedLotModel(sequelize);
+	const FeedConsumption = initFeedConsumptionModel(sequelize);
+	const FeedConsumptionLot = initFeedConsumptionLotModel(sequelize);
 
 	// associations
 	// Farm & FarmMembers
@@ -147,6 +162,28 @@ export const initDatabase = async (): Promise<Database> => {
 	EggCollection.belongsTo(UserModel, { foreignKey: 'collectedBy', as: 'collector' });
 	Flock.hasMany(EggCollection, { foreignKey: 'flockId', as: 'eggCollections' });
 
+	// Feed inventory associations
+	FeedType.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FarmModel.hasMany(FeedType, { foreignKey: 'farmId', as: 'feedTypes' });
+
+	FeedLot.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FeedLot.belongsTo(FeedType, { foreignKey: 'feedTypeId', as: 'feedType' });
+	FeedLot.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
+	FeedType.hasMany(FeedLot, { foreignKey: 'feedTypeId', as: 'lots' });
+	FarmModel.hasMany(FeedLot, { foreignKey: 'farmId', as: 'feedLots' });
+
+	FeedConsumption.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FeedConsumption.belongsTo(Flock, { foreignKey: 'flockId', as: 'flock' });
+	FeedConsumption.belongsTo(FeedType, { foreignKey: 'feedTypeId', as: 'feedType' });
+	FeedConsumption.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
+	FeedConsumption.hasMany(FeedConsumptionLot, { foreignKey: 'consumptionId', as: 'lots' });
+	Flock.hasMany(FeedConsumption, { foreignKey: 'flockId', as: 'feedConsumptions' });
+	FeedType.hasMany(FeedConsumption, { foreignKey: 'feedTypeId', as: 'consumptions' });
+
+	FeedConsumptionLot.belongsTo(FeedConsumption, { foreignKey: 'consumptionId', as: 'consumption' });
+	FeedConsumptionLot.belongsTo(FeedLot, { foreignKey: 'lotId', as: 'lot' });
+	FeedLot.hasMany(FeedConsumptionLot, { foreignKey: 'lotId', as: 'consumptionLots' });
+
 	const db: Database = {
 		sequelize,
 		models: {
@@ -164,6 +201,10 @@ export const initDatabase = async (): Promise<Database> => {
 			Flock,
 			FlockEvent,
 			EggCollection,
+			FeedType,
+			FeedLot,
+			FeedConsumption,
+			FeedConsumptionLot,
 		},
 	};
 
