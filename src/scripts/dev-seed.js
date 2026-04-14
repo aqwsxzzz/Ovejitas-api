@@ -10,8 +10,12 @@
  *   - 1 farm + owner membership
  *   - 15 animals across all species/breeds
  *   - 40+ measurements (weight, height, temperature) per animal
- *   - 15+ expenses across categories
+ *   - Non-feed expenses and income across species
  *   - 2 chicken flocks with flock events and egg collections
+ *   - Feed inventory: types, purchase lots (FIFO demo), feeding schedules,
+ *     and historical consumption events that span two lots to show the
+ *     snapshot cost breakdown. Lot purchases auto-create matching
+ *     financial_transactions rows (mirrors FeedLotService behavior).
  */
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -270,27 +274,19 @@ async function main() {
 		console.log('Financial transactions already exist. Skipping.');
 	} else {
 	const transactionDefs = [
-		// Expenses — Sheep
+		// Expenses — Sheep (non-feed; feed expenses are seeded via feed_lots below)
 		{ type: 'expense', date: '2025-11-15', amount: 800.00, desc: 'Sheep shearing service', speciesKey: 'Sheep' },
-		{ type: 'expense', date: '2025-12-01', amount: 1500.00, desc: 'Monthly feed supply - hay and grain', speciesKey: 'Sheep' },
 		{ type: 'expense', date: '2025-12-05', amount: 350.00, desc: 'Vaccination - all sheep', speciesKey: 'Sheep' },
-		{ type: 'expense', date: '2026-01-10', amount: 1200.00, desc: 'Sheep feed - January', speciesKey: 'Sheep' },
 		{ type: 'expense', date: '2026-02-05', amount: 280.00, desc: 'Deworming - sheep flock', speciesKey: 'Sheep' },
-		{ type: 'expense', date: '2026-03-01', amount: 1400.00, desc: 'March feed - sheep', speciesKey: 'Sheep' },
-		// Expenses — Cattle
-		{ type: 'expense', date: '2025-12-10', amount: 2800.00, desc: 'Cattle feed - silage delivery', speciesKey: 'Cattle' },
+		// Expenses — Cattle (non-feed)
 		{ type: 'expense', date: '2026-01-25', amount: 275.00, desc: 'Hoof trimming - cattle', speciesKey: 'Cattle' },
 		{ type: 'expense', date: '2026-02-01', amount: 3200.00, desc: 'New water troughs', speciesKey: 'Cattle' },
 		{ type: 'expense', date: '2026-02-15', amount: 600.00, desc: 'Veterinary checkup - cattle', speciesKey: 'Cattle' },
-		{ type: 'expense', date: '2026-03-10', amount: 2500.00, desc: 'Silage delivery - March', speciesKey: 'Cattle' },
-		// Expenses — Goat
+		// Expenses — Goat (non-feed)
 		{ type: 'expense', date: '2025-12-15', amount: 450.00, desc: 'Deworming treatment - goats', speciesKey: 'Goat' },
 		{ type: 'expense', date: '2026-02-10', amount: 950.00, desc: 'Goat mineral supplements - bulk', speciesKey: 'Goat' },
-		{ type: 'expense', date: '2026-03-05', amount: 320.00, desc: 'Goat feed - March', speciesKey: 'Goat' },
-		// Expenses — Pig
-		{ type: 'expense', date: '2026-01-15', amount: 500.00, desc: 'Pig feed - special mix', speciesKey: 'Pig' },
+		// Expenses — Pig (non-feed)
 		{ type: 'expense', date: '2026-02-20', amount: 380.00, desc: 'Pig supplements', speciesKey: 'Pig' },
-		{ type: 'expense', date: '2026-03-12', amount: 550.00, desc: 'Pig feed - March', speciesKey: 'Pig' },
 		// Income — Sheep
 		{ type: 'income', date: '2025-12-20', amount: 2400.00, desc: 'Wool sale - December batch', speciesKey: 'Sheep' },
 		{ type: 'income', date: '2026-01-18', amount: 1800.00, desc: 'Sold 2 lambs at market', speciesKey: 'Sheep' },
@@ -361,6 +357,22 @@ async function main() {
 	];
 
 	const flockIds = [];
+	const existingFlocks = await queryOne(
+		'SELECT COUNT(*) as count FROM flocks WHERE farm_id = :farmId',
+		{ farmId },
+	);
+
+	if (Number(existingFlocks.count) > 0) {
+		const rows = await query(
+			'SELECT id, name FROM flocks WHERE farm_id = :farmId ORDER BY id ASC',
+			{ farmId },
+		);
+		for (const row of rows) {
+			const def = flockDefs.find((d) => d.name === row.name);
+			flockIds.push({ id: row.id, ...(def ?? { name: row.name }) });
+		}
+		console.log(`Flocks already exist (${flockIds.length}). Skipping flocks, events, egg collections.`);
+	} else {
 	for (const f of flockDefs) {
 		const flock = await queryOne(
 			`INSERT INTO flocks (farm_id, species_id, breed_id, name, flock_type, initial_count, current_count, status, start_date, acquisition_type, house_name, age_at_acquisition_weeks, notes, created_at, updated_at)
@@ -432,6 +444,154 @@ async function main() {
 		);
 	}
 	console.log(`Created ${eggCollections.length} egg collections`);
+	}
+
+	// --- Feed Inventory ---
+	// Feed types + purchase lots (FIFO demo) + feeding schedules + historical consumption.
+	// Lot inserts also write their matching financial_transactions row, mirroring
+	// FeedLotService.createFeedLot (snapshotted amount, back-reference via feed_lot_id).
+	const existingFeedTypes = await queryOne(
+		'SELECT COUNT(*) as count FROM feed_types WHERE farm_id = :farmId',
+		{ farmId },
+	);
+
+	if (Number(existingFeedTypes.count) > 0) {
+		console.log('Feed inventory already exists. Skipping.');
+	} else {
+	const feedTypeDefs = [
+		{ name: 'Layer Feed', notes: '17% protein — for laying hens' },
+		{ name: 'Scratch Grain', notes: 'Cracked corn + wheat — supplement' },
+		{ name: 'Hay', notes: 'General forage — all species' },
+	];
+
+	const feedTypeIds = {};
+	for (const ft of feedTypeDefs) {
+		const row = await queryOne(
+			`INSERT INTO feed_types (farm_id, name, notes, created_at, updated_at)
+			 VALUES (:farmId, :name, :notes, :now, :now)
+			 RETURNING id`,
+			{ farmId, name: ft.name, notes: ft.notes, now },
+		);
+		feedTypeIds[ft.name] = row.id;
+	}
+	console.log(`Created ${feedTypeDefs.length} feed types`);
+
+	// Helper: inserts a feed lot AND its matching financial_transactions expense row
+	// in the same spirit as FeedLotService.createFeedLot.
+	async function createLot({ feedTypeName, qtyPurchased, unitPrice, purchasedAt, supplier, notes }) {
+		const feedTypeId = feedTypeIds[feedTypeName];
+		const lot = await queryOne(
+			`INSERT INTO feed_lots (farm_id, feed_type_id, qty_purchased, qty_remaining, unit_price, purchased_at, supplier, notes, created_by, created_at, updated_at)
+			 VALUES (:farmId, :feedTypeId, :qty, :qty, :price, :date, :supplier, :notes, :userId, :now, :now)
+			 RETURNING id`,
+			{
+				farmId, feedTypeId, qty: qtyPurchased, price: unitPrice,
+				date: purchasedAt, supplier: supplier ?? null, notes: notes ?? null, userId, now,
+			},
+		);
+		const amount = Number((qtyPurchased * unitPrice).toFixed(2));
+		await query(
+			`INSERT INTO financial_transactions (farm_id, type, amount, description, species_id, feed_lot_id, date, created_by, created_at, updated_at)
+			 VALUES (:farmId, 'expense', :amount, :desc, NULL, :lotId, :date, :userId, :now, :now)`,
+			{ farmId, amount, desc: `Feed purchase: ${feedTypeName}`, lotId: lot.id, date: purchasedAt, userId, now },
+		);
+		return lot.id;
+	}
+
+	// Two Layer Feed purchases at different prices — used to demo FIFO across lots.
+	await createLot({ feedTypeName: 'Layer Feed', qtyPurchased: 30, unitPrice: 1.20, purchasedAt: '2026-01-15', supplier: 'Green Valley Feeds' });
+	await createLot({ feedTypeName: 'Layer Feed', qtyPurchased: 30, unitPrice: 1.35, purchasedAt: '2026-02-20', supplier: 'Green Valley Feeds' });
+	await createLot({ feedTypeName: 'Scratch Grain', qtyPurchased: 30, unitPrice: 0.80, purchasedAt: '2026-02-01', supplier: 'Local Coop' });
+	await createLot({ feedTypeName: 'Hay', qtyPurchased: 200, unitPrice: 0.25, purchasedAt: '2026-01-10', supplier: 'Neighbor Farm' });
+	console.log('Created 4 feed lots (with matching expense rows)');
+
+	// Feeding schedules — active_to NULL means "until further notice".
+	const scheduleDefs = [
+		{ flockIdx: 0, feedTypeName: 'Layer Feed', qtyPerDay: 7, activeFrom: '2026-01-15' },
+		{ flockIdx: 0, feedTypeName: 'Scratch Grain', qtyPerDay: 1, activeFrom: '2026-02-01' },
+		{ flockIdx: 1, feedTypeName: 'Layer Feed', qtyPerDay: 4, activeFrom: '2025-11-15' },
+	];
+	for (const s of scheduleDefs) {
+		await query(
+			`INSERT INTO feeding_schedules (farm_id, flock_id, feed_type_id, qty_per_day, active_from, active_to, created_at, updated_at)
+			 VALUES (:farmId, :flockId, :feedTypeId, :qty, :activeFrom, NULL, :now, :now)`,
+			{
+				farmId, flockId: flockIds[s.flockIdx].id, feedTypeId: feedTypeIds[s.feedTypeName],
+				qty: s.qtyPerDay, activeFrom: s.activeFrom, now,
+			},
+		);
+	}
+	console.log(`Created ${scheduleDefs.length} feeding schedules`);
+
+	// Historical consumption events — drains lots via a minimal FIFO loop (same
+	// ordering as drainFIFO: purchased_at ASC, id ASC). The 6 Flock A Layer Feed
+	// events (7kg/day) fully drain lot 1 ($1.20) and bleed into lot 2 ($1.35),
+	// producing a consumption that spans two lots with snapshotted prices —
+	// exactly the FIFO shape the cost-by-flock and cost-by-lot reports surface.
+	async function drainAndRecord({ flockIdx, feedTypeName, qty, consumedAt, reason }) {
+		const feedTypeId = feedTypeIds[feedTypeName];
+		const lots = await query(
+			`SELECT id, qty_remaining, unit_price FROM feed_lots
+			 WHERE farm_id = :farmId AND feed_type_id = :feedTypeId AND qty_remaining > 0
+			 ORDER BY purchased_at ASC, id ASC`,
+			{ farmId, feedTypeId },
+		);
+		let remaining = qty;
+		const draws = [];
+		for (const lot of lots) {
+			if (remaining <= 0) break;
+			const avail = Number(lot.qty_remaining);
+			const draw = Math.min(avail, Number(remaining.toFixed(3)));
+			if (draw <= 0) continue;
+			draws.push({ lotId: lot.id, qtyDrawn: draw, unitPrice: Number(lot.unit_price) });
+			remaining = Number((remaining - draw).toFixed(3));
+		}
+		if (remaining > 0) {
+			throw new Error(`Seed: insufficient ${feedTypeName} stock for ${qty}kg on ${consumedAt}`);
+		}
+
+		const consumption = await queryOne(
+			`INSERT INTO feed_consumptions (farm_id, flock_id, feed_type_id, consumed_at, qty, reason, created_by, created_at, updated_at)
+			 VALUES (:farmId, :flockId, :feedTypeId, :consumedAt, :qty, :reason, :userId, :now, :now)
+			 RETURNING id`,
+			{
+				farmId, flockId: flockIds[flockIdx].id, feedTypeId,
+				consumedAt, qty, reason, userId, now,
+			},
+		);
+
+		for (const d of draws) {
+			await query(
+				`INSERT INTO feed_consumption_lots (consumption_id, lot_id, qty_drawn, unit_price_snapshot, created_at)
+				 VALUES (:cid, :lotId, :qty, :price, :now)`,
+				{ cid: consumption.id, lotId: d.lotId, qty: d.qtyDrawn, price: d.unitPrice, now },
+			);
+			await query(
+				'UPDATE feed_lots SET qty_remaining = qty_remaining - :qty, updated_at = :now WHERE id = :lotId',
+				{ qty: d.qtyDrawn, lotId: d.lotId, now },
+			);
+		}
+	}
+
+	const consumptionDefs = [
+		// Layer Flock A — six days of Layer Feed, crossing the lot boundary on day 5
+		{ flockIdx: 0, feedTypeName: 'Layer Feed', qty: 7, consumedAt: '2026-02-21', reason: 'feeding' },
+		{ flockIdx: 0, feedTypeName: 'Layer Feed', qty: 7, consumedAt: '2026-02-22', reason: 'feeding' },
+		{ flockIdx: 0, feedTypeName: 'Layer Feed', qty: 7, consumedAt: '2026-02-23', reason: 'feeding' },
+		{ flockIdx: 0, feedTypeName: 'Layer Feed', qty: 7, consumedAt: '2026-02-24', reason: 'feeding' },
+		{ flockIdx: 0, feedTypeName: 'Layer Feed', qty: 7, consumedAt: '2026-02-25', reason: 'feeding' },
+		{ flockIdx: 0, feedTypeName: 'Layer Feed', qty: 7, consumedAt: '2026-02-26', reason: 'feeding' },
+		// Layer Flock A — Scratch Grain
+		{ flockIdx: 0, feedTypeName: 'Scratch Grain', qty: 1, consumedAt: '2026-02-22', reason: 'feeding' },
+		// Dual Purpose Flock B — Layer Feed (draws from lot 2 since lot 1 is depleted by this point)
+		{ flockIdx: 1, feedTypeName: 'Layer Feed', qty: 4, consumedAt: '2026-02-27', reason: 'feeding' },
+	];
+
+	for (const c of consumptionDefs) {
+		await drainAndRecord(c);
+	}
+	console.log(`Created ${consumptionDefs.length} feed consumptions (FIFO-drained)`);
+	}
 
 	console.log('\nDev seed complete!');
 	console.log('Login: testuser@test.com / Password1');
