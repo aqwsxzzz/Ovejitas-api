@@ -141,6 +141,49 @@ export async function createFlock(
 	};
 }
 
+export async function createFeedType(
+	app: FastifyInstance,
+	farmId: number,
+	overrides?: { name?: string; notes?: string },
+): Promise<{ feedTypeId: number; encodedFeedTypeId: string }> {
+	const feedType = await app.db.models.FeedType.create({
+		farmId,
+		name: overrides?.name ?? `Feed-${Date.now()}`,
+		notes: overrides?.notes ?? null,
+	});
+
+	return {
+		feedTypeId: feedType.dataValues.id,
+		encodedFeedTypeId: encodeId(feedType.dataValues.id),
+	};
+}
+
+export async function createFeedLot(
+	app: FastifyInstance,
+	farmId: number,
+	feedTypeId: number,
+	createdBy: number,
+	overrides?: { qtyPurchased?: number; unitPrice?: number; purchasedAt?: string; supplier?: string; notes?: string },
+): Promise<{ feedLotId: number; encodedFeedLotId: string }> {
+	const qty = overrides?.qtyPurchased ?? 10;
+	const lot = await app.db.models.FeedLot.create({
+		farmId,
+		feedTypeId,
+		qtyPurchased: qty,
+		qtyRemaining: qty,
+		unitPrice: overrides?.unitPrice ?? 1,
+		purchasedAt: overrides?.purchasedAt ?? '2026-01-01',
+		supplier: overrides?.supplier ?? null,
+		notes: overrides?.notes ?? null,
+		createdBy,
+	});
+
+	return {
+		feedLotId: lot.dataValues.id,
+		encodedFeedLotId: encodeId(lot.dataValues.id),
+	};
+}
+
 export async function createFinancialTransaction(
 	app: FastifyInstance,
 	farmId: number,
