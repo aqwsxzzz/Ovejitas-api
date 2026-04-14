@@ -21,6 +21,7 @@ import { FeedTypeService } from '../src/resources/feed-type/feed-type.service';
 import { FeedLotService } from '../src/resources/feed-lot/feed-lot.service';
 import { FeedConsumptionService } from '../src/resources/feed-consumption/feed-consumption.service';
 import { FeedingScheduleService } from '../src/resources/feeding-schedule/feeding-schedule.service';
+import { FeedReportService } from '../src/resources/feed-report/feed-report.service';
 
 declare module 'fastify' {
 	interface FastifyInstance {
@@ -49,6 +50,7 @@ declare module 'fastify' {
 		feedLotService: FeedLotService;
 		feedConsumptionService: FeedConsumptionService;
 		feedingScheduleService: FeedingScheduleService;
+		feedReportService: FeedReportService;
 
 		// Helpers
 		handleDbError: (error: unknown, reply: FastifyReply) => void;
