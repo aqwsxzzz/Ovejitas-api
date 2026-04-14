@@ -21,6 +21,7 @@ import { WeatherService } from '../resources/weather/weather.service';
 import { FeedTypeService } from '../resources/feed-type/feed-type.service';
 import { FeedLotService } from '../resources/feed-lot/feed-lot.service';
 import { FeedConsumptionService } from '../resources/feed-consumption/feed-consumption.service';
+import { FeedingScheduleService } from '../resources/feeding-schedule/feeding-schedule.service';
 
 const servicesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	// Register all services as Fastify decorators
@@ -45,6 +46,7 @@ const servicesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	fastify.decorate('feedTypeService', new FeedTypeService(fastify.db));
 	fastify.decorate('feedLotService', new FeedLotService(fastify.db));
 	fastify.decorate('feedConsumptionService', new FeedConsumptionService(fastify.db));
+	fastify.decorate('feedingScheduleService', new FeedingScheduleService(fastify.db));
 
 	fastify.log.info('Services plugin registered successfully');
 };
