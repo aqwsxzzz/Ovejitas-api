@@ -184,6 +184,28 @@ export async function createFeedLot(
 	};
 }
 
+export async function createFeedingSchedule(
+	app: FastifyInstance,
+	farmId: number,
+	flockId: number,
+	feedTypeId: number,
+	overrides?: { qtyPerDay?: number; activeFrom?: string; activeTo?: string | null },
+): Promise<{ scheduleId: number; encodedScheduleId: string }> {
+	const schedule = await app.db.models.FeedingSchedule.create({
+		farmId,
+		flockId,
+		feedTypeId,
+		qtyPerDay: overrides?.qtyPerDay ?? 1,
+		activeFrom: overrides?.activeFrom ?? '2026-01-01',
+		activeTo: overrides?.activeTo ?? null,
+	});
+
+	return {
+		scheduleId: schedule.dataValues.id,
+		encodedScheduleId: encodeId(schedule.dataValues.id),
+	};
+}
+
 export async function createFinancialTransaction(
 	app: FastifyInstance,
 	farmId: number,

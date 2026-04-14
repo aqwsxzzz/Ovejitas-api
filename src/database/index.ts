@@ -35,6 +35,10 @@ import {
 	FeedConsumptionLotModel,
 	initFeedConsumptionLotModel,
 } from '../resources/feed-consumption/feed-consumption-lot.model';
+import {
+	FeedingScheduleModel,
+	initFeedingScheduleModel,
+} from '../resources/feeding-schedule/feeding-schedule.model';
 
 export interface Database {
 	sequelize: Sequelize;
@@ -57,6 +61,7 @@ export interface Database {
 		FeedLot: typeof FeedLotModel;
 		FeedConsumption: typeof FeedConsumptionModel;
 		FeedConsumptionLot: typeof FeedConsumptionLotModel;
+		FeedingSchedule: typeof FeedingScheduleModel;
 	};
 }
 
@@ -105,6 +110,7 @@ export const initDatabase = async (): Promise<Database> => {
 	const FeedLot = initFeedLotModel(sequelize);
 	const FeedConsumption = initFeedConsumptionModel(sequelize);
 	const FeedConsumptionLot = initFeedConsumptionLotModel(sequelize);
+	const FeedingSchedule = initFeedingScheduleModel(sequelize);
 
 	// associations
 	// Farm & FarmMembers
@@ -184,6 +190,12 @@ export const initDatabase = async (): Promise<Database> => {
 	FeedConsumptionLot.belongsTo(FeedLot, { foreignKey: 'lotId', as: 'lot' });
 	FeedLot.hasMany(FeedConsumptionLot, { foreignKey: 'lotId', as: 'consumptionLots' });
 
+	FeedingSchedule.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FeedingSchedule.belongsTo(Flock, { foreignKey: 'flockId', as: 'flock' });
+	FeedingSchedule.belongsTo(FeedType, { foreignKey: 'feedTypeId', as: 'feedType' });
+	Flock.hasMany(FeedingSchedule, { foreignKey: 'flockId', as: 'feedingSchedules' });
+	FeedType.hasMany(FeedingSchedule, { foreignKey: 'feedTypeId', as: 'feedingSchedules' });
+
 	const db: Database = {
 		sequelize,
 		models: {
@@ -205,6 +217,7 @@ export const initDatabase = async (): Promise<Database> => {
 			FeedLot,
 			FeedConsumption,
 			FeedConsumptionLot,
+			FeedingSchedule,
 		},
 	};
 

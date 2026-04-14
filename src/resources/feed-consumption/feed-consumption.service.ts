@@ -6,6 +6,7 @@ import { FeedConsumptionCreate, FeedConsumptionReason } from './feed-consumption
 import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 import { decodeId } from '../../utils/id-hash-util';
 import { drainFIFO } from './feed-consumption-fifo';
+import { FeedingScheduleModel } from '../feeding-schedule/feeding-schedule.model';
 
 export interface FeedConsumptionFilters {
 	flockId?: number;
@@ -118,6 +119,72 @@ export class FeedConsumptionService extends BaseService {
 				include: [{ model: this.db.models.FeedConsumptionLot, as: 'lots' }],
 				transaction,
 			}) as Promise<FeedConsumptionModel>;
+		});
+	}
+
+	async logTodaysFeeding(
+		farmId: number,
+		flockId: number,
+		createdBy: number,
+		date: string,
+	): Promise<FeedConsumptionModel[]> {
+		return this.db.sequelize.transaction(async (transaction) => {
+			const flock = await this.db.models.Flock.findOne({ where: { id: flockId, farmId }, transaction });
+			if (!flock) throw new Error('Flock not found');
+
+			const schedules = await this.db.models.FeedingSchedule.findAll({
+				where: {
+					farmId,
+					flockId,
+					activeFrom: { [Op.lte]: date },
+					[Op.or]: [{ activeTo: null }, { activeTo: { [Op.gte]: date } }],
+				},
+				order: [['feedTypeId', 'ASC']],
+				transaction,
+			}) as FeedingScheduleModel[];
+
+			if (schedules.length === 0) {
+				throw new Error('No active feeding schedules found for this flock.');
+			}
+
+			const created: FeedConsumptionModel[] = [];
+
+			for (const schedule of schedules) {
+				const draws = await drainFIFO(
+					this.db,
+					{ farmId, feedTypeId: schedule.feedTypeId, qty: Number(schedule.qtyPerDay) },
+					transaction,
+				);
+
+				const consumption = await this.db.models.FeedConsumption.create({
+					farmId,
+					flockId,
+					feedTypeId: schedule.feedTypeId,
+					consumedAt: date,
+					qty: Number(schedule.qtyPerDay),
+					reason: FeedConsumptionReason.Feeding,
+					notes: null,
+					createdBy,
+				}, { transaction });
+
+				await this.db.models.FeedConsumptionLot.bulkCreate(
+					draws.map(draw => ({
+						consumptionId: consumption.id,
+						lotId: draw.lotId,
+						qtyDrawn: draw.qtyDrawn,
+						unitPriceSnapshot: draw.unitPriceSnapshot,
+					})),
+					{ transaction },
+				);
+
+				const reloaded = await this.db.models.FeedConsumption.findByPk(consumption.id, {
+					include: [{ model: this.db.models.FeedConsumptionLot, as: 'lots' }],
+					transaction,
+				}) as FeedConsumptionModel;
+				created.push(reloaded);
+			}
+
+			return created;
 		});
 	}
 
