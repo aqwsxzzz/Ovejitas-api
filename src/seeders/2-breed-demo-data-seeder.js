@@ -2,8 +2,13 @@
 
 module.exports = {
 	up: async (queryInterface, Sequelize) => {
+		// Check for a specific seeded breed rather than "any breed" — chicken
+		// breeds are inserted by an earlier migration and would otherwise trip
+		// the guard and skip the rest of our seed data.
 		const [existing] = await queryInterface.sequelize.query(
-			'SELECT id FROM breeds LIMIT 1;',
+			`SELECT b.id FROM breeds b
+			 JOIN breed_translation bt ON bt.breed_id = b.id
+			 WHERE bt.language_code = 'en' AND bt.name = 'Suffolk'`,
 		);
 		if (existing.length > 0) return;
 

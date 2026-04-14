@@ -2,8 +2,13 @@
 
 module.exports = {
 	up: async (queryInterface, Sequelize) => {
+		// Check for our specific seeded species — not "any species" — because the
+		// chicken species is inserted by an earlier migration, and a blanket
+		// existence check would skip the rest of our seed data.
 		const [existing] = await queryInterface.sequelize.query(
-			'SELECT id FROM species LIMIT 1;',
+			`SELECT s.id FROM species s
+			 JOIN species_translation st ON st.species_id = s.id
+			 WHERE st.language_code = 'en' AND st.name = 'Sheep'`,
 		);
 		if (existing.length > 0) return;
 
