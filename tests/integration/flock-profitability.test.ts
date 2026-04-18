@@ -101,7 +101,7 @@ describe('Flock profitability report', () => {
 		await app.close();
 	});
 
-	it('returns 409 when no egg pricing is configured', async () => {
+	it('returns 422 when no egg pricing is configured', async () => {
 		const ctx = await seed(app);
 
 		const response = await app.inject({
@@ -110,7 +110,7 @@ describe('Flock profitability report', () => {
 			headers: { cookie: ctx.cookie },
 		});
 
-		expect(response.statusCode).toBe(409);
+		expect(response.statusCode).toBe(422);
 	});
 
 	it('computes revenue from sellable eggs (excluding broken) with single active price', async () => {

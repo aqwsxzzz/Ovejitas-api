@@ -10,7 +10,7 @@ import { EggPricingSerializer } from './egg-pricing.serializer';
 const eggPricingRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 	async function getFarmCurrency(farmId: number): Promise<string | null> {
 		const farm = await fastify.db.models.Farm.findByPk(farmId, { attributes: ['currency'] });
-		return farm?.currency ?? null;
+		return farm?.dataValues.currency ?? null;
 	}
 
 	fastify.get('/active', { schema: getActiveEggPricingSchema, preHandler: fastify.authenticate }, async (request, reply) => {
@@ -42,6 +42,9 @@ const eggPricingRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =>
 		} catch (error) {
 			if (error instanceof Error && error.name === 'EggPricingOrderingError') {
 				return reply.error(error.message, 409);
+			}
+			if (error instanceof Error && error.name === 'SequelizeUniqueConstraintError') {
+				return reply.error('Another pricing update is in progress. Please retry.', 409);
 			}
 			throw error;
 		}

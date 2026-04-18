@@ -56,17 +56,18 @@ export class FlockProfitabilityService extends BaseService {
 	}
 
 	async getReport(input: ProfitabilityInput): Promise<FlockProfitabilityResponse> {
-		await this.assertPricingConfigured(input.farmId);
-
-		const [revenueRows, feedRows, currency] = await Promise.all([
+		const [pricingCount, revenueRows, feedRows, currency] = await Promise.all([
+			this.countPricing(input.farmId),
 			this.queryRevenue(input),
 			this.feedReport.getCostByFlockBucketed(input.farmId, input),
 			this.getFarmCurrency(input.farmId),
 		]);
 
+		if (pricingCount === 0) throw new EggPricingMissingError();
+
 		const meta = collectMetaFromRevenue(revenueRows);
 		const grid = buildGrid(revenueRows, feedRows);
-		await this.hydrateMissingMeta(grid, meta);
+		await this.hydrateMissingMeta(input.farmId, grid, meta);
 
 		return {
 			farmId: encodeId(input.farmId),
@@ -77,14 +78,13 @@ export class FlockProfitabilityService extends BaseService {
 		};
 	}
 
-	private async getFarmCurrency(farmId: number): Promise<string | null> {
-		const farm = await this.db.models.Farm.findByPk(farmId, { attributes: ['currency'] });
-		return farm?.currency ?? null;
+	private async countPricing(farmId: number): Promise<number> {
+		return this.db.models.EggPricing.count({ where: { farmId } });
 	}
 
-	private async assertPricingConfigured(farmId: number): Promise<void> {
-		const anyPricing = await this.db.models.EggPricing.findOne({ where: { farmId } });
-		if (!anyPricing) throw new EggPricingMissingError();
+	private async getFarmCurrency(farmId: number): Promise<string | null> {
+		const farm = await this.db.models.Farm.findByPk(farmId, { attributes: ['currency'] });
+		return farm?.dataValues.currency ?? null;
 	}
 
 	private async queryRevenue(input: ProfitabilityInput): Promise<RevenueRow[]> {
@@ -128,13 +128,14 @@ export class FlockProfitabilityService extends BaseService {
 	}
 
 	private async hydrateMissingMeta(
+		farmId: number,
 		grid: Map<number, Map<string, RawRow>>,
 		meta: Map<number, FlockMeta>,
 	): Promise<void> {
 		const missing = Array.from(grid.keys()).filter(id => !meta.has(id));
 		if (missing.length === 0) return;
 		const rows = await this.db.models.Flock.findAll({
-			where: { id: missing },
+			where: { id: missing, farmId },
 			attributes: ['id', 'name', 'speciesId'],
 		});
 		for (const row of rows) {

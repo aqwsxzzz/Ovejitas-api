@@ -70,5 +70,5 @@ export type FlockProfitabilityPeriod = Static<typeof PeriodEnum>;
 export const flockProfitabilitySchema = createGetEndpointSchema({
 	querystring: FlockProfitabilityQuerySchema,
 	dataSchema: FlockProfitabilityResponseSchema,
-	errorCodes: [400, 404, 409],
+	errorCodes: [400, 404, 422],
 });

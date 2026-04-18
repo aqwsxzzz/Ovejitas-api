@@ -42,7 +42,7 @@ const flockProfitabilityRoutes: FastifyPluginAsync = async (fastify: FastifyInst
 			return reply.success(report);
 		} catch (error) {
 			if (error instanceof Error && error.name === 'EggPricingMissingError') {
-				return reply.error(error.message, 409);
+				return reply.error(error.message, 422);
 			}
 			throw error;
 		}
