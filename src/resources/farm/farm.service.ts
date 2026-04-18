@@ -53,7 +53,12 @@ export class FarmService extends BaseService {
 		if (!farm) {
 			throw new Error('Farm not found');
 		}
-		await farm.update(data);
+		await farm.update({
+			...(data.name !== undefined ? { name: data.name } : {}),
+			...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
+			...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
+			...(data.currency !== undefined ? { currency: data.currency } : {}),
+		});
 		return farm;
 	}
 

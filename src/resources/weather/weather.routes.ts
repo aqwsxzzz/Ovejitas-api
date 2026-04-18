@@ -1,13 +1,24 @@
-import { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { getWeatherSchema, WeatherQuery } from './weather.schema';
+import { FastifyPluginAsync } from 'fastify';
+import { getWeatherSchema } from './weather.schema';
 
 const weatherRoutes: FastifyPluginAsync = async (fastify) => {
 	fastify.get('/', {
 		schema: getWeatherSchema,
 		preHandler: fastify.authenticate,
-	}, async (request: FastifyRequest<{ Querystring: WeatherQuery }>, reply) => {
+	}, async (request, reply) => {
+		const farmId = request.lastVisitedFarmId;
+		const farm = await fastify.db.models.Farm.findByPk(farmId);
+		if (!farm) {
+			return reply.error('Farm not found', 404);
+		}
+
+		const latitude = farm.latitude != null ? Number(farm.latitude) : null;
+		const longitude = farm.longitude != null ? Number(farm.longitude) : null;
+		if (latitude === null || longitude === null) {
+			return reply.error('Farm location is not set. Configure latitude and longitude in farm settings.', 400);
+		}
+
 		try {
-			const { latitude, longitude } = request.query;
 			const weather = await fastify.weatherService.getWeather(latitude, longitude);
 			reply.success(weather, 'Weather data retrieved successfully');
 		} catch (error) {

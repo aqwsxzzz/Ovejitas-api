@@ -5,8 +5,11 @@ import { FarmResponse } from './farm.schema';
 export class FarmSerializer {
 	static serialize(farm: FarmModel): FarmResponse {
 		return {
-			id: encodeId((farm.dataValues.id)),
+			id: encodeId(farm.dataValues.id),
 			name: farm.dataValues.name,
+			latitude: farm.dataValues.latitude != null ? Number(farm.dataValues.latitude) : null,
+			longitude: farm.dataValues.longitude != null ? Number(farm.dataValues.longitude) : null,
+			currency: farm.dataValues.currency as FarmResponse['currency'],
 			createdAt: farm.dataValues.createdAt,
 			updatedAt: farm.dataValues.updatedAt,
 		};

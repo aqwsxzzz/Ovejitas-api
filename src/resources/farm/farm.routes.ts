@@ -7,12 +7,14 @@ import {
 	FarmParams,
 	FarmUpdateInput,
 	getFarmSchema,
+	listCurrenciesSchema,
 	listFarmsSchema,
 	updateFarmSchema,
 } from './farm.schema';
 import { FarmSerializer } from './farm.serializer';
 import { decodeId } from '../../utils/id-hash-util';
 import { parsePagination } from '../../utils/pagination';
+import { SUPPORTED_CURRENCIES } from './currencies';
 
 const farmRoutes: FastifyPluginAsync = async (fastify) => {
 	// Create Farm
@@ -68,7 +70,15 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 		}
 	});
 
-	// Update Farm
+	// List supported currencies (used by the farm settings UI)
+	fastify.get('/currencies', {
+		schema: listCurrenciesSchema,
+		preHandler: fastify.authenticate,
+	}, async (_request, reply) => {
+		reply.success([...SUPPORTED_CURRENCIES]);
+	});
+
+	// Update Farm — owner only
 	fastify.post('/:farmId', {
 		schema: updateFarmSchema,
 		preHandler: fastify.authenticate,
@@ -76,7 +86,16 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 		try {
 			const { farmId } = request.params;
 			const farmData = request.body;
-			const decodedFarmId = decodeId(farmId)!;
+			const decodedFarmId = decodeId(farmId);
+			if (!decodedFarmId) {
+				return reply.error('Invalid farm ID', 400);
+			}
+
+			const isOwner = await fastify.farmMemberService.isOwner(request.user!.id, decodedFarmId);
+			if (!isOwner) {
+				return reply.error('Only farm owners can update farm settings', 403);
+			}
+
 			const farm = await fastify.farmService.updateFarm(decodedFarmId, farmData);
 			const serializedFarm = FarmSerializer.serialize(farm);
 			reply.success(serializedFarm, 'Farm updated successfully');

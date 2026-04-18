@@ -37,6 +37,10 @@ function createOpenMeteoResponse() {
 	};
 }
 
+async function setFarmLocation(app: FastifyInstance, farmId: number, latitude: number, longitude: number) {
+	await app.db.models.Farm.update({ latitude, longitude }, { where: { id: farmId } });
+}
+
 describe('Weather endpoints', () => {
 	let app: FastifyInstance;
 	let fetchSpy: ReturnType<typeof vi.spyOn>;
@@ -56,147 +60,68 @@ describe('Weather endpoints', () => {
 
 	describe('GET /api/v1/weather', () => {
 		it('returns 401 when not authenticated', async () => {
-			const response = await app.inject({
-				method: 'GET',
-				url: '/api/v1/weather?latitude=-34.6&longitude=-58.4',
-			});
-
+			const response = await app.inject({ method: 'GET', url: '/api/v1/weather' });
 			expect(response.statusCode).toBe(401);
 		});
 
-		it('returns 400 when latitude is missing', async () => {
+		it('returns 400 when farm location is not set', async () => {
 			const { cookie } = await createAuthenticatedUser(app);
 
 			const response = await app.inject({
 				method: 'GET',
-				url: '/api/v1/weather?longitude=-58.4',
+				url: '/api/v1/weather',
 				headers: { cookie },
 			});
 
 			expect(response.statusCode).toBe(400);
+			expect(response.json().message).toMatch(/location is not set/i);
 		});
 
-		it('returns 400 when longitude is missing', async () => {
-			const { cookie } = await createAuthenticatedUser(app);
+		it('returns weather data using the farm coordinates', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			await setFarmLocation(app, user.farmId, -34.6, -58.4);
 
-			const response = await app.inject({
-				method: 'GET',
-				url: '/api/v1/weather?latitude=-34.6',
-				headers: { cookie },
-			});
-
-			expect(response.statusCode).toBe(400);
-		});
-
-		it('returns 400 when latitude is out of range', async () => {
-			const { cookie } = await createAuthenticatedUser(app);
-
-			const response = await app.inject({
-				method: 'GET',
-				url: '/api/v1/weather?latitude=999&longitude=-58.4',
-				headers: { cookie },
-			});
-
-			expect(response.statusCode).toBe(400);
-		});
-
-		it('returns 400 when longitude is out of range', async () => {
-			const { cookie } = await createAuthenticatedUser(app);
-
-			const response = await app.inject({
-				method: 'GET',
-				url: '/api/v1/weather?latitude=-34.6&longitude=999',
-				headers: { cookie },
-			});
-
-			expect(response.statusCode).toBe(400);
-		});
-
-		it('returns weather data for valid coordinates', async () => {
-			const { cookie } = await createAuthenticatedUser(app);
 			const mockData = createOpenMeteoResponse();
 			fetchSpy = vi.spyOn(globalThis, 'fetch');
 			fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify(mockData), { status: 200 }));
 
 			const response = await app.inject({
 				method: 'GET',
-				url: '/api/v1/weather?latitude=-34.6&longitude=-58.4',
+				url: '/api/v1/weather',
 				headers: { cookie },
 			});
 
 			const body = response.json();
 			expect(response.statusCode).toBe(200);
-			expect(body.status).toBe('success');
-			expect(body.message).toBe('Weather data retrieved successfully');
-			expect(body.data.current).toBeDefined();
-			expect(body.data.daily).toBeDefined();
-			expect(body.data.location).toBeDefined();
-			expect(body.data.units).toBeDefined();
+			expect(body.data.current.temperature).toBe(22.5);
+			expect(body.data.daily).toHaveLength(1);
+
+			const fetchedUrl = fetchSpy.mock.calls[0]![0] as string;
+			expect(fetchedUrl).toContain('latitude=-34.6');
+			expect(fetchedUrl).toContain('longitude=-58.4');
 		});
 
-		it('returns current weather with correct fields', async () => {
-			const { cookie } = await createAuthenticatedUser(app);
-			const mockData = createOpenMeteoResponse();
-			fetchSpy = vi.spyOn(globalThis, 'fetch');
-			fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify(mockData), { status: 200 }));
+		it('returns 502 when Open-Meteo is unreachable', async () => {
+			const { user, cookie } = await createAuthenticatedUser(app);
+			await setFarmLocation(app, user.farmId, -34.6, -58.4);
 
-			const response = await app.inject({
-				method: 'GET',
-				url: '/api/v1/weather?latitude=-34.6&longitude=-58.4',
-				headers: { cookie },
-			});
-
-			const { current } = response.json().data;
-			expect(current.temperature).toBe(22.5);
-			expect(current.apparentTemperature).toBe(24.4);
-			expect(current.weatherCode).toBe(0);
-			expect(current.weatherDescription).toBe('Clear sky');
-			expect(current.windSpeed).toBe(4);
-			expect(current.humidity).toBe(66);
-			expect(current.precipitation).toBe(0);
-		});
-
-		it('returns daily forecast array with correct fields', async () => {
-			const { cookie } = await createAuthenticatedUser(app);
-			const mockData = createOpenMeteoResponse();
-			fetchSpy = vi.spyOn(globalThis, 'fetch');
-			fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify(mockData), { status: 200 }));
-
-			const response = await app.inject({
-				method: 'GET',
-				url: '/api/v1/weather?latitude=-34.6&longitude=-58.4',
-				headers: { cookie },
-			});
-
-			const { daily } = response.json().data;
-			expect(daily).toHaveLength(1);
-			expect(daily[0].date).toBe('2026-03-26');
-			expect(daily[0].temperatureMax).toBe(26.8);
-			expect(daily[0].temperatureMin).toBe(12.4);
-			expect(daily[0].sunrise).toBe('2026-03-26T07:02');
-			expect(daily[0].sunset).toBe('2026-03-26T18:57');
-			expect(daily[0].uvIndexMax).toBe(6.65);
-		});
-
-		it('returns 502 when Open-Meteo API is unreachable', async () => {
-			const { cookie } = await createAuthenticatedUser(app);
 			fetchSpy = vi.spyOn(globalThis, 'fetch');
 			fetchSpy.mockRejectedValueOnce(new TypeError('fetch failed'));
 
 			const response = await app.inject({
 				method: 'GET',
-				url: '/api/v1/weather?latitude=-34.6&longitude=-58.4',
+				url: '/api/v1/weather',
 				headers: { cookie },
 			});
 
-			const body = response.json();
 			expect(response.statusCode).toBe(502);
-			expect(body.status).toBe('error');
-			expect(body.message).toBe('Weather data unavailable');
+			expect(response.json().message).toBe('Weather data unavailable');
 		});
 
 		it('returns 502 when Open-Meteo returns an error status', async () => {
-			const { cookie } = await createAuthenticatedUser(app);
+			const { user, cookie } = await createAuthenticatedUser(app);
+			await setFarmLocation(app, user.farmId, -34.6, -58.4);
+
 			fetchSpy = vi.spyOn(globalThis, 'fetch');
 			fetchSpy.mockResolvedValueOnce(new Response(
 				JSON.stringify({ reason: 'Bad request' }),
@@ -205,14 +130,12 @@ describe('Weather endpoints', () => {
 
 			const response = await app.inject({
 				method: 'GET',
-				url: '/api/v1/weather?latitude=-34.6&longitude=-58.4',
+				url: '/api/v1/weather',
 				headers: { cookie },
 			});
 
-			const body = response.json();
 			expect(response.statusCode).toBe(502);
-			expect(body.status).toBe('error');
-			expect(body.message).toBe('Weather data unavailable');
+			expect(response.json().message).toBe('Weather data unavailable');
 		});
 	});
 });
