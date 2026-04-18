@@ -27,10 +27,12 @@ export const ErrorResponseSchema = Type.Object({
  */
 export const CommonErrorResponses = {
 	400: ErrorResponseSchema,
+	403: ErrorResponseSchema,
 	404: ErrorResponseSchema,
 	409: ErrorResponseSchema,
 	422: ErrorResponseSchema,
 	500: ErrorResponseSchema,
+	502: ErrorResponseSchema,
 } as const;
 
 /**
@@ -42,7 +44,7 @@ export interface EndpointSchemaConfig {
     querystring?: TSchema
     successCode: 200 | 201 | 204
     dataSchema?: TSchema
-    errorCodes?: (400 | 404 | 409 | 422 | 500)[]
+    errorCodes?: (400 | 403 | 404 | 409 | 422 | 500 | 502)[]
 }
 
 /**

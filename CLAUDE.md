@@ -178,3 +178,9 @@ skill_evaluation:
     3. Call Skill(name) for every skill marked ACTIVATE
     4. Only THEN proceed to implementation
     If you skip this evaluation, your response is INCOMPLETE and WRONG.
+
+## File Size Enforcement
+
+- **Never write a file longer than 200 lines of code.** If a file would exceed 200 lines, split it into smaller modules before writing.
+- This rule applies during skill evaluation: if the code you're about to write would exceed 200 lines in any single file, refactor into multiple files first.
+- Skill evaluation must check this limit as part of every ACTIVATE decision.

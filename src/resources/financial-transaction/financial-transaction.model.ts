@@ -2,7 +2,7 @@ import { DataTypes, Model, Sequelize } from 'sequelize';
 import { FinancialTransaction, TransactionType } from './financial-transaction.schema';
 
 type FinancialTransactionCreationAttributes = Pick<FinancialTransaction, 'farmId' | 'type' | 'amount' | 'date' | 'createdBy'> &
-	Partial<Pick<FinancialTransaction, 'description' | 'speciesId' | 'feedLotId'>>;
+	Partial<Pick<FinancialTransaction, 'description' | 'speciesId' | 'feedLotId' | 'flockId'>>;
 
 export class FinancialTransactionModel extends Model<FinancialTransaction, FinancialTransactionCreationAttributes> {
 	declare id: number;
@@ -12,6 +12,7 @@ export class FinancialTransactionModel extends Model<FinancialTransaction, Finan
 	declare description: string | null;
 	declare speciesId: number | null;
 	declare feedLotId: number | null;
+	declare flockId: number | null;
 	declare date: string;
 	declare createdBy: number;
 	declare createdAt: string;
@@ -70,6 +71,15 @@ export const initFinancialTransactionModel = (sequelize: Sequelize) => Financial
 			key: 'id',
 		},
 	},
+	flockId: {
+		type: DataTypes.INTEGER.UNSIGNED,
+		allowNull: true,
+		field: 'flock_id',
+		references: {
+			model: 'flocks',
+			key: 'id',
+		},
+	},
 	date: {
 		type: DataTypes.DATEONLY,
 		allowNull: false,
@@ -121,6 +131,10 @@ export const initFinancialTransactionModel = (sequelize: Sequelize) => Financial
 		{
 			name: 'idx_financial_transactions_feed_lot',
 			fields: ['feed_lot_id'],
+		},
+		{
+			name: 'idx_financial_transactions_flock',
+			fields: ['flock_id'],
 		},
 	],
 });

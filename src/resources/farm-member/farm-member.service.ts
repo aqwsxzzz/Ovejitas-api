@@ -1,6 +1,6 @@
 import { BaseService } from '../../services/base.service';
 import { FarmMemberModel } from './farm-member.model';
-import { FarmMemberCreateInput, FarmMemberWithUser } from './farm-member.schema';
+import { FarmMemberCreateInput, FarmMemberRole, FarmMemberWithUser } from './farm-member.schema';
 import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 
 export class FarmMemberService extends BaseService {
@@ -8,6 +8,20 @@ export class FarmMemberService extends BaseService {
 	async createFarmMember(data: FarmMemberCreateInput): Promise<FarmMemberModel> {
 		const farmMember = await this.db.models.FarmMember.create(data);
 		return farmMember;
+	}
+
+	async isOwner(userId: number, farmId: number): Promise<boolean> {
+		const member = await this.db.models.FarmMember.findOne({
+			where: { userId, farmId, role: FarmMemberRole.OWNER },
+		});
+		return member !== null;
+	}
+
+	async isMember(userId: number, farmId: number): Promise<boolean> {
+		const member = await this.db.models.FarmMember.findOne({
+			where: { userId, farmId },
+		});
+		return member !== null;
 	}
 
 	async getFarmMembersWithUsers(farmId: number, pagination: PaginationParams): Promise<PaginatedResult<FarmMemberWithUser>> {

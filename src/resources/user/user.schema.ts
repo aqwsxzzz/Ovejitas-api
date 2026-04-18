@@ -1,6 +1,6 @@
 
 import { Static, Type } from '@sinclair/typebox';
-import { createDeleteEndpointSchema, createGetEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createDeleteEndpointSchema, createGetEndpointSchema, createPostEndpointSchema, createUpdateEndpointSchema } from '../../utils/schema-builder';
 
 export enum UserRole {
 	USER = 'user',
@@ -65,7 +65,7 @@ export const createUserSchema = createPostEndpointSchema({
 	errorCodes: [400, 409],
 });
 
-export const updateUserSchema = createPostEndpointSchema({
+export const updateUserSchema = createUpdateEndpointSchema({
 	params: UserParamsSchema,
 	body: UserUpdateSchema,
 	dataSchema: UserResponseSchema,

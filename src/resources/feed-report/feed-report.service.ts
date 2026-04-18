@@ -16,6 +16,28 @@ interface CostByLotRow {
 	total_cost: string;
 }
 
+export type BucketPeriod = 'daily' | 'weekly' | 'monthly';
+
+export interface BucketedFeedCostRow {
+	flockId: number;
+	period: string;
+	totalQty: number;
+	totalCost: number;
+}
+
+interface BucketedCostSqlRow {
+	flock_id: number;
+	period: string;
+	total_qty: string;
+	total_cost: string;
+}
+
+const BUCKET_EXPR: Record<BucketPeriod, string> = {
+	daily: "to_char(fc.consumed_at, 'YYYY-MM-DD')",
+	weekly: `to_char(date_trunc('week', fc.consumed_at), 'IYYY-"W"IW')`,
+	monthly: "to_char(fc.consumed_at, 'YYYY-MM')",
+};
+
 export class FeedReportService extends BaseService {
 	async getCostByFlock(
 		farmId: number,
@@ -52,6 +74,49 @@ export class FeedReportService extends BaseService {
 		);
 
 		return this.buildCostByFlockResponse(rows, filters.from ?? null, filters.to ?? null);
+	}
+
+	async getCostByFlockBucketed(
+		farmId: number,
+		filters: { from: string; to: string; flockId?: number; period: BucketPeriod },
+	): Promise<BucketedFeedCostRow[]> {
+		const conditions: string[] = [
+			'fc.farm_id = :farmId',
+			'fc.flock_id IS NOT NULL',
+			'fc.consumed_at >= :from',
+			'fc.consumed_at <= :to',
+		];
+		const replacements: Record<string, unknown> = {
+			farmId,
+			from: filters.from,
+			to: filters.to,
+		};
+		if (filters.flockId !== undefined) {
+			conditions.push('fc.flock_id = :flockId');
+			replacements.flockId = filters.flockId;
+		}
+
+		const bucket = BUCKET_EXPR[filters.period];
+		const rows = await this.db.sequelize.query<BucketedCostSqlRow>(
+			`SELECT
+				fc.flock_id,
+				${bucket} AS period,
+				SUM(fcl.qty_drawn) AS total_qty,
+				SUM(fcl.qty_drawn * fcl.unit_price_snapshot) AS total_cost
+			 FROM feed_consumptions fc
+			 INNER JOIN feed_consumption_lots fcl ON fcl.consumption_id = fc.id
+			 WHERE ${conditions.join(' AND ')}
+			 GROUP BY fc.flock_id, period
+			 ORDER BY fc.flock_id, period`,
+			{ replacements, type: QueryTypes.SELECT },
+		);
+
+		return rows.map(row => ({
+			flockId: row.flock_id,
+			period: row.period,
+			totalQty: Number(Number(row.total_qty).toFixed(3)),
+			totalCost: Number(Number(row.total_cost).toFixed(2)),
+		}));
 	}
 
 	async getCostByLot(farmId: number, lotId: number): Promise<CostByLotResponse | null> {

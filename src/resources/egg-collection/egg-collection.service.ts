@@ -1,7 +1,7 @@
 import { BaseService } from '../../services/base.service';
 import { EggCollectionModel } from './egg-collection.model';
 import { EggCollectionCreate, EggCollectionUpdate } from './egg-collection.schema';
-import { FindOptions, Op } from 'sequelize';
+import { FindOptions } from 'sequelize';
 import { PaginatedResult, PaginationParams } from '../../utils/pagination';
 import { FlockStatus } from '../flock/flock.schema';
 
@@ -35,16 +35,6 @@ export class EggCollectionService extends BaseService {
 			const brokenEggs = data.brokenEggs ?? 0;
 			if (brokenEggs > data.totalEggs) {
 				throw new Error('Broken eggs cannot exceed total eggs.');
-			}
-
-			// Validate unique date per flock
-			const existing = await this.db.models.EggCollection.findOne({
-				where: { flockId, date: data.date },
-				transaction,
-			});
-
-			if (existing) {
-				throw new Error('An egg collection already exists for this flock on this date.');
 			}
 
 			return this.db.models.EggCollection.create({
