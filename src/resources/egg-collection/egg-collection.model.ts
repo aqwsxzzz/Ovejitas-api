@@ -74,9 +74,8 @@ export const initEggCollectionModel = (sequelize: Sequelize) => EggCollectionMod
 	timestamps: true,
 	indexes: [
 		{
-			unique: true,
 			fields: ['flock_id', 'date'],
-			name: 'idx_egg_collections_flock_date_unique',
+			name: 'idx_egg_collections_flock_date',
 		},
 	],
 });
