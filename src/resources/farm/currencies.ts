@@ -19,7 +19,3 @@ export const SUPPORTED_CURRENCIES = [
 export type CurrencyCode = (typeof SUPPORTED_CURRENCIES)[number]['code'];
 
 export const CURRENCY_CODES = SUPPORTED_CURRENCIES.map(c => c.code) as readonly CurrencyCode[];
-
-export function isSupportedCurrency(code: string): code is CurrencyCode {
-	return (CURRENCY_CODES as readonly string[]).includes(code);
-}

@@ -54,11 +54,19 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 	}, async (request: FastifyRequest<{ Params: FarmParams }>, reply) => {
 		try {
 			const { farmId } = request.params;
-			const decodedFarmId = decodeId(farmId)!;
-			const  lastVisitedFarmId = request.lastVisitedFarmId;
+			const decodedFarmId = decodeId(farmId);
+			if (!decodedFarmId) {
+				return reply.error('Invalid farm ID', 400);
+			}
+
+			const isMember = await fastify.farmMemberService.isMember(request.user!.id, decodedFarmId);
+			if (!isMember) {
+				return reply.error('Farm not found', 404);
+			}
+
+			const lastVisitedFarmId = request.lastVisitedFarmId;
 			const farm = await fastify.farmService.getFarm(decodedFarmId);
 
-			// Update user's lastVisitedFarmId if different from current
 			if (request.user && lastVisitedFarmId !== decodedFarmId) {
 				await fastify.userService.updateLastVisitedFarm(request.user.id, decodedFarmId);
 			}
@@ -104,18 +112,27 @@ const farmRoutes: FastifyPluginAsync = async (fastify) => {
 		}
 	});
 
-	// Delete Farm
+	// Delete Farm — owner only
 	fastify.delete('/:farmId', {
 		schema: deleteFarmSchema,
 		preHandler: fastify.authenticate,
 	}, async (request: FastifyRequest<{ Params: FarmParams }>, reply) => {
 		try {
 			const { farmId } = request.params;
-			const decodedFarmId = decodeId(farmId)!;
+			const decodedFarmId = decodeId(farmId);
+			if (!decodedFarmId) {
+				return reply.error('Invalid farm ID', 400);
+			}
+
+			const isOwner = await fastify.farmMemberService.isOwner(request.user!.id, decodedFarmId);
+			if (!isOwner) {
+				return reply.error('Only farm owners can delete farms', 403);
+			}
+
 			await fastify.farmService.deleteFarm(decodedFarmId);
 			reply.success('Farm deleted successfully');
 		} catch (error) {
-			console.error('Error deleting farm:', error);
+			fastify.log.error(error, 'Error deleting farm');
 			fastify.handleDbError(error, reply);
 		}
 	});

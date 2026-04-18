@@ -1,5 +1,5 @@
 import { Static, Type } from '@sinclair/typebox';
-import { createDeleteEndpointSchema, createGetEndpointSchema, createListEndpointSchema, createPostEndpointSchema } from '../../utils/schema-builder';
+import { createDeleteEndpointSchema, createGetEndpointSchema, createListEndpointSchema, createPostEndpointSchema, createUpdateEndpointSchema } from '../../utils/schema-builder';
 import { PaginationQueryProps } from '../../utils/pagination';
 import { CURRENCY_CODES } from './currencies';
 
@@ -78,7 +78,7 @@ export const createFarmSchema = createPostEndpointSchema({
 	errorCodes: [400, 409],
 });
 
-export const updateFarmSchema = createPostEndpointSchema({
+export const updateFarmSchema = createUpdateEndpointSchema({
 	params: FarmParamsSchema,
 	body: FarmUpdateSchema,
 	dataSchema: FarmResponseSchema,
@@ -88,7 +88,7 @@ export const updateFarmSchema = createPostEndpointSchema({
 export const getFarmSchema = createGetEndpointSchema({
 	params: FarmParamsSchema,
 	dataSchema: FarmResponseSchema,
-	errorCodes: [404],
+	errorCodes: [400, 404],
 });
 
 export const listFarmsSchema = createListEndpointSchema({
@@ -99,7 +99,7 @@ export const listFarmsSchema = createListEndpointSchema({
 
 export const deleteFarmSchema = createDeleteEndpointSchema({
 	params: FarmParamsSchema,
-	errorCodes: [404],
+	errorCodes: [400, 403, 404],
 });
 
 export const listCurrenciesSchema = createListEndpointSchema({

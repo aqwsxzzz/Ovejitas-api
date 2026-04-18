@@ -17,6 +17,13 @@ export class FarmMemberService extends BaseService {
 		return member !== null;
 	}
 
+	async isMember(userId: number, farmId: number): Promise<boolean> {
+		const member = await this.db.models.FarmMember.findOne({
+			where: { userId, farmId },
+		});
+		return member !== null;
+	}
+
 	async getFarmMembersWithUsers(farmId: number, pagination: PaginationParams): Promise<PaginatedResult<FarmMemberWithUser>> {
 		const findOptions = {
 			where: { farmId },

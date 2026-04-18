@@ -120,4 +120,47 @@ describe('Farm update & currencies', () => {
 			expect(response.statusCode).toBe(400);
 		});
 	});
+
+	describe('GET /api/v1/farms/:farmId membership guard', () => {
+		it('returns 404 when the caller is not a member of the target farm', async () => {
+			const stranger = await createAuthenticatedUser(app);
+			const otherOwner = await createAuthenticatedUser(app);
+			const otherFarmEncoded = encodeId(otherOwner.user.farmId);
+
+			const response = await app.inject({
+				method: 'GET',
+				url: `/api/v1/farms/${otherFarmEncoded}`,
+				headers: { cookie: stranger.cookie },
+			});
+
+			expect(response.statusCode).toBe(404);
+		});
+	});
+
+	describe('DELETE /api/v1/farms/:farmId ownership guard', () => {
+		it('returns 403 when a non-owner member tries to delete the farm', async () => {
+			const owner = await createAuthenticatedUser(app);
+			const farmIdEncoded = encodeId(owner.user.farmId);
+
+			const member = await createTestUser(app);
+			await app.db.models.FarmMember.create({
+				farmId: owner.user.farmId,
+				userId: member.id,
+				role: FarmMemberRole.MEMBER,
+			});
+			await app.db.models.User.update(
+				{ lastVisitedFarmId: owner.user.farmId },
+				{ where: { id: member.id } },
+			);
+			const memberCookie = getAuthCookie({ ...member, farmId: owner.user.farmId });
+
+			const response = await app.inject({
+				method: 'DELETE',
+				url: `/api/v1/farms/${farmIdEncoded}`,
+				headers: { cookie: memberCookie },
+			});
+
+			expect(response.statusCode).toBe(403);
+		});
+	});
 });
