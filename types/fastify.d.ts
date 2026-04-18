@@ -22,6 +22,8 @@ import { FeedLotService } from '../src/resources/feed-lot/feed-lot.service';
 import { FeedConsumptionService } from '../src/resources/feed-consumption/feed-consumption.service';
 import { FeedingScheduleService } from '../src/resources/feeding-schedule/feeding-schedule.service';
 import { FeedReportService } from '../src/resources/feed-report/feed-report.service';
+import { EggPricingService } from '../src/resources/egg-pricing/egg-pricing.service';
+import { FlockProfitabilityService } from '../src/resources/flock-profitability/flock-profitability.service';
 
 declare module 'fastify' {
 	interface FastifyInstance {
@@ -51,6 +53,8 @@ declare module 'fastify' {
 		feedConsumptionService: FeedConsumptionService;
 		feedingScheduleService: FeedingScheduleService;
 		feedReportService: FeedReportService;
+		eggPricingService: EggPricingService;
+		flockProfitabilityService: FlockProfitabilityService;
 
 		// Helpers
 		handleDbError: (error: unknown, reply: FastifyReply) => void;

@@ -39,6 +39,7 @@ import {
 	FeedingScheduleModel,
 	initFeedingScheduleModel,
 } from '../resources/feeding-schedule/feeding-schedule.model';
+import { EggPricingModel, initEggPricingModel } from '../resources/egg-pricing/egg-pricing.model';
 
 export interface Database {
 	sequelize: Sequelize;
@@ -62,6 +63,7 @@ export interface Database {
 		FeedConsumption: typeof FeedConsumptionModel;
 		FeedConsumptionLot: typeof FeedConsumptionLotModel;
 		FeedingSchedule: typeof FeedingScheduleModel;
+		EggPricing: typeof EggPricingModel;
 	};
 }
 
@@ -111,6 +113,7 @@ export const initDatabase = async (): Promise<Database> => {
 	const FeedConsumption = initFeedConsumptionModel(sequelize);
 	const FeedConsumptionLot = initFeedConsumptionLotModel(sequelize);
 	const FeedingSchedule = initFeedingScheduleModel(sequelize);
+	const EggPricing = initEggPricingModel(sequelize);
 
 	// associations
 	// Farm & FarmMembers
@@ -199,6 +202,14 @@ export const initDatabase = async (): Promise<Database> => {
 	Flock.hasMany(FeedingSchedule, { foreignKey: 'flockId', as: 'feedingSchedules' });
 	FeedType.hasMany(FeedingSchedule, { foreignKey: 'feedTypeId', as: 'feedingSchedules' });
 
+	// Egg pricing associations
+	EggPricing.belongsTo(FarmModel, { foreignKey: 'farmId', as: 'farm' });
+	FarmModel.hasMany(EggPricing, { foreignKey: 'farmId', as: 'eggPricings' });
+
+	// FinancialTransaction — flock association (Phase 4)
+	FinancialTransaction.belongsTo(Flock, { foreignKey: 'flockId', as: 'flock' });
+	Flock.hasMany(FinancialTransaction, { foreignKey: 'flockId', as: 'financialTransactions' });
+
 	const db: Database = {
 		sequelize,
 		models: {
@@ -221,6 +232,7 @@ export const initDatabase = async (): Promise<Database> => {
 			FeedConsumption,
 			FeedConsumptionLot,
 			FeedingSchedule,
+			EggPricing,
 		},
 	};
 

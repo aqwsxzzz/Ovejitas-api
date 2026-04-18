@@ -12,6 +12,7 @@ export class FinancialTransactionSerializer {
 			description: transaction.description,
 			speciesId: transaction.speciesId != null ? encodeId(transaction.speciesId) : null,
 			feedLotId: transaction.feedLotId != null ? encodeId(transaction.feedLotId) : null,
+			flockId: transaction.flockId != null ? encodeId(transaction.flockId) : null,
 			date: transaction.date,
 			createdBy: encodeId(transaction.createdBy),
 			createdAt: transaction.createdAt,
