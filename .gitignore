@@ -1,42 +1,45 @@
-# Node modules
-node_modules/
-
-# Build output
-build/
-
-# Logs
-*.log
-
-# Environment files
+# Env
 .env
 .env.*
+!.env.example
 
-# TypeScript build info
-*.tsbuildinfo
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 
-# Local data
-*.local
+# uv
+.uv-cache/
 
-# Mac system files
+# Editors
+.vscode/
+.idea/
+.cursor
+*.swp
+
+# OS
 .DS_Store
 
-# Bruno API client workspace
-little-sheep/*.bru
-
-# Docker volumes (if any local files are created)
-postgres-data/
-
-# Ignore output from test/coverage tools (if added later)
-coverage/
-
-# Ignore editor/project files
-.vscode/
-.idea/ 
-
+# Project
 .bmad-core
-.claude
 .bmad-core/*
-.cursor
+.claude
 .seeded
-
-.env
+*.local
+postgres-data/
