@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ovejitas.core.config import get_settings
+from ovejitas.core.errors import register_error_handlers
 
 
 def create_app() -> FastAPI:
@@ -11,6 +12,8 @@ def create_app() -> FastAPI:
         version="0.1.0",
         debug=settings.debug,
     )
+
+    register_error_handlers(app)
 
     if settings.cors_origins_list:
         app.add_middleware(
