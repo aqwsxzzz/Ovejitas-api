@@ -4,170 +4,207 @@
 project:
   name: ovejitas-api
   type: REST API
-  domain: livestock/farm management
-  runtime: node 18
-  language: typescript 5 strict
-  framework: fastify 5
-  orm: sequelize 6
-  database: postgresql 14
-  entry: src/server.ts
-  build_dir: build/
+  domain: livestock / farm management (generic event-sourced model)
+  language: python 3.12+
+  framework: fastapi
+  orm: sqlalchemy 2.0 async
+  migrations: alembic
+  validation: pydantic v2
+  package_manager: uv
+  database: postgresql 16
+  entry: src/ovejitas/main.py
   src_dir: src/
+  status: rebuild in progress on branch feat/domain-rebuild — see docs/domain-rebuild-plan.md
 
 scripts:
-  dev: nodemon --config nodemon.json
-  build: tsc
-  start: node build/index.js
-  migrate: npx sequelize-cli db:migrate
-  seed: npx sequelize-cli db:seed:all
-  undo_migrate: npx sequelize-cli db:migrate:undo
+  dev: uv run uvicorn ovejitas.main:app --reload --host 0.0.0.0
+  start: uv run uvicorn ovejitas.main:app --host 0.0.0.0
+  test: uv run pytest
+  lint: uv run ruff check
+  format: uv run ruff format
+  typecheck: uv run mypy src
+  migrate: uv run alembic upgrade head
+  migrate_new: uv run alembic revision --autogenerate -m "<msg>"
+  migrate_down: uv run alembic downgrade -1
+  seed: uv run python -m ovejitas.scripts.seed
 
 formatting:
-  indent: tabs
-  quotes: single
-  semicolons: always
-  trailing_commas: multiline
-  brace_style: 1tbs
-  object_curly_spacing: true
-  eol: lf
-  max_empty_lines: 1
+  tool: ruff (format + check)
+  line_length: 100
+  quotes: double
+  indent: 4 spaces
+  import_sort: ruff (isort-compatible)
 
 naming:
-  files: kebab-case
-  variables: camelCase
-  functions: camelCase
+  files: snake_case
+  modules: snake_case
+  variables: snake_case
+  functions: snake_case
   classes: PascalCase
-  interfaces: PascalCase
-  types: PascalCase
+  constants: UPPER_SNAKE_CASE
   db_columns: snake_case
-  db_tables: snake_case
+  db_tables: snake_case (singular, e.g. production_unit)
 
-typescript:
-  target: ES2024
-  module: NodeNext
-  strict: true
-  no_any: true, use unknown and narrow
-  no_default_exports_except: resource index.ts and route files
-  unused_vars: error, prefix _ to ignore args
+python:
+  target: 3.12+
+  type_hints: required on all function signatures
+  strict: mypy --strict (no implicit Any, no untyped defs)
+  async: default for I/O; sync only for pure helpers
+  no_star_imports: true
 
 architecture:
-  pattern: plugin-based
+  pattern: feature-folders (everything per-feature close together)
   api_prefix: /api/v1
-  autoload: src/resources/ via @fastify/autoload
+  app_factory: src/ovejitas/main.py
 
-plugin_rules:
-  shared_plugins: wrap with fastify-plugin (breaks encapsulation, exposes decorators)
-  resource_plugins: plain FastifyPluginAsync (stay encapsulated, autoloaded)
-  shared_location: src/plugins/
-  registration_order:
-    - databasePlugin
-    - fastifyCookie
-    - customReplyPlugin
-    - errorHandler
-    - servicesPlugin (depends on database)
-    - authenticationPlugin
-
-resource_pattern:
-  location: src/resources/{name}/
-  files:
-    - index.ts: plugin entry, registers routes with prefix
-    - "{name}.routes.ts": route definitions with schema validation
-    - "{name}.model.ts": sequelize model with TS interfaces
-    - "{name}.schema.ts": typebox schemas for validation
-    - "{name}.service.ts": business logic, extends BaseService
-    - "{name}.serializer.ts": transforms models to API responses
+project_layout:
+  root: src/ovejitas/
+  core:
+    location: src/ovejitas/core/
+    files:
+      - config.py        # pydantic-settings, env vars
+      - db.py            # async engine, session, get_db dep
+      - security.py      # JWT encode/decode, password hashing
+      - deps.py          # get_current_user, require_farm_member, pagination
+      - errors.py        # domain exceptions + FastAPI exception handlers
+      - pagination.py    # Page, PageParams, paginate()
+      - filters.py       # FilterParams base, apply_filters()
+      - search.py        # search helper (ILIKE over configured columns)
+  features:
+    location: src/ovejitas/features/{name}/
+    files:
+      - router.py        # APIRouter, thin — validation + dep injection
+      - models.py        # SQLAlchemy models
+      - schemas.py       # Pydantic request/response schemas
+      - service.py       # business logic, only layer touching DB
+      - deps.py          # feature-local dependencies (optional)
+      - guards.py        # cross-entity assertions (optional, e.g. event)
   rules:
-    - singular resource name
-    - service is only layer touching database
-    - routes never import models directly
-    - serializer controls exposed fields
-    - protected routes use preHandler fastify.authenticate
+    - singular feature name (production_unit, event, not events)
+    - service is only layer touching the database
+    - routers never import models directly — go through service
+    - schemas.py owns serialization; service returns models, router returns schemas
+    - cross-feature calls go service → service, never model imports
 
-services:
-  base_class: BaseService in src/services/base.service.ts
-  registration: fastify.decorate in src/plugins/services.plugin.ts
-  access: via fastify instance (fastify.animalService)
-  utilities:
-    - parseIncludes: relationship loading from query params
-    - parseOrder: sorting from query params
-    - parseFilters: filtering from query params
-    - extractFilterParams: strips pagination params
-    - filterTranslationsByLanguage: i18n support
-    - combineWhereConditions: merges where clauses
+core_domain:
+  primitives: production_unit, individual, event_category, event
+  event_types: [production, expense, income, observation, reproductive]
+  validation: pydantic discriminated union on event.type
+  details: see docs/domain-rebuild-plan.md
+
+list_endpoints:
+  mandatory_from_day_0: true
+  every_list_endpoint_supports:
+    - pagination: offset/limit + total count, standard response envelope
+    - search: q param, ILIKE over feature-declared searchable columns
+    - filtering: typed query params per feature, declared in schemas.py
+    - sorting: sort param, whitelist of allowed columns per feature
+  response_envelope:
+    data: list[Schema]
+    meta:
+      page: int
+      page_size: int
+      total: int
+      has_next: bool
+  implementation:
+    - core/pagination.py owns PageParams (page, page_size) + Page[T] generic
+    - core/filters.py owns FilterParams base (date_from, date_to, etc.) per feature extends
+    - core/search.py owns search(query, columns, term) helper
+    - service accepts (params, filters, search_term, sort) — returns (rows, total)
+    - router wraps into Page[Schema] response model
+  list_endpoint_shape: |
+    async def list_items(
+        params: PageParams = Depends(),
+        filters: ItemFilters = Depends(),
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ) -> Page[ItemRead]: ...
 
 schemas:
-  library: "@sinclair/typebox"
-  purpose: request params, body, querystring, response validation
-  ajv_config:
-    removeAdditional: false
-    coerceTypes: true
-    allErrors: true
+  library: pydantic v2
+  patterns:
+    - {Name}Create — POST body
+    - {Name}Update — PATCH body (all fields optional)
+    - {Name}Read — response model (exposes fields, hides secrets)
+    - {Name}Filters — list query params (extends FilterParams)
+  config:
+    from_attributes: true (model → schema conversion)
+    extra: forbid (reject unknown fields on input)
+    discriminator: used on event type union
 
 responses:
-  use: reply.success(), reply.error(), reply.successWithPagination()
-  never: reply.send() directly
-  format:
-    status: success | error
-    message: string
-    data: optional
-    meta: timestamp + optional pagination
+  success: return Pydantic schema directly; FastAPI serializes
+  error: raise domain exception (AppError subclass); handler formats envelope
+  envelope:
+    success: { data, meta? }
+    error: { detail, code, errors[]? }
 
 auth:
-  method: JWT
-  storage: httpOnly cookies
-  hook: preHandler fastify.authenticate
-  password: bcryptjs
-  id_obfuscation: hashids
+  method: JWT bearer tokens
+  header: Authorization: Bearer <token>
+  access_token_ttl: 15m
+  refresh_token_ttl: 7d
+  password_hash: passlib[bcrypt]
+  dep: get_current_user (required), get_current_user_optional (public)
+  farm_scope: require_farm_member(farm_id) dep — checks membership on every farm-scoped route
 
 database:
+  engine: asyncpg via sqlalchemy.ext.asyncio
+  session: scoped per request via FastAPI dep
   migrations:
-    language: javascript (not typescript)
-    location: src/migrations/
-    naming: "YYYYMMDDHHMMSS-description.js"
+    tool: alembic
+    location: migrations/versions/
+    naming: alembic auto-timestamp + slug
     must_have: up and down functions
-  seeders:
-    language: javascript
-    location: src/seeders/
   pool:
-    max: 5
-    min: 0
-    acquire: 30000
-    idle: 10000
-  errors: use handleSequelizeErrors utility
-  no_raw_sql: prefer sequelize query interface
+    size: 5
+    max_overflow: 10
+    pool_pre_ping: true
+  query_rules:
+    - no raw SQL unless justified (use select(), insert(), update())
+    - prefer select() with explicit columns; avoid model.query loading everything
+    - eager-load relationships with selectinload / joinedload — never lazy in async
+    - use SAVEPOINT for nested transactions
+  errors:
+    - catch IntegrityError in service, re-raise as ConflictError
+    - catch NoResultFound in service, re-raise as NotFoundError
 
 logging:
-  use: fastify.log
-  never: console.log
+  use: logging.getLogger(__name__) + structlog optional
+  never: print()
 
 deployment:
   containerization: docker multi-stage
-  compose: postgres + fastify
-  production: render.com
-  db_hosting: supabase
+  compose: postgres + app with hot-reload volumes
   env_file: .env (see .env.example)
 
 cors:
   origins: ALLOWED_ORIGINS env var, comma separated
   credentials: true
-  methods: [GET, POST, PUT, DELETE, OPTIONS]
+  methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
 
 docs:
-  prd: docs/prd.md
-  architecture: docs/architecture/
-  coding_standards: docs/architecture/coding-standards/
-  deployment: docs/production-deployment.md
-  api_testing: little-sheep/ (Bruno collection)
+  prd: docs/prd_granjas.md
+  rebuild_plan: docs/domain-rebuild-plan.md
+  api_testing: little-sheep/ (Bruno collection — rewrite pending)
 
-test_framework: vitest
+test_framework: pytest + pytest-asyncio + httpx.AsyncClient
+test_factories: polyfactory
+test_rules:
+  - integration tests use real postgres (testcontainers or compose service)
+  - no mocking the DB — mock only external HTTP
+  - Arrange-Act-Assert structure
+  - one assertion per concept
 
 docker:
   rule: ALWAYS run commands inside Docker containers, never on host
-  app_container: fastify-app
-  build: docker compose exec app npm run build
-  migrate: docker compose exec app npx sequelize-cli db:migrate
-  dev: docker compose up (runs via entrypoint.sh)
+  app_container: app
+  dev: docker compose up
   exec_pattern: docker compose exec app <command>
+  examples:
+    - docker compose exec app uv run pytest
+    - docker compose exec app uv run alembic upgrade head
+    - docker compose exec app uv run alembic revision --autogenerate -m "msg"
 
 skill_evaluation:
   mandatory: true
@@ -178,6 +215,7 @@ skill_evaluation:
     3. Call Skill(name) for every skill marked ACTIVATE
     4. Only THEN proceed to implementation
     If you skip this evaluation, your response is INCOMPLETE and WRONG.
+```
 
 ## File Size Enforcement
 
