@@ -17,7 +17,7 @@ def _build_engine() -> AsyncEngine:
         pool_size=5,
         max_overflow=10,
         pool_pre_ping=True,
-        echo=settings.debug,
+        echo=settings.sql_echo,
     )
 
 

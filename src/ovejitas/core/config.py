@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     app_env: str = "development"
     debug: bool = False
+    sql_echo: bool = False
 
     database_url: str
 
