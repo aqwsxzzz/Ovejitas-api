@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ovejitas.core.config import get_settings
 from ovejitas.core.errors import register_error_handlers
+from ovejitas.features.auth.router import router as auth_router
+
+API_PREFIX = "/api/v1"
 
 
 def create_app() -> FastAPI:
@@ -23,6 +26,8 @@ def create_app() -> FastAPI:
             allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             allow_headers=["Authorization", "Content-Type"],
         )
+
+    app.include_router(auth_router, prefix=API_PREFIX)
 
     @app.get("/health")
     def health() -> dict[str, str]:
