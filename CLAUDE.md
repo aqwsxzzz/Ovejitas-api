@@ -43,7 +43,7 @@ naming:
   classes: PascalCase
   constants: UPPER_SNAKE_CASE
   db_columns: snake_case
-  db_tables: snake_case (singular, e.g. production_unit)
+  db_tables: snake_case (singular, e.g. asset)
 
 python:
   target: 3.12+
@@ -80,14 +80,14 @@ project_layout:
       - deps.py          # feature-local dependencies (optional)
       - guards.py        # cross-entity assertions (optional, e.g. event)
   rules:
-    - singular feature name (production_unit, event, not events)
+    - singular feature name (asset, event, not events)
     - service is only layer touching the database
     - routers never import models directly — go through service
     - schemas.py owns serialization; service returns models, router returns schemas
     - cross-feature calls go service → service, never model imports
 
 core_domain:
-  primitives: production_unit, individual, event_category, event
+  primitives: asset, individual, event_category, event
   event_types: [production, expense, income, observation, reproductive]
   validation: pydantic discriminated union on event.type
   details: see docs/domain-rebuild-plan.md

@@ -1,13 +1,13 @@
 # Domain Notes
 
-Non-obvious domain knowledge distilled from legacy planning docs (temporal-database-schema.md, animal-tracking-features.md, stories 1.x). The legacy docs described a Node/Sequelize implementation that is being thrown out; these are the *rules and requirements* worth porting. They map onto the new three-primitive model (`production_unit` / `individual` / `event`) described in [domain-rebuild-plan.md](./domain-rebuild-plan.md).
+Non-obvious domain knowledge distilled from legacy planning docs (temporal-database-schema.md, animal-tracking-features.md, stories 1.x). The legacy docs described a Node/Sequelize implementation that is being thrown out; these are the *rules and requirements* worth porting. They map onto the new three-primitive model (`asset` / `individual` / `event`) described in [domain-rebuild-plan.md](./domain-rebuild-plan.md).
 
 ## Feature Roadmap
 
 ### Phase 1 — Core foundation
 - Historical weight tracking (→ `event` type=`observation`, category=`weight`)
 - Basic medical records (→ `event` type=`observation`, category=`vaccination`/`treatment`/`examination`)
-- Group / production-unit assignment (→ already in `production_unit`)
+- Group / asset assignment (→ already in `asset`)
 
 ### Phase 2 — Extended
 - Full breeding management (→ `event` type=`reproductive`)
@@ -68,7 +68,7 @@ These legacy features are *not* in v1 scope but the schema should not preclude t
 - **Scheduled reminders** (vaccination due dates) — requires a notification system (email/push) + background jobs. Plan says "no background jobs in v1". Data model already supports the query (`next_due_date` in payload). Add ARQ + a daily job when this becomes real.
 - **Materialized views for analytics** — legacy plan suggested `animal_summary`. Skip until a report actually hurts.
 - **Partitioning** by date — premature; revisit when `event` table hits tens of millions of rows.
-- **Location as a first-class asset** — for v1, `production_unit.location` is free text. If farmers start moving individuals between real locations and need history, introduce a `location` table and convert movements into events.
+- **Location as a first-class asset** — for v1, `asset.location` is free text. If farmers start moving individuals between real locations and need history, introduce a `location` table and convert movements into events.
 - **Vaccination-type catalog** — legacy had a `vaccination_types` lookup table (species-specific recommended frequency). Not in v1; the user models this as `event_category` with notes. Revisit if multi-farm standardization becomes a goal.
 - **Weight-unit normalization** — events store `unit` free-text (`kg`, `lbs`). UI converts at display time; DB stores as recorded.
 
@@ -81,10 +81,10 @@ These legacy features are *not* in v1 scope but the schema should not preclude t
 | `animal_locations` | deferred; `event` with location payload, or future `location` table |
 | `animal_breeding_events` | `event` (type=`reproductive`) |
 | `animal_financial_records` | `event` (type=`expense`/`income`) |
-| `animal_group_assignments` | `production_unit` membership (one unit per individual at a time in v1) |
+| `animal_group_assignments` | `asset` membership (one unit per individual at a time in v1) |
 | `vaccination_types` (lookup) | `event_category` (per-farm, user-defined) |
-| `farm_locations` (lookup) | deferred; `production_unit.location` text for now |
-| `species` / `breed` tables | removed; user writes on `production_unit.name` or `individual.metadata` |
+| `farm_locations` (lookup) | deferred; `asset.location` text for now |
+| `species` / `breed` tables | removed; user writes on `asset.name` or `individual.metadata` |
 | `animal_summary` materialized view | on-demand report endpoints under `/api/v1/reports` |
 
 ## References

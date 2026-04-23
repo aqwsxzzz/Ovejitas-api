@@ -1,6 +1,6 @@
 # Domain Rebuild Plan
 
-Rebuild the backend around three primitives — **Production Unit**, **Individual**, **Event** — replacing the current tree of ~24 domain-specific resources. Also a full stack swap: **Node/Fastify/Sequelize → Python/FastAPI/SQLAlchemy**. Goal: a small, generic, scalable system that supports gallinas and vacas today and crops, beehives, aquaculture tomorrow without backend changes.
+Rebuild the backend around three primitives — **Asset** (farmOS convention — any trackable thing: animal, crop, equipment, material, location), **Individual**, **Event** — replacing the current tree of ~24 domain-specific resources. Also a full stack swap: **Node/Fastify/Sequelize → Python/FastAPI/SQLAlchemy**. Goal: a small, generic, scalable system that supports gallinas and vacas today and crops, beehives, aquaculture tomorrow without backend changes.
 
 Reference: [PRD v1 simplificado](./prd_granjas.md) · Inspired by the [farmOS Asset + Log model](https://farmos.org/model/).
 
@@ -46,7 +46,7 @@ src/ovejitas/
     farm/
       router.py models.py schemas.py service.py deps.py
     farm_member/      # invitations + membership
-    production_unit/
+    asset/
       router.py models.py schemas.py service.py
     individual/
     event_category/
@@ -74,20 +74,27 @@ Test data is disposable. New branch wipes the database and builds schema fresh v
 
 ## Schema
 
-### `production_unit`
-Container for activity. Flexible, user-named.
+### `asset`
+Any trackable thing on the farm. Flexible, user-named.
 
 | column | type | notes |
 |---|---|---|
 | id | bigint identity | PK |
 | farm_id | bigint | FK |
-| name | text | "Gallinas", "Vacas lecheras" |
-| mode | enum | `aggregated` \| `individual` |
+| name | text | "Gallinas", "Vacas lecheras", "Tractor J-5075" |
+| kind | enum | `animal` \| `crop` \| `equipment` \| `material` \| `location` — UI classifier |
+| mode | enum | `aggregated` (bulk/count) \| `individual` (tagged instance) |
 | location | text? | free text, e.g. "Galpón norte" |
 | description | text? | |
 | created_at / updated_at | timestamptz | |
 
-Index: `(farm_id)`.
+Indexes: `(farm_id)`, `(farm_id, kind)` for kind-filtered lists.
+
+**`kind` vs `mode`:**
+- `kind` answers *what is this* (animal, tractor, feed bag) — drives UI tabs and optional report filters.
+- `mode` answers *how we count it* — `aggregated` for bulk ("20 chickens", "50 bags of feed"), `individual` for tagged instances ("Vaca A", "Tractor J-5075"). Any `kind` can be either `mode`.
+
+Extending the `kind` enum later: one-line Alembic migration (`ALTER TYPE ... ADD VALUE 'structure'`). Safe.
 
 ### `individual`
 Optional. Only created when unit is `individual` mode.
@@ -96,7 +103,7 @@ Optional. Only created when unit is `individual` mode.
 |---|---|---|
 | id | bigint identity | PK |
 | farm_id | bigint | FK (denormalized for scoping) |
-| production_unit_id | bigint | FK |
+| asset_id | bigint | FK |
 | name | text | "Vaca A" |
 | tag | text? | ear tag, external id |
 | birth_date | date? | |
@@ -106,7 +113,7 @@ Optional. Only created when unit is `individual` mode.
 | metadata | jsonb | breed, color, free-form |
 | created_at / updated_at | timestamptz | |
 
-Indexes: `(production_unit_id)`, `(farm_id, status)`.
+Indexes: `(asset_id)`, `(farm_id, status)`.
 
 ### `event_category`
 User-defined labels per farm, scoped by event type.
@@ -129,7 +136,7 @@ Core engine. Single table, discriminated by `type`.
 |---|---|---|
 | id | bigint identity | PK |
 | farm_id | bigint | FK |
-| production_unit_id | bigint | FK |
+| asset_id | bigint | FK |
 | individual_id | bigint? | FK |
 | type | enum | `production` \| `expense` \| `income` \| `observation` \| `reproductive` |
 | category_id | bigint? | FK → event_category |
@@ -146,7 +153,7 @@ Core engine. Single table, discriminated by `type`.
 
 Indexes:
 - `(farm_id, occurred_at DESC)` — dashboards
-- `(production_unit_id, type, occurred_at DESC)` — per-unit reports
+- `(asset_id, type, occurred_at DESC)` — per-unit reports
 - `(individual_id, occurred_at DESC) WHERE individual_id IS NOT NULL` — timeline
 - `(category_id) WHERE category_id IS NOT NULL`
 - `unique (farm_id, idempotency_key) WHERE idempotency_key IS NOT NULL`
@@ -170,8 +177,8 @@ Enforced via a **Pydantic discriminated union** on `type` (`Field(discriminator=
 Every list endpoint (units, individuals, categories, events, reports when listable) ships from day 0 with:
 
 - **Pagination** — `?page=1&page_size=20`. Response envelope carries `page`, `page_size`, `total`, `has_next`.
-- **Search** — `?q=<term>`. Per-feature whitelist of searchable text columns (e.g. event.notes, individual.name/tag, production_unit.name). Case-insensitive `ILIKE`.
-- **Filtering** — typed query params per feature; common: `date_from`, `date_to`, `farm_id` (implicit from auth), feature-specific: `type`, `category_id`, `production_unit_id`, `individual_id`, `status`.
+- **Search** — `?q=<term>`. Per-feature whitelist of searchable text columns (e.g. event.notes, individual.name/tag, asset.name). Case-insensitive `ILIKE`.
+- **Filtering** — typed query params per feature; common: `date_from`, `date_to`, `farm_id` (implicit from auth), feature-specific: `type`, `category_id`, `asset_id`, `individual_id`, `status`.
 - **Sorting** — `?sort=-occurred_at,name`. Whitelisted per feature; `-` prefix for DESC.
 
 Implementation lives in `src/ovejitas/core/`:
@@ -208,18 +215,21 @@ No list endpoint ships without all four. Applies equally to the very first resou
 
 `EventService.create` / `update` must assert:
 
-1. If `individual_id` set: individual exists, `individual.production_unit_id == input.production_unit_id`.
-2. If `individual_id` set: unit's `mode == 'individual'`.
-3. If `category_id` set: category exists, `category.farm_id == input.farm_id`, `category.type == input.type`.
-4. All referenced entities (`unit`, `individual`, `category`) belong to the same farm as the event.
+1. If `individual_id` set: individual exists, `individual.asset_id == input.asset_id`.
+2. If `individual_id` set: asset's `mode == 'individual'`.
+3. If `event.type == 'reproductive'`: asset's `kind == 'animal'` (only animals reproduce — the one kind-specific rule we enforce).
+4. If `category_id` set: category exists, `category.farm_id == input.farm_id`, `category.type == input.type`.
+5. All referenced entities (`asset`, `individual`, `category`) belong to the same farm as the event.
 
 Single chokepoint; routers never touch models directly.
+
+**Why only one kind-specific rule?** The `reproductive` event is the only type whose payload (`mother_id` / `father_id` / `offspring_count`) structurally doesn't make sense for non-animals. Every other event type (expense on a tractor, observation on a feed bag, income from a field) is plausible somewhere. UI hides wrong combinations; API only hard-blocks the one that breaks reports.
 
 ## Core Reports (drive the schema)
 
 All four resolve to one indexed aggregate — no JSONB extraction.
 
-- **R1 Profitability per unit** — `SUM(CASE WHEN type=...) GROUP BY production_unit_id` over `(farm_id, occurred_at)`.
+- **R1 Profitability per unit** — `SUM(CASE WHEN type=...) GROUP BY asset_id` over `(farm_id, occurred_at)`.
 - **R2 Production over time** — `date_trunc + SUM(quantity) GROUP BY day, category_id, unit`.
 - **R3 Cost per produced unit** — CTE of R1 expense side ÷ R2 quantity, per unit.
 - **R4 Individual timeline** — `WHERE individual_id=? ORDER BY occurred_at DESC` on partial index.
@@ -259,7 +269,7 @@ Each phase ends with green `uv run pytest` (where applicable) and a commit.
 0. **Branch + prep** — `feat/domain-rebuild` off `develop`. Delete Node source tree. Scaffold `pyproject.toml`, `uv.lock`, src layout, Dockerfile, compose, `.env.example`.
 1. **Core** — `config`, async DB session, JWT security, `deps`, error handlers, health endpoint, **pagination + filters + search helpers** (so every list endpoint in later phases inherits them).
 2. **Auth + Farm** — user registration, login (tokens), farm CRUD, farm_member, invitations.
-3. **Domain schema** — Alembic migration for `production_unit`, `individual`, `event_category`, `event`. SQLAlchemy models + relationships.
+3. **Domain schema** — Alembic migration for `asset`, `individual`, `event_category`, `event`. SQLAlchemy models + relationships.
 4. **Domain routes** — Pydantic schemas (incl. discriminated union for events), services, routers behind `require_farm_member` dep.
 5. **Reports** — four read-only endpoints under `/api/v1/reports`.
 6. **Tests + seed** — pytest suite covering the 5 EventService guard cases, polyfactory factories, seed script for gallinas (aggregated) + vacas (individual, 3 with parentage).
@@ -268,7 +278,8 @@ Each phase ends with green `uv run pytest` (where applicable) and a commit.
 ## Open / Future
 
 - Add `event_measurement` child table if single `quantity` proves insufficient.
-- Rename `production_unit` → `asset` if scope expands to land, equipment, plots.
+- Extend `kind` enum when a new asset type needs its own UI tab (e.g. `structure` for barns/coops).
+- Add kind-specific rules in `EventService` if UI guidance proves insufficient.
 - GIN index on `payload` only if a concrete filter use case appears.
 - Migrate old data? **No** — wipe and reseed.
 - Mobile client — bearer tokens already make this trivial; generate client from OpenAPI schema.
