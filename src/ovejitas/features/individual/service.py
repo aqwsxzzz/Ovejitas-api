@@ -57,11 +57,13 @@ class IndividualService:
         individual = await self.get(asset.id, individual_id)
         updates = data.model_dump(exclude_unset=True)
         if "mother_id" in updates or "father_id" in updates:
-            await self._validate_parents(
-                asset.farm_id,
-                updates.get("mother_id", individual.mother_id),
-                updates.get("father_id", individual.father_id),
-            )
+            mother = updates.get("mother_id", individual.mother_id)
+            father = updates.get("father_id", individual.father_id)
+            if mother == individual.id or father == individual.id:
+                raise ValidationError("An individual cannot be its own parent")
+            if mother is not None and mother == father:
+                raise ValidationError("Mother and father cannot be the same individual")
+            await self._validate_parents(asset.farm_id, mother, father)
         for key, value in updates.items():
             setattr(individual, key, value)
         await self.db.commit()
