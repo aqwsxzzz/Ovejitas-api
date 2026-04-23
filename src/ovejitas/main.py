@@ -6,6 +6,7 @@ from ovejitas.core.config import get_settings
 from ovejitas.core.errors import register_error_handlers
 from ovejitas.features.asset.router import router as asset_router
 from ovejitas.features.auth.router import router as auth_router
+from ovejitas.features.individual.router import router as individual_router
 
 API_PREFIX = "/api/v1"
 
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
 
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(asset_router, prefix=API_PREFIX)
+    app.include_router(individual_router, prefix=API_PREFIX)
 
     @app.get("/health", tags=["health"], summary="Liveness check")
     def health() -> dict[str, str]:
