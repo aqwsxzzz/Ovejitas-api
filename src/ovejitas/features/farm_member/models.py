@@ -1,4 +1,4 @@
-import enum
+from enum import StrEnum
 
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import ForeignKey, Identity, UniqueConstraint
@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from ovejitas.core.models import Base, TimestampMixin
 
 
-class FarmRole(str, enum.Enum):
+class FarmRole(StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"

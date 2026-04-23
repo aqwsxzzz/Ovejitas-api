@@ -92,9 +92,7 @@ class TestLogin:
 
 
 class TestMe:
-    async def test_valid_token_returns_user_and_memberships(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_valid_token_returns_user_and_memberships(self, client: AsyncClient) -> None:
         registered = await client.post(
             REGISTER,
             json={"email": "dave@example.com", "name": "Dave", "password": "supersecret"},
@@ -131,9 +129,7 @@ class TestRefresh:
         assert response.status_code == 200
         assert "access_token" in response.json()
 
-    async def test_access_token_used_as_refresh_returns_401(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_access_token_used_as_refresh_returns_401(self, client: AsyncClient) -> None:
         registered = await client.post(
             REGISTER,
             json={"email": "frank@example.com", "name": "Frank", "password": "supersecret"},

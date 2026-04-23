@@ -1,0 +1,19 @@
+default_install_hook_types: [pre-commit]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.11
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: export-openapi
+        name: Regenerate OpenAPI schema + per-tag docs
+        language: system
+        entry: bash -c 'docker compose exec -T app python scripts/export_openapi.py && git add openapi.json docs/api'
+        pass_filenames: false
+        files: ^(src/ovejitas/.*\.py|pyproject\.toml)$

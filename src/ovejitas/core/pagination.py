@@ -1,8 +1,6 @@
-from typing import Generic, Self, TypeVar
+from typing import Self
 
 from pydantic import BaseModel, Field
-
-T = TypeVar("T")
 
 
 class PageParams(BaseModel):
@@ -25,7 +23,7 @@ class PageMeta(BaseModel):
     has_next: bool
 
 
-class Page(BaseModel, Generic[T]):
+class Page[T](BaseModel):
     data: list[T]
     meta: PageMeta
 

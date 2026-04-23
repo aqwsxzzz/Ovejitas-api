@@ -32,7 +32,7 @@ async def _ensure_test_database() -> None:
 
 
 @pytest.fixture
-async def engine() -> AsyncGenerator[AsyncEngine, None]:
+async def engine() -> AsyncGenerator[AsyncEngine]:
     await _ensure_test_database()
     test_engine = create_async_engine(TEST_URL, poolclass=NullPool)
     async with test_engine.begin() as conn:
@@ -46,7 +46,7 @@ async def engine() -> AsyncGenerator[AsyncEngine, None]:
 
 
 @pytest.fixture
-async def db_session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
+async def db_session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
     session_maker = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with session_maker() as session:
         bind_factories(session)
@@ -54,8 +54,8 @@ async def db_session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient]:
+    async def override_get_db() -> AsyncGenerator[AsyncSession]:
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
