@@ -6,7 +6,9 @@ handles this automatically. Outputs:
 
 - openapi.json                full spec (used by @hey-api/openapi-ts)
 - docs/api/INDEX.md           one-line table of resources
-- docs/api/{tag}.md           per-resource human/agent-readable markdown
+- docs/api/{tag}.md           per-resource human/agent-readable markdown,
+                              with enum values inlined and referenced types
+                              expanded in a "Types" section at the bottom.
 """
 
 from __future__ import annotations
@@ -16,7 +18,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Make `src/` importable when run directly (no `uv run` needed).
 _SRC = Path(__file__).resolve().parent.parent / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
@@ -30,31 +31,64 @@ def _ref_name(ref: str) -> str:
     return ref.rsplit("/", 1)[-1]
 
 
-def _describe(schema: dict[str, Any]) -> str:
+def _describe(schema: dict[str, Any], components: dict[str, Any]) -> str:
+    """One-line type description. Enum refs inline values; object refs keep their name."""
     if "$ref" in schema:
-        return _ref_name(schema["$ref"])
+        name = _ref_name(schema["$ref"])
+        ref_schema = components.get("schemas", {}).get(name, {})
+        if "enum" in ref_schema:
+            return " | ".join(f"'{v}'" for v in ref_schema["enum"])
+        return name
     type_ = schema.get("type")
     if type_ == "array":
-        return f"{_describe(schema.get('items', {}))}[]"
+        return f"{_describe(schema.get('items', {}), components)}[]"
     if "anyOf" in schema:
-        return " | ".join(_describe(s) for s in schema["anyOf"])
+        return " | ".join(_describe(s, components) for s in schema["anyOf"])
     if type_ == "string" and "format" in schema:
         return f"string ({schema['format']})"
     return type_ or "any"
 
 
 def _fields(schema: dict[str, Any], components: dict[str, Any]) -> list[str]:
+    """Bullet list of properties in a schema (resolves $ref once)."""
     if "$ref" in schema:
         schema = components.get("schemas", {}).get(_ref_name(schema["$ref"]), {})
     required = set(schema.get("required", []))
     lines: list[str] = []
     for name, spec in schema.get("properties", {}).items():
         flag = "required" if name in required else "optional"
-        line = f"- `{name}` ({_describe(spec)}, {flag})"
+        line = f"- `{name}` ({_describe(spec, components)}, {flag})"
         if desc := spec.get("description"):
             line += f" — {desc}"
         lines.append(line)
     return lines
+
+
+def _collect_refs(node: Any, out: set[str]) -> None:
+    if isinstance(node, dict):
+        if "$ref" in node:
+            out.add(_ref_name(node["$ref"]))
+        for v in node.values():
+            _collect_refs(v, out)
+    elif isinstance(node, list):
+        for v in node:
+            _collect_refs(v, out)
+
+
+def _transitive_refs(seed: set[str], components: dict[str, Any]) -> set[str]:
+    """Expand a set of ref names to include refs they themselves contain."""
+    found = set(seed)
+    queue = list(seed)
+    while queue:
+        name = queue.pop()
+        schema = components.get("schemas", {}).get(name, {})
+        sub: set[str] = set()
+        _collect_refs(schema, sub)
+        for dep in sub:
+            if dep not in found:
+                found.add(dep)
+                queue.append(dep)
+    return found
 
 
 def _render_op(path: str, method: str, op: dict[str, Any], components: dict[str, Any]) -> str:
@@ -76,11 +110,22 @@ def _render_op(path: str, method: str, op: dict[str, Any], components: dict[str,
         out.append("**Responses:**")
         for code, resp in sorted(responses.items()):
             rschema = resp.get("content", {}).get("application/json", {}).get("schema", {})
-            name = _ref_name(rschema.get("$ref", "")) or _describe(rschema)
+            name = _ref_name(rschema.get("$ref", "")) or _describe(rschema, components)
             rdesc = resp.get("description", "")
             suffix = f" — {rdesc}" if rdesc and rdesc != name else ""
             out.append(f"- `{code}` → {name}{suffix}")
         out.append("")
+    return "\n".join(out)
+
+
+def _render_type(name: str, schema: dict[str, Any], components: dict[str, Any]) -> str:
+    out = [f"### {name}", ""]
+    if "enum" in schema:
+        out.append("**Values:** " + " | ".join(f"`{v}`" for v in schema["enum"]))
+        out.append("")
+        return "\n".join(out)
+    out.extend(_fields(schema, components))
+    out.append("")
     return "\n".join(out)
 
 
@@ -130,8 +175,26 @@ def main() -> None:
 
     for tag, ops in grouped.items():
         body = [f"# {tag}", "", "_Auto-generated. Do not edit by hand._", ""]
+        direct_refs: set[str] = set()
         for path, method, op in ops:
             body.append(_render_op(path, method, op, components))
+            _collect_refs(op, direct_refs)
+
+        all_refs = _transitive_refs(direct_refs, components)
+        # Drop refs we resolved inline (enums) since they add noise.
+        object_refs = {
+            name for name in all_refs if "enum" not in components.get("schemas", {}).get(name, {})
+        }
+        enum_refs = all_refs - object_refs
+
+        if object_refs or enum_refs:
+            body.append("## Types")
+            body.append("")
+            for name in sorted(object_refs):
+                body.append(_render_type(name, components["schemas"][name], components))
+            for name in sorted(enum_refs):
+                body.append(_render_type(name, components["schemas"][name], components))
+
         (api_dir / f"{tag}.md").write_text("\n".join(body) + "\n")
         print(f"wrote docs/api/{tag}.md")
 

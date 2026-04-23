@@ -49,3 +49,55 @@ _Current user and farm memberships_
 **Responses:**
 - `200` → MeResponse — Successful Response
 
+## Types
+
+### FarmMembershipRead
+
+- `farm_id` (integer, required)
+- `role` (string, required)
+
+### HTTPValidationError
+
+- `detail` (ValidationError[], optional)
+
+### LoginInput
+
+- `email` (string (email), required)
+- `password` (string, required)
+
+### MeResponse
+
+- `user` (UserRead, required)
+- `memberships` (FarmMembershipRead[], required)
+
+### RefreshInput
+
+- `refresh_token` (string, required)
+
+### RegisterInput
+
+- `email` (string (email), required)
+- `name` (string, required)
+- `password` (string, required)
+
+### TokenPair
+
+- `access_token` (string, required)
+- `refresh_token` (string, required)
+- `token_type` (string, optional)
+
+### UserRead
+
+- `id` (integer, required)
+- `email` (string (email), required)
+- `name` (string, required)
+- `created_at` (string (date-time), required)
+
+### ValidationError
+
+- `loc` (string | integer[], required)
+- `msg` (string, required)
+- `type` (string, required)
+- `input` (any, optional)
+- `ctx` (object, optional)
+

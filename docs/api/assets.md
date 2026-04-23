@@ -16,8 +16,8 @@ _Create an asset in a farm_
 
 **Request body:**
 - `name` (string, required)
-- `kind` (AssetKind, required)
-- `mode` (AssetMode, required)
+- `kind` ('animal' | 'crop' | 'equipment' | 'material' | 'location', required)
+- `mode` ('aggregated' | 'individual', required)
 - `location` (string | null, optional)
 - `description` (string | null, optional)
 
@@ -39,8 +39,8 @@ _Update an asset_
 
 **Request body:**
 - `name` (string | null, optional)
-- `kind` (AssetKind | null, optional)
-- `mode` (AssetMode | null, optional)
+- `kind` ('animal' | 'crop' | 'equipment' | 'material' | 'location' | null, optional)
+- `mode` ('aggregated' | 'individual' | null, optional)
 - `location` (string | null, optional)
 - `description` (string | null, optional)
 
@@ -55,4 +55,66 @@ _Delete an asset_
 **Responses:**
 - `204` → any — Successful Response
 - `422` → HTTPValidationError — Validation Error
+
+## Types
+
+### AssetCreate
+
+- `name` (string, required)
+- `kind` ('animal' | 'crop' | 'equipment' | 'material' | 'location', required)
+- `mode` ('aggregated' | 'individual', required)
+- `location` (string | null, optional)
+- `description` (string | null, optional)
+
+### AssetRead
+
+- `id` (integer, required)
+- `farm_id` (integer, required)
+- `name` (string, required)
+- `kind` ('animal' | 'crop' | 'equipment' | 'material' | 'location', required)
+- `mode` ('aggregated' | 'individual', required)
+- `location` (string | null, required)
+- `description` (string | null, required)
+- `created_at` (string (date-time), required)
+- `updated_at` (string (date-time), required)
+
+### AssetUpdate
+
+- `name` (string | null, optional)
+- `kind` ('animal' | 'crop' | 'equipment' | 'material' | 'location' | null, optional)
+- `mode` ('aggregated' | 'individual' | null, optional)
+- `location` (string | null, optional)
+- `description` (string | null, optional)
+
+### HTTPValidationError
+
+- `detail` (ValidationError[], optional)
+
+### PageMeta
+
+- `page` (integer, required)
+- `page_size` (integer, required)
+- `total` (integer, required)
+- `has_next` (boolean, required)
+
+### Page_AssetRead_
+
+- `data` (AssetRead[], required)
+- `meta` (PageMeta, required)
+
+### ValidationError
+
+- `loc` (string | integer[], required)
+- `msg` (string, required)
+- `type` (string, required)
+- `input` (any, optional)
+- `ctx` (object, optional)
+
+### AssetKind
+
+**Values:** `animal` | `crop` | `equipment` | `material` | `location`
+
+### AssetMode
+
+**Values:** `aggregated` | `individual`
 
