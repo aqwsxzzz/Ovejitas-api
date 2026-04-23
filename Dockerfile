@@ -19,8 +19,10 @@ WORKDIR /app
 RUN groupadd --system app && useradd --system --gid app --home /app app
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 COPY --chown=app:app src ./src
+COPY --chown=app:app migrations ./migrations
+COPY --chown=app:app alembic.ini ./alembic.ini
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH="/app/src"
 USER app
-EXPOSE 8000
-CMD ["uvicorn", "ovejitas.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 7777
+CMD ["uvicorn", "ovejitas.main:app", "--host", "0.0.0.0", "--port", "7777"]
