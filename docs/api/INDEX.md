@@ -6,5 +6,6 @@ Source of truth: [`openapi.json`](../../openapi.json)
 
 | Resource | Endpoints |
 |---|---|
+| [assets](./assets.md) | 5 |
 | [auth](./auth.md) | 4 |
 | [health](./health.md) | 1 |

@@ -1,4 +1,5 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from dataclasses import dataclass
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -65,3 +66,45 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient]:
             yield http
     finally:
         app.dependency_overrides.clear()
+
+
+@dataclass(slots=True)
+class AuthedUser:
+    user_id: int
+    farm_id: int
+    token: str
+
+    @property
+    def headers(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self.token}"}
+
+
+async def _register(client: AsyncClient, email: str) -> AuthedUser:
+    resp = await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "name": email.split("@")[0], "password": "password123"},
+    )
+    assert resp.status_code == 201, resp.text
+    token = resp.json()["access_token"]
+    me = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    body = me.json()
+    return AuthedUser(
+        user_id=body["user"]["id"],
+        farm_id=body["memberships"][0]["farm_id"],
+        token=token,
+    )
+
+
+@pytest.fixture
+async def authed_user(client: AsyncClient) -> AuthedUser:
+    return await _register(client, "default@example.com")
+
+
+@pytest.fixture
+def register_user(
+    client: AsyncClient,
+) -> Callable[[str], Awaitable[AuthedUser]]:
+    async def _factory(email: str) -> AuthedUser:
+        return await _register(client, email)
+
+    return _factory
