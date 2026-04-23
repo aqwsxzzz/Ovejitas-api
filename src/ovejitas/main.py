@@ -12,6 +12,7 @@ from ovejitas.features.auth.router import router as auth_router
 from ovejitas.features.event.router import router as event_router
 from ovejitas.features.event_category.router import router as event_category_router
 from ovejitas.features.individual.router import router as individual_router
+from ovejitas.features.report.router import router as report_router
 
 API_PREFIX = "/api/v1"
 
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(individual_router, prefix=API_PREFIX)
     app.include_router(event_category_router, prefix=API_PREFIX)
     app.include_router(event_router, prefix=API_PREFIX)
+    app.include_router(report_router, prefix=API_PREFIX)
 
     @app.get("/health", tags=["health"], summary="Liveness check")
     def health() -> dict[str, str]:
