@@ -25,7 +25,10 @@ services:
     volumes:
       - ./src:/app/src:ro
       - ./tests:/app/tests:ro
+      - ./scripts:/app/scripts:ro
       - ./migrations:/app/migrations
+      - ./docs:/app/docs
+      - ./openapi.json:/app/openapi.json
       - ./alembic.ini:/app/alembic.ini:ro
       - ./pyproject.toml:/app/pyproject.toml:ro
     command:
