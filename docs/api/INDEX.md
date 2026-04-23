@@ -8,5 +8,6 @@ Source of truth: [`openapi.json`](../../openapi.json)
 |---|---|
 | [assets](./assets.md) | 5 |
 | [auth](./auth.md) | 4 |
+| [event-categories](./event-categories.md) | 5 |
 | [health](./health.md) | 1 |
 | [individuals](./individuals.md) | 5 |

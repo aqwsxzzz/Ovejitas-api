@@ -199,6 +199,157 @@
         "title": "AssetUpdate",
         "type": "object"
       },
+      "EventCategoryCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          }
+        },
+        "required": [
+          "type",
+          "name"
+        ],
+        "title": "EventCategoryCreate",
+        "type": "object"
+      },
+      "EventCategoryRead": {
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "farm_id": {
+            "title": "Farm Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "farm_id",
+          "type",
+          "name",
+          "color",
+          "archived_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EventCategoryRead",
+        "type": "object"
+      },
+      "EventCategoryUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "EventCategoryUpdate",
+        "type": "object"
+      },
+      "EventType": {
+        "enum": [
+          "production",
+          "expense",
+          "income",
+          "observation",
+          "reproductive"
+        ],
+        "title": "EventType",
+        "type": "string"
+      },
       "FarmMembershipRead": {
         "properties": {
           "farm_id": {
@@ -580,6 +731,26 @@
           "meta"
         ],
         "title": "Page[AssetRead]",
+        "type": "object"
+      },
+      "Page_EventCategoryRead_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EventCategoryRead"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Page[EventCategoryRead]",
         "type": "object"
       },
       "Page_IndividualRead_": {
@@ -1723,6 +1894,403 @@
         "summary": "Update an individual",
         "tags": [
           "individuals"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/event-categories": {
+      "get": {
+        "operationId": "event-categories_list_event_categories",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Search across name",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search across name",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "e.g. -created_at,name",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -created_at,name",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EventType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "archived",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Archived"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_EventCategoryRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List event categories in a farm",
+        "tags": [
+          "event-categories"
+        ]
+      },
+      "post": {
+        "description": "`type` is immutable after creation. Uniqueness enforced on (farm, type, name).",
+        "operationId": "event-categories_create_event_category",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCategoryCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCategoryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create an event category",
+        "tags": [
+          "event-categories"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/event-categories/{category_id}": {
+      "delete": {
+        "description": "Events referencing this category have their `category_id` set to null.",
+        "operationId": "event-categories_delete_event_category",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete an event category",
+        "tags": [
+          "event-categories"
+        ]
+      },
+      "get": {
+        "operationId": "event-categories_get_event_category",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCategoryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get one event category",
+        "tags": [
+          "event-categories"
+        ]
+      },
+      "patch": {
+        "description": "Set `archived_at` to archive; set to null to unarchive. `type` cannot change.",
+        "operationId": "event-categories_update_event_category",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCategoryUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCategoryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update an event category",
+        "tags": [
+          "event-categories"
         ]
       }
     },
