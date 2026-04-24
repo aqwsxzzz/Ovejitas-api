@@ -7,10 +7,11 @@ services:
       POSTGRES_PASSWORD: ovejitas
     volumes:
       - pgdata:/var/lib/postgresql/data
+    command: ["postgres", "-c", "port=5433"]
     ports:
-      - "5433:5432"
+      - "5433:5433"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ovejitas -d ovejitas"]
+      test: ["CMD-SHELL", "pg_isready -U ovejitas -d ovejitas -p 5433"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -32,15 +33,9 @@ services:
       - ./alembic.ini:/app/alembic.ini:ro
       - ./pyproject.toml:/app/pyproject.toml:ro
     command:
-      - uvicorn
-      - ovejitas.main:app
-      - --host
-      - 0.0.0.0
-      - --port
-      - "7777"
-      - --reload
-      - --reload-dir
-      - /app/src
+      - sh
+      - -c
+      - "alembic upgrade head && exec uvicorn ovejitas.main:app --host 0.0.0.0 --port 7777 --reload --reload-dir /app/src"
     depends_on:
       db:
         condition: service_healthy

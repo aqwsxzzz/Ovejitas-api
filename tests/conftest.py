@@ -17,8 +17,8 @@ from ovejitas.main import app
 from ovejitas.models import Base
 from tests.factories import bind_factories
 
-ADMIN_URL = "postgresql+asyncpg://ovejitas:ovejitas@db:5432/ovejitas"
-TEST_URL = "postgresql+asyncpg://ovejitas:ovejitas@db:5432/ovejitas_test"
+ADMIN_URL = "postgresql+asyncpg://ovejitas:ovejitas@db:5433/ovejitas"
+TEST_URL = "postgresql+asyncpg://ovejitas:ovejitas@db:5433/ovejitas_test"
 
 
 async def _ensure_test_database() -> None:
