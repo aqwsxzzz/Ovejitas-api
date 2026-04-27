@@ -7,3 +7,5 @@ class EventType(StrEnum):
     INCOME = "income"
     OBSERVATION = "observation"
     REPRODUCTIVE = "reproductive"
+    ACQUISITION = "acquisition"
+    MORTALITY = "mortality"

@@ -61,6 +61,19 @@ _Delete an event_
 
 ## Types
 
+### EventAcquisitionCreate
+
+- `occurred_at` (string (date-time), required)
+- `individual_id` (integer | null, optional)
+- `category_id` (integer | null, optional)
+- `notes` (string | null, optional)
+- `payload` (object, optional)
+- `idempotency_key` (string | null, optional)
+- `type` (string, required)
+- `quantity` (number | string, required)
+- `amount` (number | string | null, optional)
+- `currency` (string | null, optional)
+
 ### EventExpenseCreate
 
 - `occurred_at` (string (date-time), required)
@@ -84,6 +97,17 @@ _Delete an event_
 - `type` (string, required)
 - `amount` (number | string, required)
 - `currency` (string, required)
+
+### EventMortalityCreate
+
+- `occurred_at` (string (date-time), required)
+- `individual_id` (integer | null, optional)
+- `category_id` (integer | null, optional)
+- `notes` (string | null, optional)
+- `payload` (object, optional)
+- `idempotency_key` (string | null, optional)
+- `type` (string, required)
+- `quantity` (number | string, required)
 
 ### EventObservationCreate
 
@@ -113,7 +137,7 @@ _Delete an event_
 - `farm_id` (integer, required)
 - `asset_id` (integer, required)
 - `individual_id` (integer | null, required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
 - `category_id` (integer | null, required)
 - `occurred_at` (string (date-time), required)
 - `quantity` (string | null, required)
@@ -175,5 +199,5 @@ _Delete an event_
 
 ### EventType
 
-**Values:** `production` | `expense` | `income` | `observation` | `reproductive`
+**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality`
 

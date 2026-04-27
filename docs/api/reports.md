@@ -62,7 +62,7 @@ _R4 — paginated event timeline for one individual_
 - `farm_id` (integer, required)
 - `asset_id` (integer, required)
 - `individual_id` (integer | null, required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
 - `category_id` (integer | null, required)
 - `occurred_at` (string (date-time), required)
 - `quantity` (string | null, required)
@@ -96,7 +96,7 @@ _R4 — paginated event timeline for one individual_
 
 - `data` (ProductionRow[], required)
 - `bucket` ('day' | 'week' | 'month', required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
 
 ### ProductionRow
 
@@ -133,5 +133,5 @@ _R4 — paginated event timeline for one individual_
 
 ### EventType
 
-**Values:** `production` | `expense` | `income` | `observation` | `reproductive`
+**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality`
 

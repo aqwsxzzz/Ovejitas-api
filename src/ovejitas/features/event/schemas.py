@@ -46,12 +46,26 @@ class EventReproductiveCreate(_EventCreateBase):
     individual_id: int
 
 
+class EventAcquisitionCreate(_EventCreateBase):
+    type: Literal[EventType.ACQUISITION]
+    quantity: Decimal = Field(gt=0)
+    amount: Decimal | None = Field(default=None, gt=0)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+
+
+class EventMortalityCreate(_EventCreateBase):
+    type: Literal[EventType.MORTALITY]
+    quantity: Decimal = Field(gt=0)
+
+
 EventCreate = Annotated[
     EventProductionCreate
     | EventExpenseCreate
     | EventIncomeCreate
     | EventObservationCreate
-    | EventReproductiveCreate,
+    | EventReproductiveCreate
+    | EventAcquisitionCreate
+    | EventMortalityCreate,
     Field(discriminator="type"),
 ]
 
