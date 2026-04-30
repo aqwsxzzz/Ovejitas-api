@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import ClassVar
 
 from ovejitas.features.event.models import Event
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, Unit
 from tests.factories._base import BaseFactory
 
 
@@ -17,7 +17,7 @@ class EventFactory(BaseFactory):
     __model__ = Event
     type = EventType.PRODUCTION
     quantity = Decimal("1")
-    unit = "unit"
+    unit = Unit.UNIT
     payload: ClassVar[dict[str, object]] = {}
 
     @classmethod

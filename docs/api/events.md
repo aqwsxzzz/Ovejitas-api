@@ -41,7 +41,7 @@ _Update an event_
 - `individual_id` (integer | null, optional)
 - `category_id` (integer | null, optional)
 - `quantity` (number | string | null, optional)
-- `unit` (string | null, optional)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, optional)
 - `amount` (number | string | null, optional)
 - `currency` (string | null, optional)
 - `notes` (string | null, optional)
@@ -129,7 +129,7 @@ _Delete an event_
 - `idempotency_key` (string | null, optional)
 - `type` (string, required)
 - `quantity` (number | string, required)
-- `unit` (string, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
 
 ### EventRead
 
@@ -141,7 +141,7 @@ _Delete an event_
 - `category_id` (integer | null, required)
 - `occurred_at` (string (date-time), required)
 - `quantity` (string | null, required)
-- `unit` (string | null, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, required)
 - `amount` (string | null, required)
 - `currency` (string | null, required)
 - `notes` (string | null, required)
@@ -167,7 +167,7 @@ _Delete an event_
 - `individual_id` (integer | null, optional)
 - `category_id` (integer | null, optional)
 - `quantity` (number | string | null, optional)
-- `unit` (string | null, optional)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, optional)
 - `amount` (number | string | null, optional)
 - `currency` (string | null, optional)
 - `notes` (string | null, optional)
@@ -200,4 +200,8 @@ _Delete an event_
 ### EventType
 
 **Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality`
+
+### Unit
+
+**Values:** `g` | `kg` | `lb` | `t` | `ml` | `l` | `gal` | `unit` | `dozen` | `head`
 

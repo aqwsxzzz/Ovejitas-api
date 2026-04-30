@@ -9,3 +9,16 @@ class EventType(StrEnum):
     REPRODUCTIVE = "reproductive"
     ACQUISITION = "acquisition"
     MORTALITY = "mortality"
+
+
+class Unit(StrEnum):
+    G = "g"
+    KG = "kg"
+    LB = "lb"
+    T = "t"
+    ML = "ml"
+    L = "l"
+    GAL = "gal"
+    UNIT = "unit"
+    DOZEN = "dozen"
+    HEAD = "head"

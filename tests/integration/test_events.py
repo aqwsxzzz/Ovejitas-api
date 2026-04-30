@@ -71,7 +71,7 @@ class TestCreateByType:
                 "type": "production",
                 "occurred_at": OCCURRED,
                 "quantity": "12.5",
-                "unit": "liters",
+                "unit": "l",
             },
         )
 
@@ -79,7 +79,7 @@ class TestCreateByType:
         body = response.json()
         assert body["type"] == "production"
         assert body["quantity"] == "12.5"
-        assert body["unit"] == "liters"
+        assert body["unit"] == "l"
         assert body["amount"] is None
 
     async def test_expense_requires_amount(

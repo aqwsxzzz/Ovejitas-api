@@ -165,7 +165,7 @@ async def _seed_vacas(db: AsyncSession, user: User, farm: Farm) -> list[Individu
                 occurred_at=TODAY - timedelta(days=offset),
                 individual_id=mother.id,
                 quantity=Decimal("18.5"),
-                unit="L",
+                unit="l",
                 created_by=user.id,
             )
         )

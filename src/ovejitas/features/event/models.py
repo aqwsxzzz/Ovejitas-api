@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ovejitas.core.models import Base, TimestampMixin
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, Unit
 
 
 class Event(Base, TimestampMixin):
@@ -73,7 +73,10 @@ class Event(Base, TimestampMixin):
     )
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     quantity: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
-    unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    unit: Mapped[Unit | None] = mapped_column(
+        SQLEnum(Unit, name="unit", values_callable=lambda e: [m.value for m in e]),
+        nullable=True,
+    )
     amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)

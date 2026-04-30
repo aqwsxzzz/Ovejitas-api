@@ -192,7 +192,7 @@ class TestTimelineEdges:
             individual_id=ind.id,
             type=EventType.PRODUCTION,
             quantity=Decimal("1"),
-            unit="L",
+            unit="l",
         )
         await _event(
             authed_user.farm_id,

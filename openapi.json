@@ -218,8 +218,7 @@
             "type": "array"
           },
           "unit": {
-            "title": "Unit",
-            "type": "string"
+            "$ref": "#/components/schemas/Unit"
           }
         },
         "required": [
@@ -941,10 +940,7 @@
             "type": "string"
           },
           "unit": {
-            "maxLength": 32,
-            "minLength": 1,
-            "title": "Unit",
-            "type": "string"
+            "$ref": "#/components/schemas/Unit"
           }
         },
         "required": [
@@ -1074,13 +1070,12 @@
           "unit": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/Unit"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Unit"
+            ]
           },
           "updated_at": {
             "format": "date-time",
@@ -1296,15 +1291,12 @@
           "unit": {
             "anyOf": [
               {
-                "maxLength": 32,
-                "minLength": 1,
-                "type": "string"
+                "$ref": "#/components/schemas/Unit"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Unit"
+            ]
           }
         },
         "title": "EventUpdate",
@@ -1806,8 +1798,7 @@
             "type": "string"
           },
           "unit": {
-            "title": "Unit",
-            "type": "string"
+            "$ref": "#/components/schemas/Unit"
           }
         },
         "required": [
@@ -1942,6 +1933,22 @@
         ],
         "title": "TokenPair",
         "type": "object"
+      },
+      "Unit": {
+        "enum": [
+          "g",
+          "kg",
+          "lb",
+          "t",
+          "ml",
+          "l",
+          "gal",
+          "unit",
+          "dozen",
+          "head"
+        ],
+        "title": "Unit",
+        "type": "string"
       },
       "UserRead": {
         "properties": {
@@ -3959,10 +3966,7 @@
             "name": "unit",
             "required": true,
             "schema": {
-              "maxLength": 32,
-              "minLength": 1,
-              "title": "Unit",
-              "type": "string"
+              "$ref": "#/components/schemas/Unit"
             }
           }
         ],
@@ -4208,9 +4212,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 32,
-                  "minLength": 1,
-                  "type": "string"
+                  "$ref": "#/components/schemas/Unit"
                 },
                 {
                   "type": "null"

@@ -5,7 +5,7 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ovejitas.core.filters import FilterParams
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, Unit
 
 
 class _EventCreateBase(BaseModel):
@@ -22,7 +22,7 @@ class _EventCreateBase(BaseModel):
 class EventProductionCreate(_EventCreateBase):
     type: Literal[EventType.PRODUCTION]
     quantity: Decimal = Field(gt=0)
-    unit: str = Field(min_length=1, max_length=32)
+    unit: Unit
 
 
 class EventExpenseCreate(_EventCreateBase):
@@ -77,7 +77,7 @@ class EventUpdate(BaseModel):
     individual_id: int | None = None
     category_id: int | None = None
     quantity: Decimal | None = Field(default=None, gt=0)
-    unit: str | None = Field(default=None, min_length=1, max_length=32)
+    unit: Unit | None = None
     amount: Decimal | None = Field(default=None, gt=0)
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     notes: str | None = None
@@ -95,7 +95,7 @@ class EventRead(BaseModel):
     category_id: int | None
     occurred_at: datetime
     quantity: Decimal | None
-    unit: str | None
+    unit: Unit | None
     amount: Decimal | None
     currency: str | None
     notes: str | None

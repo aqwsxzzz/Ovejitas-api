@@ -45,7 +45,7 @@ _R4 — paginated event timeline for one individual_
 ### CostPerUnitReport
 
 - `data` (CostPerUnitRow[], required)
-- `unit` (string, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
 
 ### CostPerUnitRow
 
@@ -66,7 +66,7 @@ _R4 — paginated event timeline for one individual_
 - `category_id` (integer | null, required)
 - `occurred_at` (string (date-time), required)
 - `quantity` (string | null, required)
-- `unit` (string | null, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, required)
 - `amount` (string | null, required)
 - `currency` (string | null, required)
 - `notes` (string | null, required)
@@ -102,7 +102,7 @@ _R4 — paginated event timeline for one individual_
 
 - `bucket_start` (string (date-time), required)
 - `asset_id` (integer, required)
-- `unit` (string, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
 - `category_id` (integer | null, required)
 - `total` (string, required)
 
@@ -134,4 +134,8 @@ _R4 — paginated event timeline for one individual_
 ### EventType
 
 **Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality`
+
+### Unit
+
+**Values:** `g` | `kg` | `lb` | `t` | `ml` | `l` | `gal` | `unit` | `dozen` | `head`
 

@@ -2,10 +2,10 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from ovejitas.core.filters import FilterParams
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, Unit
 
 
 class Bucket(StrEnum):
@@ -34,7 +34,7 @@ class ProductionRow(BaseModel):
 
     bucket_start: datetime
     asset_id: int
-    unit: str
+    unit: Unit
     category_id: int | None
     total: Decimal
 
@@ -58,7 +58,7 @@ class CostPerUnitRow(BaseModel):
 
 class CostPerUnitReport(BaseModel):
     data: list[CostPerUnitRow]
-    unit: str
+    unit: Unit
 
 
 class ProfitabilityQuery(FilterParams):
@@ -68,13 +68,13 @@ class ProfitabilityQuery(FilterParams):
 class ProductionQuery(FilterParams):
     asset_id: int | None = None
     type: EventType = EventType.PRODUCTION
-    unit: str | None = Field(default=None, min_length=1, max_length=32)
+    unit: Unit | None = None
     bucket: Bucket = Bucket.DAY
 
 
 class CostPerUnitQuery(FilterParams):
     asset_id: int | None = None
-    unit: str = Field(min_length=1, max_length=32)
+    unit: Unit
 
 
 class TimelineQuery(FilterParams):
