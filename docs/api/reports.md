@@ -45,12 +45,20 @@ _R4 — paginated event timeline for one individual_
 ### CostPerUnitReport
 
 - `data` (CostPerUnitRow[], required)
+- `totals` (CostPerUnitTotal[], required)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
 
 ### CostPerUnitRow
 
 - `asset_id` (integer, required)
 - `asset_name` (string, required)
+- `currency` (string, required)
+- `quantity` (string, required)
+- `expense_total` (string, required)
+- `cost_per_unit` (string, required)
+
+### CostPerUnitTotal
+
 - `currency` (string, required)
 - `quantity` (string, required)
 - `expense_total` (string, required)
@@ -95,6 +103,7 @@ _R4 — paginated event timeline for one individual_
 ### ProductionReport
 
 - `data` (ProductionRow[], required)
+- `totals` (ProductionTotal[], required)
 - `bucket` ('day' | 'week' | 'month', required)
 - `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
 
@@ -106,14 +115,27 @@ _R4 — paginated event timeline for one individual_
 - `category_id` (integer | null, required)
 - `total` (string, required)
 
+### ProductionTotal
+
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
+- `total` (string, required)
+
 ### ProfitabilityReport
 
 - `data` (ProfitabilityRow[], required)
+- `totals` (ProfitabilityTotal[], required)
 
 ### ProfitabilityRow
 
 - `asset_id` (integer, required)
 - `asset_name` (string, required)
+- `currency` (string, required)
+- `income_total` (string, required)
+- `expense_total` (string, required)
+- `net` (string, required)
+
+### ProfitabilityTotal
+
 - `currency` (string, required)
 - `income_total` (string, required)
 - `expense_total` (string, required)

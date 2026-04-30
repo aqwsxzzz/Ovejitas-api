@@ -67,6 +67,53 @@ class TestProfitability:
         assert Decimal(row["net"]) == Decimal("200")
         assert row["currency"] == "USD"
 
+    async def test_totals_grouped_by_currency(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        a1 = await _asset(authed_user.farm_id, name="A1")
+        a2 = await _asset(authed_user.farm_id, name="A2")
+        for asset_id in (a1, a2):
+            await _event(
+                authed_user.farm_id,
+                asset_id,
+                authed_user.user_id,
+                type=EventType.INCOME,
+                amount=Decimal("100"),
+                currency="USD",
+                quantity=None,
+                unit=None,
+            )
+            await _event(
+                authed_user.farm_id,
+                asset_id,
+                authed_user.user_id,
+                type=EventType.EXPENSE,
+                amount=Decimal("40"),
+                currency="USD",
+                quantity=None,
+                unit=None,
+            )
+        await _event(
+            authed_user.farm_id,
+            a1,
+            authed_user.user_id,
+            type=EventType.INCOME,
+            amount=Decimal("500"),
+            currency="ARS",
+            quantity=None,
+            unit=None,
+        )
+
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/profitability", headers=authed_user.headers
+        )
+        totals = {t["currency"]: t for t in resp.json()["totals"]}
+        assert Decimal(totals["USD"]["income_total"]) == Decimal("200")
+        assert Decimal(totals["USD"]["expense_total"]) == Decimal("80")
+        assert Decimal(totals["USD"]["net"]) == Decimal("120")
+        assert Decimal(totals["ARS"]["income_total"]) == Decimal("500")
+        assert Decimal(totals["ARS"]["net"]) == Decimal("500")
+
     async def test_currencies_not_mixed(self, client: AsyncClient, authed_user: AuthedUser) -> None:
         asset_id = await _asset(authed_user.farm_id, name="Vacas")
         await _event(
@@ -140,6 +187,30 @@ class TestProduction:
         assert totals["2026-04-01"] == Decimal("15")
         assert totals["2026-04-02"] == Decimal("7")
 
+    async def test_totals_grouped_by_unit(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        a1 = await _asset(authed_user.farm_id, name="Gallinas")
+        a2 = await _asset(authed_user.farm_id, name="Vacas")
+        await _event(
+            authed_user.farm_id, a1, authed_user.user_id, quantity=Decimal("12"), unit="unit"
+        )
+        await _event(
+            authed_user.farm_id, a1, authed_user.user_id, quantity=Decimal("8"), unit="unit"
+        )
+        await _event(
+            authed_user.farm_id, a2, authed_user.user_id, quantity=Decimal("18.5"), unit="l"
+        )
+        await _event(
+            authed_user.farm_id, a2, authed_user.user_id, quantity=Decimal("17.5"), unit="l"
+        )
+
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/production", headers=authed_user.headers
+        )
+        totals = {t["unit"]: Decimal(t["total"]) for t in resp.json()["totals"]}
+        assert totals == {"unit": Decimal("20"), "l": Decimal("36")}
+
     async def test_observation_headcount(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
@@ -205,6 +276,42 @@ class TestCostPerUnit:
         assert body["unit"] == "unit"
         assert len(body["data"]) == 1
         assert Decimal(body["data"][0]["cost_per_unit"]) == Decimal("2")
+
+    async def test_totals_grouped_by_currency(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        a1 = await _asset(authed_user.farm_id, name="A1")
+        a2 = await _asset(authed_user.farm_id, name="A2")
+        for asset_id in (a1, a2):
+            await _event(
+                authed_user.farm_id,
+                asset_id,
+                authed_user.user_id,
+                type=EventType.EXPENSE,
+                amount=Decimal("60"),
+                currency="USD",
+                quantity=None,
+                unit=None,
+            )
+            await _event(
+                authed_user.farm_id,
+                asset_id,
+                authed_user.user_id,
+                type=EventType.PRODUCTION,
+                quantity=Decimal("30"),
+                unit="unit",
+            )
+
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/cost-per-unit",
+            headers=authed_user.headers,
+            params={"unit": "unit"},
+        )
+        body = resp.json()
+        totals = {t["currency"]: t for t in body["totals"]}
+        assert Decimal(totals["USD"]["quantity"]) == Decimal("60")
+        assert Decimal(totals["USD"]["expense_total"]) == Decimal("120")
+        assert Decimal(totals["USD"]["cost_per_unit"]) == Decimal("2")
 
     async def test_missing_unit_rejected(
         self, client: AsyncClient, authed_user: AuthedUser

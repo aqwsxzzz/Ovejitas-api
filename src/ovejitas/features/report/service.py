@@ -1,4 +1,6 @@
+from collections import defaultdict
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import Select, case, func, select
@@ -14,12 +16,53 @@ from ovejitas.features.individual.models import Individual
 from ovejitas.features.report.schemas import (
     CostPerUnitQuery,
     CostPerUnitRow,
+    CostPerUnitTotal,
     ProductionQuery,
     ProductionRow,
+    ProductionTotal,
     ProfitabilityQuery,
     ProfitabilityRow,
+    ProfitabilityTotal,
     TimelineQuery,
 )
+
+
+def _profitability_totals(rows: list[ProfitabilityRow]) -> list[ProfitabilityTotal]:
+    by_currency: dict[str, dict[str, Decimal]] = defaultdict(
+        lambda: {"income_total": Decimal(0), "expense_total": Decimal(0), "net": Decimal(0)}
+    )
+    for r in rows:
+        bucket = by_currency[r.currency]
+        bucket["income_total"] += r.income_total
+        bucket["expense_total"] += r.expense_total
+        bucket["net"] += r.net
+    return [ProfitabilityTotal(currency=cur, **vals) for cur, vals in sorted(by_currency.items())]
+
+
+def _production_totals(rows: list[ProductionRow]) -> list[ProductionTotal]:
+    by_unit: dict[Any, Decimal] = defaultdict(lambda: Decimal(0))
+    for r in rows:
+        by_unit[r.unit] += r.total
+    return [ProductionTotal(unit=u, total=t) for u, t in sorted(by_unit.items())]
+
+
+def _cost_per_unit_totals(rows: list[CostPerUnitRow]) -> list[CostPerUnitTotal]:
+    by_currency: dict[str, dict[str, Decimal]] = defaultdict(
+        lambda: {"quantity": Decimal(0), "expense_total": Decimal(0)}
+    )
+    for r in rows:
+        bucket = by_currency[r.currency]
+        bucket["quantity"] += r.quantity
+        bucket["expense_total"] += r.expense_total
+    return [
+        CostPerUnitTotal(
+            currency=cur,
+            quantity=v["quantity"],
+            expense_total=v["expense_total"],
+            cost_per_unit=v["expense_total"] / v["quantity"] if v["quantity"] else Decimal(0),
+        )
+        for cur, v in sorted(by_currency.items())
+    ]
 
 
 def _scope(
@@ -40,7 +83,9 @@ class ReportService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def profitability(self, farm_id: int, q: ProfitabilityQuery) -> list[ProfitabilityRow]:
+    async def profitability(
+        self, farm_id: int, q: ProfitabilityQuery
+    ) -> tuple[list[ProfitabilityRow], list[ProfitabilityTotal]]:
         income = func.coalesce(
             func.sum(case((Event.type == EventType.INCOME, Event.amount), else_=0)), 0
         )
@@ -68,9 +113,13 @@ class ReportService:
         )
         stmt = _scope(stmt, farm_id, q.date_from, q.date_to, q.asset_id)
         rows = (await self.db.execute(stmt)).mappings().all()
-        return [ProfitabilityRow.model_validate(r) for r in rows]
+        data = [ProfitabilityRow.model_validate(r) for r in rows]
+        totals = _profitability_totals(data)
+        return data, totals
 
-    async def production(self, farm_id: int, q: ProductionQuery) -> list[ProductionRow]:
+    async def production(
+        self, farm_id: int, q: ProductionQuery
+    ) -> tuple[list[ProductionRow], list[ProductionTotal]]:
         bucket_col = func.date_trunc(q.bucket.value, Event.occurred_at)
         stmt = (
             select(
@@ -92,9 +141,13 @@ class ReportService:
         if q.unit is not None:
             stmt = stmt.where(Event.unit == q.unit)
         rows = (await self.db.execute(stmt)).mappings().all()
-        return [ProductionRow.model_validate(r) for r in rows]
+        data = [ProductionRow.model_validate(r) for r in rows]
+        totals = _production_totals(data)
+        return data, totals
 
-    async def cost_per_unit(self, farm_id: int, q: CostPerUnitQuery) -> list[CostPerUnitRow]:
+    async def cost_per_unit(
+        self, farm_id: int, q: CostPerUnitQuery
+    ) -> tuple[list[CostPerUnitRow], list[CostPerUnitTotal]]:
         prod_stmt = (
             select(
                 Event.asset_id.label("asset_id"),
@@ -143,7 +196,9 @@ class ReportService:
             .order_by(Asset.name, exp_cte.c.currency)
         )
         rows = (await self.db.execute(stmt)).mappings().all()
-        return [CostPerUnitRow.model_validate(r) for r in rows]
+        data = [CostPerUnitRow.model_validate(r) for r in rows]
+        totals = _cost_per_unit_totals(data)
+        return data, totals
 
     async def timeline(
         self,

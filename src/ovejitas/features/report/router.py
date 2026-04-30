@@ -41,8 +41,8 @@ async def profitability(
     svc: ReportSvc,
     q: Annotated[ProfitabilityQuery, Depends()],
 ) -> ProfitabilityReport:
-    rows = await svc.profitability(membership.farm_id, q)
-    return ProfitabilityReport(data=rows)
+    rows, totals = await svc.profitability(membership.farm_id, q)
+    return ProfitabilityReport(data=rows, totals=totals)
 
 
 @router.get(
@@ -59,8 +59,8 @@ async def production(
     svc: ReportSvc,
     q: Annotated[ProductionQuery, Depends()],
 ) -> ProductionReport:
-    rows = await svc.production(membership.farm_id, q)
-    return ProductionReport(data=rows, bucket=q.bucket, type=q.type)
+    rows, totals = await svc.production(membership.farm_id, q)
+    return ProductionReport(data=rows, totals=totals, bucket=q.bucket, type=q.type)
 
 
 @router.get(
@@ -82,8 +82,8 @@ async def cost_per_unit(
     svc: ReportSvc,
     q: Annotated[CostPerUnitQuery, Depends()],
 ) -> CostPerUnitReport:
-    rows = await svc.cost_per_unit(membership.farm_id, q)
-    return CostPerUnitReport(data=rows, unit=q.unit)
+    rows, totals = await svc.cost_per_unit(membership.farm_id, q)
+    return CostPerUnitReport(data=rows, totals=totals, unit=q.unit)
 
 
 @router.get(

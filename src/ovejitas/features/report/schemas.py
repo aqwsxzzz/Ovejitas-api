@@ -25,8 +25,16 @@ class ProfitabilityRow(BaseModel):
     net: Decimal
 
 
+class ProfitabilityTotal(BaseModel):
+    currency: str
+    income_total: Decimal
+    expense_total: Decimal
+    net: Decimal
+
+
 class ProfitabilityReport(BaseModel):
     data: list[ProfitabilityRow]
+    totals: list[ProfitabilityTotal]
 
 
 class ProductionRow(BaseModel):
@@ -39,8 +47,14 @@ class ProductionRow(BaseModel):
     total: Decimal
 
 
+class ProductionTotal(BaseModel):
+    unit: Unit
+    total: Decimal
+
+
 class ProductionReport(BaseModel):
     data: list[ProductionRow]
+    totals: list[ProductionTotal]
     bucket: Bucket
     type: EventType
 
@@ -56,8 +70,16 @@ class CostPerUnitRow(BaseModel):
     cost_per_unit: Decimal
 
 
+class CostPerUnitTotal(BaseModel):
+    currency: str
+    quantity: Decimal
+    expense_total: Decimal
+    cost_per_unit: Decimal
+
+
 class CostPerUnitReport(BaseModel):
     data: list[CostPerUnitRow]
+    totals: list[CostPerUnitTotal]
     unit: Unit
 
 

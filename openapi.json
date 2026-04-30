@@ -217,12 +217,20 @@
             "title": "Data",
             "type": "array"
           },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/CostPerUnitTotal"
+            },
+            "title": "Totals",
+            "type": "array"
+          },
           "unit": {
             "$ref": "#/components/schemas/Unit"
           }
         },
         "required": [
           "data",
+          "totals",
           "unit"
         ],
         "title": "CostPerUnitReport",
@@ -267,6 +275,37 @@
           "cost_per_unit"
         ],
         "title": "CostPerUnitRow",
+        "type": "object"
+      },
+      "CostPerUnitTotal": {
+        "properties": {
+          "cost_per_unit": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cost Per Unit",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "expense_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Expense Total",
+            "type": "string"
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "quantity",
+          "expense_total",
+          "cost_per_unit"
+        ],
+        "title": "CostPerUnitTotal",
         "type": "object"
       },
       "EventAcquisitionCreate": {
@@ -1758,12 +1797,20 @@
             "title": "Data",
             "type": "array"
           },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/ProductionTotal"
+            },
+            "title": "Totals",
+            "type": "array"
+          },
           "type": {
             "$ref": "#/components/schemas/EventType"
           }
         },
         "required": [
           "data",
+          "totals",
           "bucket",
           "type"
         ],
@@ -1811,6 +1858,24 @@
         "title": "ProductionRow",
         "type": "object"
       },
+      "ProductionTotal": {
+        "properties": {
+          "total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "unit",
+          "total"
+        ],
+        "title": "ProductionTotal",
+        "type": "object"
+      },
       "ProfitabilityReport": {
         "properties": {
           "data": {
@@ -1819,10 +1884,18 @@
             },
             "title": "Data",
             "type": "array"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/ProfitabilityTotal"
+            },
+            "title": "Totals",
+            "type": "array"
           }
         },
         "required": [
-          "data"
+          "data",
+          "totals"
         ],
         "title": "ProfitabilityReport",
         "type": "object"
@@ -1866,6 +1939,37 @@
           "net"
         ],
         "title": "ProfitabilityRow",
+        "type": "object"
+      },
+      "ProfitabilityTotal": {
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "expense_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Expense Total",
+            "type": "string"
+          },
+          "income_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Income Total",
+            "type": "string"
+          },
+          "net": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net",
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "income_total",
+          "expense_total",
+          "net"
+        ],
+        "title": "ProfitabilityTotal",
         "type": "object"
       },
       "RefreshInput": {
