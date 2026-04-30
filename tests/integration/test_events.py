@@ -42,7 +42,7 @@ async def _create_individual(
     resp = await client.post(
         individuals_url(authed.farm_id, asset_id),
         headers=authed.headers,
-        json={"name": name},
+        json={"name": name, "tag": f"{name}-{asset_id}"},
     )
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]

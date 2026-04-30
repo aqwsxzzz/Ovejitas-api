@@ -10,8 +10,8 @@ from ovejitas.features.individual.models import IndividualStatus
 class IndividualCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(min_length=1, max_length=255)
-    tag: str | None = Field(default=None, max_length=128)
+    tag: str = Field(min_length=1, max_length=128)
+    name: str | None = Field(default=None, min_length=1, max_length=255)
     birth_date: date | None = None
     mother_id: int | None = None
     father_id: int | None = None
@@ -36,8 +36,8 @@ class IndividualRead(BaseModel):
     id: int
     farm_id: int
     asset_id: int
-    name: str
-    tag: str | None
+    name: str | None
+    tag: str
     birth_date: date | None
     mother_id: int | None
     father_id: int | None

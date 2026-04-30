@@ -48,7 +48,11 @@ async def _asset(client: AsyncClient, u: AuthedUser, payload: dict) -> int:
 
 
 async def _individual(client: AsyncClient, u: AuthedUser, aid: int, name: str = "X") -> int:
-    r = await client.post(individuals_url(u.farm_id, aid), headers=u.headers, json={"name": name})
+    r = await client.post(
+        individuals_url(u.farm_id, aid),
+        headers=u.headers,
+        json={"name": name, "tag": f"{name}-{aid}"},
+    )
     assert r.status_code == 201, r.text
     return int(r.json()["id"])
 

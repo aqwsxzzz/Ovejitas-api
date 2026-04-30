@@ -17,8 +17,8 @@ _Create an individual under an asset_
 Asset must be in `individual` mode. Parents (if any) must belong to the same farm.
 
 **Request body:**
-- `name` (string, required)
-- `tag` (string | null, optional)
+- `tag` (string, required)
+- `name` (string | null, optional)
 - `birth_date` (string (date) | null, optional)
 - `mother_id` (integer | null, optional)
 - `father_id` (integer | null, optional)
@@ -69,8 +69,8 @@ _Delete an individual_
 
 ### IndividualCreate
 
-- `name` (string, required)
-- `tag` (string | null, optional)
+- `tag` (string, required)
+- `name` (string | null, optional)
 - `birth_date` (string (date) | null, optional)
 - `mother_id` (integer | null, optional)
 - `father_id` (integer | null, optional)
@@ -81,8 +81,8 @@ _Delete an individual_
 - `id` (integer, required)
 - `farm_id` (integer, required)
 - `asset_id` (integer, required)
-- `name` (string, required)
-- `tag` (string | null, required)
+- `name` (string | null, required)
+- `tag` (string, required)
 - `birth_date` (string (date) | null, required)
 - `mother_id` (integer | null, required)
 - `father_id` (integer | null, required)

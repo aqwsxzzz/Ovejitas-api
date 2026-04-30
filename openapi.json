@@ -1384,26 +1384,27 @@
             "title": "Mother Id"
           },
           "name": {
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
-          },
-          "tag": {
             "anyOf": [
               {
-                "maxLength": 128,
+                "maxLength": 255,
+                "minLength": 1,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Tag"
+            "title": "Name"
+          },
+          "tag": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tag",
+            "type": "string"
           }
         },
         "required": [
-          "name"
+          "tag"
         ],
         "title": "IndividualCreate",
         "type": "object"
@@ -1467,13 +1468,6 @@
             "title": "Mother Id"
           },
           "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/IndividualStatus"
-          },
-          "tag": {
             "anyOf": [
               {
                 "type": "string"
@@ -1482,7 +1476,14 @@
                 "type": "null"
               }
             ],
-            "title": "Tag"
+            "title": "Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IndividualStatus"
+          },
+          "tag": {
+            "title": "Tag",
+            "type": "string"
           },
           "updated_at": {
             "format": "date-time",

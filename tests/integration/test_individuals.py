@@ -53,7 +53,7 @@ class TestCreateIndividual:
         response = await client.post(
             individuals_url(authed_user.farm_id, asset_id),
             headers=authed_user.headers,
-            json={"name": "Gallina B"},
+            json={"name": "Gallina B", "tag": "G-001"},
         )
 
         assert response.status_code == 422
@@ -71,14 +71,14 @@ class TestCreateIndividual:
         bob_parent = await client.post(
             individuals_url(bob.farm_id, bob_asset),
             headers=bob.headers,
-            json={"name": "Bob's Cow"},
+            json={"name": "Bob's Cow", "tag": "BOB-001"},
         )
         bob_parent_id = bob_parent.json()["id"]
 
         response = await client.post(
             individuals_url(alice.farm_id, alice_asset),
             headers=alice.headers,
-            json={"name": "Calf", "mother_id": bob_parent_id},
+            json={"name": "Calf", "tag": "CALF-001", "mother_id": bob_parent_id},
         )
 
         assert response.status_code == 422
@@ -92,7 +92,7 @@ class TestListIndividuals:
             await client.post(
                 individuals_url(authed_user.farm_id, asset_id),
                 headers=authed_user.headers,
-                json={"name": name},
+                json={"name": name, "tag": f"TAG-{name}"},
             )
         created_c = (
             await client.get(
@@ -146,7 +146,7 @@ class TestGetUpdateDelete:
         created = await client.post(
             individuals_url(authed_user.farm_id, asset_id),
             headers=authed_user.headers,
-            json={"name": "Vaca A"},
+            json={"name": "Vaca A", "tag": "VACA-A"},
         )
         individual_id = created.json()["id"]
 
@@ -164,7 +164,7 @@ class TestGetUpdateDelete:
         created = await client.post(
             individuals_url(authed_user.farm_id, asset_id),
             headers=authed_user.headers,
-            json={"name": "Temporary"},
+            json={"name": "Temporary", "tag": "TMP-001"},
         )
         individual_id = created.json()["id"]
 

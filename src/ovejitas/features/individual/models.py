@@ -32,8 +32,8 @@ class Individual(Base, TimestampMixin):
         nullable=False,
         index=True,
     )
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    tag: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    tag: Mapped[str] = mapped_column(String(128), nullable=False)
     birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     mother_id: Mapped[int | None] = mapped_column(
         ForeignKey("individual.id", ondelete="SET NULL"),

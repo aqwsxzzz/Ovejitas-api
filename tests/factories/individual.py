@@ -14,3 +14,7 @@ class IndividualFactory(BaseFactory):
     @classmethod
     def name(cls) -> str:
         return cls.__faker__.first_name()
+
+    @classmethod
+    def tag(cls) -> str:
+        return cls.__faker__.unique.bothify(text="TAG-####")
