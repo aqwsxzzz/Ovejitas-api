@@ -1,11 +1,16 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
+from sqlalchemy import select
 
 from ovejitas.core.deps import DBSession
+from ovejitas.core.errors import NotFoundError
 from ovejitas.core.pagination import Page, PageParams
+from ovejitas.features.auth.deps import CurrentUser
 from ovejitas.features.event.schemas import EventRead
+from ovejitas.features.farm.models import Farm
 from ovejitas.features.farm_member.deps import FarmMembership
+from ovejitas.features.report.pdf import render_pdf
 from ovejitas.features.report.schemas import (
     CostPerUnitQuery,
     CostPerUnitReport,
@@ -16,6 +21,21 @@ from ovejitas.features.report.schemas import (
     TimelineQuery,
 )
 from ovejitas.features.report.service import ReportService
+
+
+async def _farm_name(db: DBSession, farm_id: int) -> str:
+    name = (await db.execute(select(Farm.name).where(Farm.id == farm_id))).scalar_one_or_none()
+    if name is None:
+        raise NotFoundError("Farm not found")
+    return name
+
+
+def _pdf_response(content: bytes, filename: str) -> Response:
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def get_report_service(db: DBSession) -> ReportService:
@@ -84,6 +104,69 @@ async def cost_per_unit(
 ) -> CostPerUnitReport:
     rows, totals = await svc.cost_per_unit(membership.farm_id, q)
     return CostPerUnitReport(data=rows, totals=totals, unit=q.unit)
+
+
+@router.get("/profitability/pdf", summary="R1 — PDF download")
+async def profitability_pdf(
+    membership: FarmMembership,
+    current_user: CurrentUser,
+    svc: ReportSvc,
+    db: DBSession,
+    q: Annotated[ProfitabilityQuery, Depends()],
+) -> Response:
+    rows, totals = await svc.profitability(membership.farm_id, q)
+    pdf = render_pdf(
+        "profitability.html",
+        farm_name=await _farm_name(db, membership.farm_id),
+        title="Rentabilidad",
+        generated_by=current_user.name,
+        date_from=q.date_from,
+        date_to=q.date_to,
+        context={"rows": rows, "totals": totals},
+    )
+    return _pdf_response(pdf, "rentabilidad.pdf")
+
+
+@router.get("/production/pdf", summary="R2 — PDF download")
+async def production_pdf(
+    membership: FarmMembership,
+    current_user: CurrentUser,
+    svc: ReportSvc,
+    db: DBSession,
+    q: Annotated[ProductionQuery, Depends()],
+) -> Response:
+    rows, totals = await svc.production(membership.farm_id, q)
+    pdf = render_pdf(
+        "production.html",
+        farm_name=await _farm_name(db, membership.farm_id),
+        title="Producción",
+        generated_by=current_user.name,
+        date_from=q.date_from,
+        date_to=q.date_to,
+        context={"rows": rows, "totals": totals, "bucket": q.bucket, "type": q.type},
+    )
+    return _pdf_response(pdf, "produccion.pdf")
+
+
+@router.get("/cost-per-unit/pdf", summary="R3 — PDF download")
+async def cost_per_unit_pdf(
+    membership: FarmMembership,
+    current_user: CurrentUser,
+    svc: ReportSvc,
+    db: DBSession,
+    q: Annotated[CostPerUnitQuery, Depends()],
+) -> Response:
+    rows, totals = await svc.cost_per_unit(membership.farm_id, q)
+    pdf = render_pdf(
+        "cost_per_unit.html",
+        farm_name=await _farm_name(db, membership.farm_id),
+        title="Costo por unidad",
+        generated_by=current_user.name,
+        date_from=q.date_from,
+        date_to=q.date_to,
+        context={"rows": rows, "totals": totals, "unit": q.unit},
+    )
+    return _pdf_response(pdf, "costo-por-unidad.pdf")
 
 
 @router.get(

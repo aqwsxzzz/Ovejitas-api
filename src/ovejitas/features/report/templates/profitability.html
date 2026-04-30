@@ -1,0 +1,56 @@
+{% extends "_base.html" %}
+{% block content %}
+
+<h2>Detalle por activo</h2>
+{% if rows %}
+<table>
+  <thead>
+    <tr>
+      <th>Activo</th>
+      <th>Moneda</th>
+      <th class="num">Ingresos</th>
+      <th class="num">Gastos</th>
+      <th class="num">Neto</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.asset_name }}</td>
+      <td>{{ r.currency }}</td>
+      <td class="num">{{ r.income_total | money }}</td>
+      <td class="num">{{ r.expense_total | money }}</td>
+      <td class="num">{{ r.net | money }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Sin datos para el período seleccionado.</p>
+{% endif %}
+
+{% if totals %}
+<h2>Totales por moneda</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Moneda</th>
+      <th class="num">Ingresos</th>
+      <th class="num">Gastos</th>
+      <th class="num">Neto</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in totals %}
+    <tr class="totals">
+      <td>{{ t.currency }}</td>
+      <td class="num">{{ t.income_total | money }}</td>
+      <td class="num">{{ t.expense_total | money }}</td>
+      <td class="num">{{ t.net | money }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% endblock %}

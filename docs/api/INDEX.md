@@ -12,4 +12,4 @@ Source of truth: [`openapi.json`](../../openapi.json)
 | [events](./events.md) | 5 |
 | [health](./health.md) | 1 |
 | [individuals](./individuals.md) | 5 |
-| [reports](./reports.md) | 4 |
+| [reports](./reports.md) | 7 |

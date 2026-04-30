@@ -365,6 +365,75 @@ class TestTimeline:
         assert resp.status_code == 404
 
 
+class TestPdfDownload:
+    async def test_profitability_pdf(self, client: AsyncClient, authed_user: AuthedUser) -> None:
+        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            asset_id,
+            authed_user.user_id,
+            type=EventType.INCOME,
+            amount=Decimal("300"),
+            currency="USD",
+            quantity=None,
+            unit=None,
+        )
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/profitability/pdf", headers=authed_user.headers
+        )
+        assert resp.status_code == 200
+        assert resp.headers["content-type"] == "application/pdf"
+        assert resp.content[:4] == b"%PDF"
+        assert "rentabilidad.pdf" in resp.headers["content-disposition"]
+
+    async def test_production_pdf_empty_dataset(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/production/pdf", headers=authed_user.headers
+        )
+        assert resp.status_code == 200
+        assert resp.content[:4] == b"%PDF"
+
+    async def test_cost_per_unit_pdf(self, client: AsyncClient, authed_user: AuthedUser) -> None:
+        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            asset_id,
+            authed_user.user_id,
+            type=EventType.EXPENSE,
+            amount=Decimal("100"),
+            currency="USD",
+            quantity=None,
+            unit=None,
+        )
+        await _event(
+            authed_user.farm_id,
+            asset_id,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/cost-per-unit/pdf",
+            headers=authed_user.headers,
+            params={"unit": "unit"},
+        )
+        assert resp.status_code == 200
+        assert resp.content[:4] == b"%PDF"
+
+    async def test_pdf_requires_membership(
+        self,
+        client: AsyncClient,
+        register_user: Callable[[str], Awaitable[AuthedUser]],
+    ) -> None:
+        alice = await register_user("alice-pdf@example.com")
+        bob = await register_user("bob-pdf@example.com")
+        resp = await client.get(f"{reports(alice.farm_id)}/profitability/pdf", headers=bob.headers)
+        assert resp.status_code == 403
+
+
 class TestFarmScope:
     async def test_non_member_forbidden(
         self,

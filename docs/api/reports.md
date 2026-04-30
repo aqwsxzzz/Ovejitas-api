@@ -32,6 +32,30 @@ Requires `unit` (what counts as one produced unit). One row per (asset, currency
 - `200` → CostPerUnitReport — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
+## GET /api/v1/farms/{farm_id}/reports/profitability/pdf
+
+_R1 — PDF download_
+
+**Responses:**
+- `200` → any — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
+## GET /api/v1/farms/{farm_id}/reports/production/pdf
+
+_R2 — PDF download_
+
+**Responses:**
+- `200` → any — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
+## GET /api/v1/farms/{farm_id}/reports/cost-per-unit/pdf
+
+_R3 — PDF download_
+
+**Responses:**
+- `200` → any — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
 ## GET /api/v1/farms/{farm_id}/reports/individuals/{individual_id}/timeline
 
 _R4 — paginated event timeline for one individual_
