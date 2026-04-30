@@ -1,16 +1,17 @@
+import asyncio
+import os
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from dataclasses import dataclass
 
+import bcrypt
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.pool import NullPool
 
 from ovejitas.core.db import get_db
 from ovejitas.main import app
@@ -18,40 +19,78 @@ from ovejitas.models import Base
 from tests.factories import bind_factories
 
 ADMIN_URL = "postgresql+asyncpg://ovejitas:ovejitas@db:5433/ovejitas"
-TEST_URL = "postgresql+asyncpg://ovejitas:ovejitas@db:5433/ovejitas_test"
 
 
-async def _ensure_test_database() -> None:
+def _worker_id() -> str:
+    return os.environ.get("PYTEST_XDIST_WORKER", "master")
+
+
+def _test_db_name() -> str:
+    return f"ovejitas_test_{_worker_id()}"
+
+
+def _test_url() -> str:
+    return f"postgresql+asyncpg://ovejitas:ovejitas@db:5433/{_test_db_name()}"
+
+
+# Bcrypt at default rounds (12) costs ~250ms per hash. Drop to 4 for tests.
+_original_gensalt = bcrypt.gensalt
+bcrypt.gensalt = lambda rounds=4, prefix=b"2b": _original_gensalt(rounds=4, prefix=prefix)  # type: ignore[assignment]
+
+
+async def _setup_schema() -> None:
+    db_name = _test_db_name()
     admin = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")
     async with admin.connect() as conn:
         exists = await conn.execute(
-            text("SELECT 1 FROM pg_database WHERE datname = 'ovejitas_test'")
+            text("SELECT 1 FROM pg_database WHERE datname = :n").bindparams(n=db_name)
         )
         if exists.scalar() is None:
-            await conn.execute(text("CREATE DATABASE ovejitas_test"))
+            await conn.execute(text(f'CREATE DATABASE "{db_name}"'))
     await admin.dispose()
-
-
-@pytest.fixture
-async def engine() -> AsyncGenerator[AsyncEngine]:
-    await _ensure_test_database()
-    test_engine = create_async_engine(TEST_URL, poolclass=NullPool)
-    async with test_engine.begin() as conn:
+    setup_engine = create_async_engine(_test_url())
+    async with setup_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+    await setup_engine.dispose()
+
+
+asyncio.run(_setup_schema())
+
+
+@pytest.fixture(scope="session")
+async def engine() -> AsyncGenerator[AsyncEngine]:
+    test_engine = create_async_engine(_test_url())
     try:
         yield test_engine
     finally:
-        async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
         await test_engine.dispose()
 
 
 @pytest.fixture
 async def db_session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
-    session_maker = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-    async with session_maker() as session:
-        bind_factories(session)
+    """Each test runs inside an outer transaction that gets rolled back.
+
+    The app's session.commit() becomes a SAVEPOINT release (via
+    join_transaction_mode='create_savepoint'), so endpoint code sees normal
+    commit semantics, but no data persists between tests. This avoids both
+    per-test engine creation and TRUNCATE.
+    """
+    connection = await engine.connect()
+    transaction = await connection.begin()
+    session = AsyncSession(
+        bind=connection,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    bind_factories(session)
+    try:
         yield session
+    finally:
+        await session.close()
+        if transaction.is_active:
+            await transaction.rollback()
+        await connection.close()
 
 
 @pytest.fixture

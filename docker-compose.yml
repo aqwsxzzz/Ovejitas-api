@@ -24,14 +24,8 @@ services:
     ports:
       - "7777:7777"
     volumes:
-      - ./src:/app/src:ro
-      - ./tests:/app/tests:ro
-      - ./scripts:/app/scripts:ro
-      - ./migrations:/app/migrations
-      - ./docs:/app/docs
-      - ./openapi.json:/app/openapi.json
-      - ./alembic.ini:/app/alembic.ini:ro
-      - ./pyproject.toml:/app/pyproject.toml:ro
+      - .:/app
+      - app_venv:/app/.venv
     command:
       - sh
       - -c
@@ -48,3 +42,4 @@ services:
 
 volumes:
   pgdata:
+  app_venv:

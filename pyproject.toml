@@ -23,6 +23,7 @@ dev = [
     "mypy>=1.14",
     "pytest>=8.3",
     "pytest-asyncio>=0.25",
+    "pytest-xdist>=3.6",
     "httpx>=0.28",
     "polyfactory>=2.18",
 ]
@@ -55,5 +56,8 @@ mypy_path = "src"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+addopts = "-n 4 --dist loadfile"
 testpaths = ["tests"]
 pythonpath = ["src"]
