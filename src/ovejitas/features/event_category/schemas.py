@@ -3,22 +3,19 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from ovejitas.core.filters import FilterParams
+from ovejitas.core.schemas import OptionalStr, StrictModel
 from ovejitas.features.event.types import EventType
 
 
-class EventCategoryCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class EventCategoryCreate(StrictModel):
     type: EventType
     name: str = Field(min_length=1, max_length=128)
-    color: str | None = Field(default=None, max_length=16)
+    color: OptionalStr = Field(default=None, max_length=16)
 
 
-class EventCategoryUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class EventCategoryUpdate(StrictModel):
     name: str | None = Field(default=None, min_length=1, max_length=128)
-    color: str | None = Field(default=None, max_length=16)
+    color: OptionalStr = Field(default=None, max_length=16)
     archived_at: datetime | None = None
 
 

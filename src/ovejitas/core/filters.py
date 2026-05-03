@@ -1,14 +1,13 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Select
 from sqlalchemy.orm import InstrumentedAttribute
 
+from ovejitas.core.schemas import StrictModel
 
-class FilterParams(BaseModel):
+
+class FilterParams(StrictModel):
     """Base filter schema. Feature-specific filters extend this."""
-
-    model_config = ConfigDict(extra="forbid")
 
     date_from: datetime | None = None
     date_to: datetime | None = None
