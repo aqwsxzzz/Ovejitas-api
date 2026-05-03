@@ -10,6 +10,7 @@ Source of truth: [`openapi.json`](../../openapi.json)
 | [auth](./auth.md) | 4 |
 | [event-categories](./event-categories.md) | 5 |
 | [events](./events.md) | 5 |
+| [farms](./farms.md) | 2 |
 | [health](./health.md) | 1 |
 | [individuals](./individuals.md) | 5 |
 | [reports](./reports.md) | 7 |

@@ -338,19 +338,6 @@
             ],
             "title": "Category Id"
           },
-          "currency": {
-            "anyOf": [
-              {
-                "maxLength": 3,
-                "minLength": 3,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Currency"
-          },
           "idempotency_key": {
             "anyOf": [
               {
@@ -589,12 +576,6 @@
             ],
             "title": "Category Id"
           },
-          "currency": {
-            "maxLength": 3,
-            "minLength": 3,
-            "title": "Currency",
-            "type": "string"
-          },
           "idempotency_key": {
             "anyOf": [
               {
@@ -648,8 +629,7 @@
         "required": [
           "occurred_at",
           "type",
-          "amount",
-          "currency"
+          "amount"
         ],
         "title": "EventExpenseCreate",
         "type": "object"
@@ -680,12 +660,6 @@
               }
             ],
             "title": "Category Id"
-          },
-          "currency": {
-            "maxLength": 3,
-            "minLength": 3,
-            "title": "Currency",
-            "type": "string"
           },
           "idempotency_key": {
             "anyOf": [
@@ -740,8 +714,7 @@
         "required": [
           "occurred_at",
           "type",
-          "amount",
-          "currency"
+          "amount"
         ],
         "title": "EventIncomeCreate",
         "type": "object"
@@ -1252,19 +1225,6 @@
             ],
             "title": "Category Id"
           },
-          "currency": {
-            "anyOf": [
-              {
-                "maxLength": 3,
-                "minLength": 3,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Currency"
-          },
           "individual_id": {
             "anyOf": [
               {
@@ -1343,6 +1303,10 @@
       },
       "FarmMembershipRead": {
         "properties": {
+          "default_currency": {
+            "title": "Default Currency",
+            "type": "string"
+          },
           "farm_id": {
             "title": "Farm Id",
             "type": "integer"
@@ -1354,9 +1318,78 @@
         },
         "required": [
           "farm_id",
-          "role"
+          "role",
+          "default_currency"
         ],
         "title": "FarmMembershipRead",
+        "type": "object"
+      },
+      "FarmRead": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "default_currency": {
+            "title": "Default Currency",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "default_currency",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "FarmRead",
+        "type": "object"
+      },
+      "FarmUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "default_currency": {
+            "anyOf": [
+              {
+                "maxLength": 3,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Currency"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "FarmUpdate",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -2291,6 +2324,108 @@
         "summary": "Register a new user",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}": {
+      "get": {
+        "operationId": "farms_get_farm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FarmRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get a farm",
+        "tags": [
+          "farms"
+        ]
+      },
+      "patch": {
+        "operationId": "farms_update_farm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FarmUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FarmRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update a farm",
+        "tags": [
+          "farms"
         ]
       }
     },

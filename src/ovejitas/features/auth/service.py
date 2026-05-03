@@ -67,12 +67,21 @@ class AuthService:
         return self._issue_tokens(user)
 
     async def me(self, user: User) -> MeResponse:
-        stmt = select(FarmMember).where(FarmMember.user_id == user.id)
-        memberships = (await self.db.execute(stmt)).scalars().all()
+        stmt = (
+            select(FarmMember.farm_id, FarmMember.role, Farm.default_currency)
+            .join(Farm, Farm.id == FarmMember.farm_id)
+            .where(FarmMember.user_id == user.id)
+        )
+        rows = (await self.db.execute(stmt)).all()
         return MeResponse(
             user=UserRead.model_validate(user),
             memberships=[
-                FarmMembershipRead(farm_id=m.farm_id, role=m.role.value) for m in memberships
+                FarmMembershipRead(
+                    farm_id=farm_id,
+                    role=role.value,
+                    default_currency=default_currency,
+                )
+                for farm_id, role, default_currency in rows
             ],
         )
 

@@ -2,25 +2,21 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from ovejitas.core.schemas import StrictModel
 
-class RegisterInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
 
+class RegisterInput(StrictModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=255)
     password: str = Field(min_length=8, max_length=128)
 
 
-class LoginInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class LoginInput(StrictModel):
     email: EmailStr
     password: str
 
 
-class RefreshInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class RefreshInput(StrictModel):
     refresh_token: str
 
 
@@ -42,6 +38,7 @@ class UserRead(BaseModel):
 class FarmMembershipRead(BaseModel):
     farm_id: int
     role: str
+    default_currency: str
 
 
 class MeResponse(BaseModel):

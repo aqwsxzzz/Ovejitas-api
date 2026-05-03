@@ -15,6 +15,7 @@ from ovejitas.features.event.guards import (
 )
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.schemas import EventCreate, EventFilters, EventUpdate
+from ovejitas.features.farm.models import Farm
 
 SEARCH_COLUMNS = [Event.notes]
 SORT_ALLOWED = {
@@ -33,11 +34,16 @@ class EventService:
         await validate_type_against_asset(data.type, asset)
         await validate_individual(self.db, asset, data.individual_id)
         await validate_category(self.db, asset.farm_id, data.type, data.category_id)
+        payload = data.model_dump()
+        if payload.get("amount") is not None:
+            farm = await self.db.get(Farm, asset.farm_id)
+            assert farm is not None
+            payload["currency"] = farm.default_currency
         event = Event(
             farm_id=asset.farm_id,
             asset_id=asset.id,
             created_by=user_id,
-            **data.model_dump(),
+            **payload,
         )
         self.db.add(event)
         try:
@@ -62,6 +68,10 @@ class EventService:
             await validate_individual(self.db, asset, updates["individual_id"])
         if "category_id" in updates:
             await validate_category(self.db, asset.farm_id, event.type, updates["category_id"])
+        if updates.get("amount") is not None and event.currency is None:
+            farm = await self.db.get(Farm, asset.farm_id)
+            assert farm is not None
+            event.currency = farm.default_currency
         for key, value in updates.items():
             setattr(event, key, value)
         await self.db.commit()

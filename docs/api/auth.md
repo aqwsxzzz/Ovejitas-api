@@ -55,6 +55,7 @@ _Current user and farm memberships_
 
 - `farm_id` (integer, required)
 - `role` (string, required)
+- `default_currency` (string, required)
 
 ### HTTPValidationError
 

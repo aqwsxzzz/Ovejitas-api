@@ -43,7 +43,6 @@ _Update an event_
 - `quantity` (number | string | null, optional)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, optional)
 - `amount` (number | string | null, optional)
-- `currency` (string | null, optional)
 - `notes` (string | null, optional)
 - `payload` (object | null, optional)
 
@@ -72,7 +71,6 @@ _Delete an event_
 - `type` (string, required)
 - `quantity` (number | string, required)
 - `amount` (number | string | null, optional)
-- `currency` (string | null, optional)
 
 ### EventExpenseCreate
 
@@ -84,7 +82,6 @@ _Delete an event_
 - `idempotency_key` (string | null, optional)
 - `type` (string, required)
 - `amount` (number | string, required)
-- `currency` (string, required)
 
 ### EventIncomeCreate
 
@@ -96,7 +93,6 @@ _Delete an event_
 - `idempotency_key` (string | null, optional)
 - `type` (string, required)
 - `amount` (number | string, required)
-- `currency` (string, required)
 
 ### EventMortalityCreate
 
@@ -169,7 +165,6 @@ _Delete an event_
 - `quantity` (number | string | null, optional)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, optional)
 - `amount` (number | string | null, optional)
-- `currency` (string | null, optional)
 - `notes` (string | null, optional)
 - `payload` (object | null, optional)
 

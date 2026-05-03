@@ -5,18 +5,17 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ovejitas.core.filters import FilterParams
+from ovejitas.core.schemas import OptionalStr, StrictModel
 from ovejitas.features.event.types import EventType, Unit
 
 
-class _EventCreateBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class _EventCreateBase(StrictModel):
     occurred_at: datetime
     individual_id: int | None = None
     category_id: int | None = None
-    notes: str | None = None
+    notes: OptionalStr = None
     payload: dict[str, Any] = Field(default_factory=dict)
-    idempotency_key: str | None = Field(default=None, max_length=128)
+    idempotency_key: OptionalStr = Field(default=None, max_length=128)
 
 
 class EventProductionCreate(_EventCreateBase):
@@ -28,13 +27,11 @@ class EventProductionCreate(_EventCreateBase):
 class EventExpenseCreate(_EventCreateBase):
     type: Literal[EventType.EXPENSE]
     amount: Decimal = Field(gt=0)
-    currency: str = Field(min_length=3, max_length=3)
 
 
 class EventIncomeCreate(_EventCreateBase):
     type: Literal[EventType.INCOME]
     amount: Decimal = Field(gt=0)
-    currency: str = Field(min_length=3, max_length=3)
 
 
 class EventObservationCreate(_EventCreateBase):
@@ -50,7 +47,6 @@ class EventAcquisitionCreate(_EventCreateBase):
     type: Literal[EventType.ACQUISITION]
     quantity: Decimal = Field(gt=0)
     amount: Decimal | None = Field(default=None, gt=0)
-    currency: str | None = Field(default=None, min_length=3, max_length=3)
 
 
 class EventMortalityCreate(_EventCreateBase):
@@ -70,17 +66,14 @@ EventCreate = Annotated[
 ]
 
 
-class EventUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class EventUpdate(StrictModel):
     occurred_at: datetime | None = None
     individual_id: int | None = None
     category_id: int | None = None
     quantity: Decimal | None = Field(default=None, gt=0)
     unit: Unit | None = None
     amount: Decimal | None = Field(default=None, gt=0)
-    currency: str | None = Field(default=None, min_length=3, max_length=3)
-    notes: str | None = None
+    notes: OptionalStr = None
     payload: dict[str, Any] | None = None
 
 

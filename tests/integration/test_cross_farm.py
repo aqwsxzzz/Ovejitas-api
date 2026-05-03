@@ -83,7 +83,6 @@ class TestEventBodyReferences:
                 "type": "expense",
                 "occurred_at": OCCURRED,
                 "amount": "10",
-                "currency": "USD",
                 "category_id": bob_cat,
             },
         )
@@ -102,7 +101,6 @@ class TestEventBodyReferences:
                 "type": "expense",
                 "occurred_at": OCCURRED,
                 "amount": "10",
-                "currency": "USD",
             },
         )
         event_id = created.json()["id"]
@@ -198,7 +196,6 @@ class TestIdempotency:
             "type": "expense",
             "occurred_at": OCCURRED,
             "amount": "10",
-            "currency": "USD",
             "idempotency_key": "shared-key",
         }
 

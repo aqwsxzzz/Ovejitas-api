@@ -106,6 +106,7 @@ class TestMe:
         assert body["user"]["email"] == "dave@example.com"
         assert len(body["memberships"]) == 1
         assert body["memberships"][0]["role"] == "owner"
+        assert body["memberships"][0]["default_currency"] == "USD"
 
     async def test_without_token_returns_401(self, client: AsyncClient) -> None:
         response = await client.get(ME)

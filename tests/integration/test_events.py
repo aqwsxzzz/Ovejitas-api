@@ -104,7 +104,6 @@ class TestCreateByType:
                 "type": "expense",
                 "occurred_at": OCCURRED,
                 "amount": "100.00",
-                "currency": "USD",
             },
         )
         assert response.status_code == 201
@@ -226,7 +225,6 @@ class TestGuards:
                 "type": "expense",
                 "occurred_at": OCCURRED,
                 "amount": "100.00",
-                "currency": "USD",
                 "category_id": income_category,
             },
         )
@@ -244,7 +242,6 @@ class TestGuards:
                 "type": "expense",
                 "occurred_at": OCCURRED,
                 "amount": "50.00",
-                "currency": "USD",
                 "category_id": feed,
             },
         )
@@ -261,7 +258,6 @@ class TestIdempotency:
             "type": "expense",
             "occurred_at": OCCURRED,
             "amount": "10.00",
-            "currency": "USD",
             "idempotency_key": "key-1",
         }
 
@@ -300,7 +296,6 @@ class TestListAndUpdate:
                 "type": "expense",
                 "occurred_at": OCCURRED,
                 "amount": "10",
-                "currency": "USD",
             },
         )
 

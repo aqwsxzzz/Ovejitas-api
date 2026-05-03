@@ -11,6 +11,7 @@ from ovejitas.features.asset.router import router as asset_router
 from ovejitas.features.auth.router import router as auth_router
 from ovejitas.features.event.router import router as event_router
 from ovejitas.features.event_category.router import router as event_category_router
+from ovejitas.features.farm.router import router as farm_router
 from ovejitas.features.individual.router import router as individual_router
 from ovejitas.features.report.router import router as report_router
 
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(auth_router, prefix=API_PREFIX)
+    app.include_router(farm_router, prefix=API_PREFIX)
     app.include_router(asset_router, prefix=API_PREFIX)
     app.include_router(individual_router, prefix=API_PREFIX)
     app.include_router(event_category_router, prefix=API_PREFIX)
