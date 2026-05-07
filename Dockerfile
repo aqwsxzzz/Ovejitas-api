@@ -31,4 +31,4 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH="/app/src"
 USER app
 EXPOSE 7777
-CMD ["uvicorn", "ovejitas.main:app", "--host", "0.0.0.0", "--port", "7777"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn ovejitas.main:app --host 0.0.0.0 --port 7777"]
