@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ovejitas.core.models import Base, TimestampMixin
-from ovejitas.features.event.types import EventType, Unit
+from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 
 
 class Event(Base, TimestampMixin):
@@ -28,8 +28,18 @@ class Event(Base, TimestampMixin):
             "type <> 'reproductive' OR individual_id IS NOT NULL",
             name="reproductive_requires_individual",
         ),
+        CheckConstraint(
+            "(type = 'inventory') = (adjustment IS NOT NULL)",
+            name="inventory_requires_adjustment",
+        ),
         Index("ix_event_farm_occurred_at", "farm_id", "occurred_at"),
         Index("ix_event_asset_type_occurred_at", "asset_id", "type", "occurred_at"),
+        Index(
+            "ix_event_inventory_asset_occurred",
+            "asset_id",
+            "occurred_at",
+            postgresql_where=text("type = 'inventory'"),
+        ),
         Index(
             "ix_event_individual_occurred_at",
             "individual_id",
@@ -78,6 +88,14 @@ class Event(Base, TimestampMixin):
         nullable=True,
     )
     amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+    adjustment: Mapped[InventoryAdjustment | None] = mapped_column(
+        SQLEnum(
+            InventoryAdjustment,
+            name="inventory_adjustment",
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        nullable=True,
+    )
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     payload: Mapped[dict[str, Any]] = mapped_column(

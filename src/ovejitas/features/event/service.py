@@ -1,3 +1,7 @@
+from collections import defaultdict
+from decimal import Decimal
+from typing import Any
+
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +18,14 @@ from ovejitas.features.event.guards import (
     validate_type_against_asset,
 )
 from ovejitas.features.event.models import Event
-from ovejitas.features.event.schemas import EventCreate, EventFilters, EventUpdate
+from ovejitas.features.event.schemas import (
+    EventCreate,
+    EventFilters,
+    EventUpdate,
+    InventoryBalance,
+    InventoryBalanceRow,
+)
+from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 from ovejitas.features.farm.models import Farm
 
 SEARCH_COLUMNS = [Event.notes]
@@ -99,6 +110,8 @@ class EventService:
             stmt = stmt.where(Event.category_id == filters.category_id)
         if filters.individual_id is not None:
             stmt = stmt.where(Event.individual_id == filters.individual_id)
+        if filters.adjustment is not None:
+            stmt = stmt.where(Event.adjustment == filters.adjustment)
         stmt = apply_date_range(stmt, Event.occurred_at, filters.date_from, filters.date_to)
         stmt = apply_search(stmt, search, SEARCH_COLUMNS)
         stmt = apply_sort(stmt, sort, SORT_ALLOWED)
@@ -111,3 +124,35 @@ class EventService:
         stmt = stmt.offset(page.offset).limit(page.limit)
         rows = (await self.db.execute(stmt)).scalars().all()
         return list(rows), total
+
+    async def inventory_balance(self, asset: Asset) -> InventoryBalance:
+        stmt = (
+            select(Event.adjustment, Event.unit, Event.quantity, Event.occurred_at)
+            .where(
+                Event.asset_id == asset.id,
+                Event.type == EventType.INVENTORY,
+            )
+            .order_by(Event.occurred_at.asc(), Event.id.asc())
+        )
+        rows = (await self.db.execute(stmt)).all()
+        by_unit: dict[Unit, dict[str, Any]] = defaultdict(
+            lambda: {"on_hand": Decimal(0), "last_reset_at": None}
+        )
+        for adjustment, unit, quantity, occurred_at in rows:
+            bucket = by_unit[unit]
+            if adjustment is InventoryAdjustment.RESET:
+                bucket["on_hand"] = Decimal(quantity)
+                bucket["last_reset_at"] = occurred_at
+            elif adjustment is InventoryAdjustment.INCREMENT:
+                bucket["on_hand"] = bucket["on_hand"] + Decimal(quantity)
+            elif adjustment is InventoryAdjustment.DECREMENT:
+                bucket["on_hand"] = bucket["on_hand"] - Decimal(quantity)
+        balances = [
+            InventoryBalanceRow(
+                unit=unit,
+                on_hand=vals["on_hand"],
+                last_reset_at=vals["last_reset_at"],
+            )
+            for unit, vals in sorted(by_unit.items(), key=lambda kv: kv[0].value)
+        ]
+        return InventoryBalance(asset_id=asset.id, balances=balances)

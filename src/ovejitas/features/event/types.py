@@ -9,6 +9,13 @@ class EventType(StrEnum):
     REPRODUCTIVE = "reproductive"
     ACQUISITION = "acquisition"
     MORTALITY = "mortality"
+    INVENTORY = "inventory"
+
+
+class InventoryAdjustment(StrEnum):
+    INCREMENT = "increment"
+    DECREMENT = "decrement"
+    RESET = "reset"
 
 
 class Unit(StrEnum):

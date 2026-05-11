@@ -94,13 +94,14 @@ _R4 — paginated event timeline for one individual_
 - `farm_id` (integer, required)
 - `asset_id` (integer, required)
 - `individual_id` (integer | null, required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality' | 'inventory', required)
 - `category_id` (integer | null, required)
 - `occurred_at` (string (date-time), required)
 - `quantity` (string | null, required)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, required)
 - `amount` (string | null, required)
 - `currency` (string | null, required)
+- `adjustment` ('increment' | 'decrement' | 'reset' | null, required)
 - `notes` (string | null, required)
 - `payload` (object, required)
 - `idempotency_key` (string | null, required)
@@ -129,7 +130,7 @@ _R4 — paginated event timeline for one individual_
 - `data` (ProductionRow[], required)
 - `totals` (ProductionTotal[], required)
 - `bucket` ('day' | 'week' | 'month', required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality' | 'inventory', required)
 
 ### ProductionRow
 
@@ -179,7 +180,11 @@ _R4 — paginated event timeline for one individual_
 
 ### EventType
 
-**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality`
+**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality` | `inventory`
+
+### InventoryAdjustment
+
+**Values:** `increment` | `decrement` | `reset`
 
 ### Unit
 

@@ -17,7 +17,7 @@ _Create an event category_
 `type` is immutable after creation. Uniqueness enforced on (farm, type, name).
 
 **Request body:**
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality' | 'inventory', required)
 - `name` (string, required)
 - `color` (string | null, optional)
 
@@ -62,7 +62,7 @@ Events referencing this category have their `category_id` set to null.
 
 ### EventCategoryCreate
 
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality' | 'inventory', required)
 - `name` (string, required)
 - `color` (string | null, optional)
 
@@ -70,7 +70,7 @@ Events referencing this category have their `category_id` set to null.
 
 - `id` (integer, required)
 - `farm_id` (integer, required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality' | 'inventory', required)
 - `name` (string, required)
 - `color` (string | null, required)
 - `archived_at` (string (date-time) | null, required)
@@ -109,5 +109,5 @@ Events referencing this category have their `category_id` set to null.
 
 ### EventType
 
-**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality`
+**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality` | `inventory`
 

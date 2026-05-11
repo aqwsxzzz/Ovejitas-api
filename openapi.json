@@ -719,6 +719,99 @@
         "title": "EventIncomeCreate",
         "type": "object"
       },
+      "EventInventoryCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "adjustment": {
+            "$ref": "#/components/schemas/InventoryAdjustment"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Individual Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "type": {
+            "const": "inventory",
+            "title": "Type",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "occurred_at",
+          "type",
+          "adjustment",
+          "quantity",
+          "unit"
+        ],
+        "title": "EventInventoryCreate",
+        "type": "object"
+      },
       "EventMortalityCreate": {
         "additionalProperties": false,
         "properties": {
@@ -966,6 +1059,16 @@
       },
       "EventRead": {
         "properties": {
+          "adjustment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InventoryAdjustment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "amount": {
             "anyOf": [
               {
@@ -1107,6 +1210,7 @@
           "unit",
           "amount",
           "currency",
+          "adjustment",
           "notes",
           "payload",
           "idempotency_key",
@@ -1190,7 +1294,8 @@
           "observation",
           "reproductive",
           "acquisition",
-          "mortality"
+          "mortality",
+          "inventory"
         ],
         "title": "EventType",
         "type": "string"
@@ -1198,6 +1303,16 @@
       "EventUpdate": {
         "additionalProperties": false,
         "properties": {
+          "adjustment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InventoryAdjustment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "amount": {
             "anyOf": [
               {
@@ -1274,7 +1389,7 @@
           "quantity": {
             "anyOf": [
               {
-                "exclusiveMinimum": 0.0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -1667,6 +1782,67 @@
           }
         },
         "title": "IndividualUpdate",
+        "type": "object"
+      },
+      "InventoryAdjustment": {
+        "enum": [
+          "increment",
+          "decrement",
+          "reset"
+        ],
+        "title": "InventoryAdjustment",
+        "type": "string"
+      },
+      "InventoryBalance": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryBalanceRow"
+            },
+            "title": "Balances",
+            "type": "array"
+          }
+        },
+        "required": [
+          "asset_id",
+          "balances"
+        ],
+        "title": "InventoryBalance",
+        "type": "object"
+      },
+      "InventoryBalanceRow": {
+        "properties": {
+          "last_reset_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reset At"
+          },
+          "on_hand": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "On Hand",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "unit",
+          "on_hand",
+          "last_reset_at"
+        ],
+        "title": "InventoryBalanceRow",
         "type": "object"
       },
       "LoginInput": {
@@ -2984,6 +3160,22 @@
               ],
               "title": "Individual Id"
             }
+          },
+          {
+            "in": "query",
+            "name": "adjustment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InventoryAdjustment"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Adjustment"
+            }
           }
         ],
         "responses": {
@@ -3050,6 +3242,7 @@
                     "acquisition": "#/components/schemas/EventAcquisitionCreate",
                     "expense": "#/components/schemas/EventExpenseCreate",
                     "income": "#/components/schemas/EventIncomeCreate",
+                    "inventory": "#/components/schemas/EventInventoryCreate",
                     "mortality": "#/components/schemas/EventMortalityCreate",
                     "observation": "#/components/schemas/EventObservationCreate",
                     "production": "#/components/schemas/EventProductionCreate",
@@ -3078,6 +3271,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/EventMortalityCreate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/EventInventoryCreate"
                   }
                 ],
                 "title": "Data"
@@ -3114,6 +3310,63 @@
           }
         ],
         "summary": "Create an event",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/events/balance": {
+      "get": {
+        "description": "Returns the derived on-hand balance per (asset, unit), computed from INVENTORY events: sum of increments minus decrements since the most recent reset. Only meaningful for assets with kind=material.",
+        "operationId": "events_asset_inventory_balance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryBalance"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Current on-hand inventory for a material asset",
         "tags": [
           "events"
         ]
