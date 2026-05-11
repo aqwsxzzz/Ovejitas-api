@@ -1845,6 +1845,50 @@
         "title": "InventoryBalanceRow",
         "type": "object"
       },
+      "InventorySummaryReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/InventorySummaryRow"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "InventorySummaryReport",
+        "type": "object"
+      },
+      "InventorySummaryRow": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "asset_name": {
+            "title": "Asset Name",
+            "type": "string"
+          },
+          "on_hand": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "On Hand",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "asset_id",
+          "asset_name",
+          "unit",
+          "on_hand"
+        ],
+        "title": "InventorySummaryRow",
+        "type": "object"
+      },
       "LoginInput": {
         "additionalProperties": false,
         "properties": {
@@ -4721,6 +4765,104 @@
           }
         ],
         "summary": "R4 \u2014 paginated event timeline for one individual",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/inventory-summary": {
+      "get": {
+        "description": "One row per (material asset, unit). On-hand is derived from INVENTORY events: sum of increments minus decrements since the most recent reset. Date filters bound the events considered, not the resulting balance.",
+        "operationId": "reports_inventory_summary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySummaryReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "R5 \u2014 current on-hand inventory across material assets",
         "tags": [
           "reports"
         ]

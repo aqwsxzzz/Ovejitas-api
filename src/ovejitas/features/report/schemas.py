@@ -101,3 +101,20 @@ class CostPerUnitQuery(FilterParams):
 
 class TimelineQuery(FilterParams):
     type: EventType | None = None
+
+
+class InventorySummaryRow(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    asset_id: int
+    asset_name: str
+    unit: Unit
+    on_hand: Decimal
+
+
+class InventorySummaryReport(BaseModel):
+    data: list[InventorySummaryRow]
+
+
+class InventorySummaryQuery(FilterParams):
+    asset_id: int | None = None

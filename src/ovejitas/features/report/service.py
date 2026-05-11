@@ -11,12 +11,14 @@ from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.models import Event
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.individual.models import Individual
 from ovejitas.features.report.schemas import (
     CostPerUnitQuery,
     CostPerUnitRow,
     CostPerUnitTotal,
+    InventorySummaryQuery,
+    InventorySummaryRow,
     ProductionQuery,
     ProductionRow,
     ProductionTotal,
@@ -199,6 +201,56 @@ class ReportService:
         data = [CostPerUnitRow.model_validate(r) for r in rows]
         totals = _cost_per_unit_totals(data)
         return data, totals
+
+    async def inventory_summary(
+        self, farm_id: int, q: InventorySummaryQuery
+    ) -> list[InventorySummaryRow]:
+        stmt = (
+            select(
+                Event.asset_id,
+                Asset.name.label("asset_name"),
+                Event.adjustment,
+                Event.unit,
+                Event.quantity,
+                Event.occurred_at,
+                Event.id,
+            )
+            .join(Asset, Asset.id == Event.asset_id)
+            .where(
+                Asset.farm_id == farm_id,
+                Event.type == EventType.INVENTORY,
+            )
+            .order_by(Event.asset_id, Event.occurred_at.asc(), Event.id.asc())
+        )
+        stmt = apply_date_range(stmt, Event.occurred_at, q.date_from, q.date_to)
+        if q.asset_id is not None:
+            stmt = stmt.where(Event.asset_id == q.asset_id)
+        rows = (await self.db.execute(stmt)).all()
+
+        buckets: dict[tuple[int, Any], dict[str, Any]] = defaultdict(
+            lambda: {"on_hand": Decimal(0), "asset_name": ""}
+        )
+        for asset_id, asset_name, adjustment, unit, quantity, _occurred_at, _id in rows:
+            key = (asset_id, unit)
+            bucket = buckets[key]
+            bucket["asset_name"] = asset_name
+            if adjustment is InventoryAdjustment.RESET:
+                bucket["on_hand"] = Decimal(quantity)
+            elif adjustment is InventoryAdjustment.INCREMENT:
+                bucket["on_hand"] = Decimal(bucket["on_hand"]) + Decimal(quantity)
+            elif adjustment is InventoryAdjustment.DECREMENT:
+                bucket["on_hand"] = Decimal(bucket["on_hand"]) - Decimal(quantity)
+        return [
+            InventorySummaryRow(
+                asset_id=asset_id,
+                asset_name=vals["asset_name"],
+                unit=unit,
+                on_hand=Decimal(vals["on_hand"]),
+            )
+            for (asset_id, unit), vals in sorted(
+                buckets.items(), key=lambda kv: (kv[1]["asset_name"], kv[0][1].value)
+            )
+        ]
 
     async def timeline(
         self,

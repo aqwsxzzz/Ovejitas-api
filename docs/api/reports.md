@@ -56,6 +56,16 @@ _R3 — PDF download_
 - `200` → any — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
+## GET /api/v1/farms/{farm_id}/reports/inventory-summary
+
+_R5 — current on-hand inventory across material assets_
+
+One row per (material asset, unit). On-hand is derived from INVENTORY events: sum of increments minus decrements since the most recent reset. Date filters bound the events considered, not the resulting balance.
+
+**Responses:**
+- `200` → InventorySummaryReport — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
 ## GET /api/v1/farms/{farm_id}/reports/individuals/{individual_id}/timeline
 
 _R4 — paginated event timeline for one individual_
@@ -112,6 +122,17 @@ _R4 — paginated event timeline for one individual_
 ### HTTPValidationError
 
 - `detail` (ValidationError[], optional)
+
+### InventorySummaryReport
+
+- `data` (InventorySummaryRow[], required)
+
+### InventorySummaryRow
+
+- `asset_id` (integer, required)
+- `asset_name` (string, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
+- `on_hand` (string, required)
 
 ### PageMeta
 

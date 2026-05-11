@@ -14,6 +14,8 @@ from ovejitas.features.report.pdf import render_pdf
 from ovejitas.features.report.schemas import (
     CostPerUnitQuery,
     CostPerUnitReport,
+    InventorySummaryQuery,
+    InventorySummaryReport,
     ProductionQuery,
     ProductionReport,
     ProfitabilityQuery,
@@ -167,6 +169,25 @@ async def cost_per_unit_pdf(
         context={"rows": rows, "totals": totals, "unit": q.unit},
     )
     return _pdf_response(pdf, "costo-por-unidad.pdf")
+
+
+@router.get(
+    "/inventory-summary",
+    response_model=InventorySummaryReport,
+    summary="R5 — current on-hand inventory across material assets",
+    description=(
+        "One row per (material asset, unit). On-hand is derived from INVENTORY "
+        "events: sum of increments minus decrements since the most recent reset. "
+        "Date filters bound the events considered, not the resulting balance."
+    ),
+)
+async def inventory_summary(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[InventorySummaryQuery, Depends()],
+) -> InventorySummaryReport:
+    rows = await svc.inventory_summary(membership.farm_id, q)
+    return InventorySummaryReport(data=rows)
 
 
 @router.get(
