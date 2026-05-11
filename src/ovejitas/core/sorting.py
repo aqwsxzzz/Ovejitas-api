@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import Select
 from sqlalchemy.orm import InstrumentedAttribute
 
@@ -5,10 +7,10 @@ from ovejitas.core.errors import ValidationError
 
 
 def apply_sort(
-    stmt: Select,
+    stmt: Select[Any],
     sort: str | None,
-    allowed: dict[str, InstrumentedAttribute],
-) -> Select:
+    allowed: dict[str, InstrumentedAttribute[Any]],
+) -> Select[Any]:
     """Apply `?sort=-created_at,name` to a SELECT, whitelisting columns.
 
     `-` prefix = DESC, no prefix = ASC. Unknown fields raise ValidationError.
