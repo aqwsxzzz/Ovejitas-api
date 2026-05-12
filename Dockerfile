@@ -1,24 +1,34 @@
-# ---- Dev stage (used by docker-compose) ----
-FROM node:20-slim AS dev
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
+# syntax=docker/dockerfile:1.7
 
-# ---- Build stage ----
-FROM dev AS build
-RUN npm run build
+FROM python:3.14-slim AS base
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
+COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /uvx /usr/local/bin/
 
-# ---- Production stage ----
-FROM node:20-slim AS production
+FROM base AS builder
 WORKDIR /app
-COPY --from=build /app/build ./build
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json ./
-COPY --from=build /app/.sequelizerc ./
-COPY --from=build /app/src/migrations ./src/migrations
-COPY --from=build /app/src/seeders ./src/seeders
-COPY --from=build /app/src/database/sequelize-config.js ./src/database/sequelize-config.js
-COPY --chown=node:node entrypoint.prod.sh ./entrypoint.prod.sh
-USER node
-CMD ["sh", "entrypoint.prod.sh"]
+COPY pyproject.toml ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-install-project
+
+FROM base AS runtime
+WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpango-1.0-0 \
+        libpangoft2-1.0-0 \
+        fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd --system app && useradd --system --gid app --home /app app
+COPY --from=builder --chown=app:app /app/.venv /app/.venv
+COPY --chown=app:app src ./src
+COPY --chown=app:app migrations ./migrations
+COPY --chown=app:app alembic.ini ./alembic.ini
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/src"
+USER app
+EXPOSE 7777
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn ovejitas.main:app --host 0.0.0.0 --port 7777"]
