@@ -1,58 +1,24 @@
-FROM node:18-alpine as build
-
+# ---- Dev stage (used by docker-compose) ----
+FROM node:20-slim AS dev
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy application source
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
 
-# Build TypeScript code
+# ---- Build stage ----
+FROM dev AS build
 RUN npm run build
 
-# Runtime stage
-FROM node:18-alpine
-
+# ---- Production stage ----
+FROM node:20-slim AS production
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies only
-RUN npm ci --only=production
-
-# Copy built application from build stage
 COPY --from=build /app/build ./build
-
-# Copy necessary files for runtime
 COPY --from=build /app/node_modules ./node_modules
-
-# Expose the application port
-EXPOSE ${PORT:-8081}
-
-# Command to run the application
-CMD ["node", "build/index.js"]
-
-# Development stage
-FROM node:18-alpine as dev
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies including dev dependencies
-RUN npm install
-
-# Copy application source
-COPY . .
-
-# Expose the application port
-EXPOSE ${PORT:-8081}
-
-# Command to run the application with nodemon for development
-CMD ["npm", "run", "dev"]
+COPY --from=build /app/package.json ./
+COPY --from=build /app/.sequelizerc ./
+COPY --from=build /app/src/migrations ./src/migrations
+COPY --from=build /app/src/seeders ./src/seeders
+COPY --from=build /app/src/database/sequelize-config.js ./src/database/sequelize-config.js
+COPY --chown=node:node entrypoint.prod.sh ./entrypoint.prod.sh
+USER node
+CMD ["sh", "entrypoint.prod.sh"]
