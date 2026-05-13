@@ -12,12 +12,12 @@ from ovejitas.features.farm.models import Farm
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.report.pdf import render_pdf
 from ovejitas.features.report.schemas import (
+    AggregateQuery,
+    AggregateReport,
     CostPerUnitQuery,
     CostPerUnitReport,
     InventorySummaryQuery,
     InventorySummaryReport,
-    ProductionQuery,
-    ProductionReport,
     ProfitabilityQuery,
     ProfitabilityReport,
     TimelineQuery,
@@ -68,21 +68,27 @@ async def profitability(
 
 
 @router.get(
-    "/production",
-    response_model=ProductionReport,
-    summary="R2 — SUM(quantity) bucketed over time",
+    "/aggregate",
+    response_model=AggregateReport,
+    summary="Generic time-bucketed aggregate over events of one type",
     description=(
-        "Default type=production. Pass type=observation + unit=unit to get headcount deltas. "
-        "Grouped by (bucket, asset_id, unit, category_id)."
+        "Dispatches on `type` and returns uniform `{bucket, group, measure, value}` rows.\n\n"
+        "- production / observation: SUM(quantity) grouped by unit\n"
+        "- mortality / acquisition: SUM(quantity) as headcount, no grouping\n"
+        "- inventory: net flow within window (increments minus decrements). "
+        "  Pass `adjustment=reset|increment|decrement` to isolate one kind.\n"
+        "- expense / income: SUM(amount) grouped by currency\n"
+        "- reproductive: COUNT(*) of events\n\n"
+        "Filters `unit`, `adjustment`, `currency` are ignored for types where they do not apply."
     ),
 )
-async def production(
+async def aggregate_report(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[ProductionQuery, Depends()],
-) -> ProductionReport:
-    rows, totals = await svc.production(membership.farm_id, q)
-    return ProductionReport(data=rows, totals=totals, bucket=q.bucket, type=q.type)
+    q: Annotated[AggregateQuery, Depends()],
+) -> AggregateReport:
+    rows, meta = await svc.aggregate(membership.farm_id, q)
+    return AggregateReport(data=rows, meta=meta)
 
 
 @router.get(
@@ -127,27 +133,6 @@ async def profitability_pdf(
         context={"rows": rows, "totals": totals},
     )
     return _pdf_response(pdf, "rentabilidad.pdf")
-
-
-@router.get("/production/pdf", summary="R2 — PDF download")
-async def production_pdf(
-    membership: FarmMembership,
-    current_user: CurrentUser,
-    svc: ReportSvc,
-    db: DBSession,
-    q: Annotated[ProductionQuery, Depends()],
-) -> Response:
-    rows, totals = await svc.production(membership.farm_id, q)
-    pdf = render_pdf(
-        "production.html",
-        farm_name=await _farm_name(db, membership.farm_id),
-        title="Producción",
-        generated_by=current_user.name,
-        date_from=q.date_from,
-        date_to=q.date_to,
-        context={"rows": rows, "totals": totals, "bucket": q.bucket, "type": q.type},
-    )
-    return _pdf_response(pdf, "produccion.pdf")
 
 
 @router.get("/cost-per-unit/pdf", summary="R3 — PDF download")

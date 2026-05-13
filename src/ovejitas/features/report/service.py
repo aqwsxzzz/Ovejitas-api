@@ -13,15 +13,16 @@ from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.individual.models import Individual
+from ovejitas.features.report.aggregate import aggregate as run_aggregate
 from ovejitas.features.report.schemas import (
+    AggregateMeta,
+    AggregateQuery,
+    AggregateRow,
     CostPerUnitQuery,
     CostPerUnitRow,
     CostPerUnitTotal,
     InventorySummaryQuery,
     InventorySummaryRow,
-    ProductionQuery,
-    ProductionRow,
-    ProductionTotal,
     ProfitabilityQuery,
     ProfitabilityRow,
     ProfitabilityTotal,
@@ -39,13 +40,6 @@ def _profitability_totals(rows: list[ProfitabilityRow]) -> list[ProfitabilityTot
         bucket["expense_total"] += r.expense_total
         bucket["net"] += r.net
     return [ProfitabilityTotal(currency=cur, **vals) for cur, vals in sorted(by_currency.items())]
-
-
-def _production_totals(rows: list[ProductionRow]) -> list[ProductionTotal]:
-    by_unit: dict[Any, Decimal] = defaultdict(lambda: Decimal(0))
-    for r in rows:
-        by_unit[r.unit] += r.total
-    return [ProductionTotal(unit=u, total=t) for u, t in sorted(by_unit.items())]
 
 
 def _cost_per_unit_totals(rows: list[CostPerUnitRow]) -> list[CostPerUnitTotal]:
@@ -119,33 +113,10 @@ class ReportService:
         totals = _profitability_totals(data)
         return data, totals
 
-    async def production(
-        self, farm_id: int, q: ProductionQuery
-    ) -> tuple[list[ProductionRow], list[ProductionTotal]]:
-        bucket_col = func.date_trunc(q.bucket.value, Event.occurred_at)
-        stmt = (
-            select(
-                bucket_col.label("bucket_start"),
-                Event.asset_id.label("asset_id"),
-                Event.unit.label("unit"),
-                Event.category_id.label("category_id"),
-                func.sum(Event.quantity).label("total"),
-            )
-            .where(
-                Event.type == q.type,
-                Event.quantity.is_not(None),
-                Event.unit.is_not(None),
-            )
-            .group_by(bucket_col, Event.asset_id, Event.unit, Event.category_id)
-            .order_by(bucket_col, Event.asset_id)
-        )
-        stmt = _scope(stmt, farm_id, q.date_from, q.date_to, q.asset_id)
-        if q.unit is not None:
-            stmt = stmt.where(Event.unit == q.unit)
-        rows = (await self.db.execute(stmt)).mappings().all()
-        data = [ProductionRow.model_validate(r) for r in rows]
-        totals = _production_totals(data)
-        return data, totals
+    async def aggregate(
+        self, farm_id: int, q: AggregateQuery
+    ) -> tuple[list[AggregateRow], AggregateMeta]:
+        return await run_aggregate(self.db, farm_id, q)
 
     async def cost_per_unit(
         self, farm_id: int, q: CostPerUnitQuery

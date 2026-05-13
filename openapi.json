@@ -1,6 +1,103 @@
 {
   "components": {
     "schemas": {
+      "AggregateMeasure": {
+        "enum": [
+          "sum_quantity",
+          "sum_amount",
+          "count"
+        ],
+        "title": "AggregateMeasure",
+        "type": "string"
+      },
+      "AggregateMeta": {
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/Bucket"
+          },
+          "group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Key"
+          },
+          "measure": {
+            "$ref": "#/components/schemas/AggregateMeasure"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          }
+        },
+        "required": [
+          "type",
+          "measure",
+          "bucket",
+          "group_key"
+        ],
+        "title": "AggregateMeta",
+        "type": "object"
+      },
+      "AggregateReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AggregateRow"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/AggregateMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AggregateReport",
+        "type": "object"
+      },
+      "AggregateRow": {
+        "properties": {
+          "bucket": {
+            "format": "date-time",
+            "title": "Bucket",
+            "type": "string"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group"
+          },
+          "measure": {
+            "$ref": "#/components/schemas/AggregateMeasure"
+          },
+          "value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucket",
+          "group",
+          "measure",
+          "value"
+        ],
+        "title": "AggregateRow",
+        "type": "object"
+      },
       "AssetCreate": {
         "additionalProperties": false,
         "properties": {
@@ -2035,97 +2132,6 @@
           "meta"
         ],
         "title": "Page[IndividualRead]",
-        "type": "object"
-      },
-      "ProductionReport": {
-        "properties": {
-          "bucket": {
-            "$ref": "#/components/schemas/Bucket"
-          },
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/ProductionRow"
-            },
-            "title": "Data",
-            "type": "array"
-          },
-          "totals": {
-            "items": {
-              "$ref": "#/components/schemas/ProductionTotal"
-            },
-            "title": "Totals",
-            "type": "array"
-          },
-          "type": {
-            "$ref": "#/components/schemas/EventType"
-          }
-        },
-        "required": [
-          "data",
-          "totals",
-          "bucket",
-          "type"
-        ],
-        "title": "ProductionReport",
-        "type": "object"
-      },
-      "ProductionRow": {
-        "properties": {
-          "asset_id": {
-            "title": "Asset Id",
-            "type": "integer"
-          },
-          "bucket_start": {
-            "format": "date-time",
-            "title": "Bucket Start",
-            "type": "string"
-          },
-          "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
-          },
-          "total": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Total",
-            "type": "string"
-          },
-          "unit": {
-            "$ref": "#/components/schemas/Unit"
-          }
-        },
-        "required": [
-          "bucket_start",
-          "asset_id",
-          "unit",
-          "category_id",
-          "total"
-        ],
-        "title": "ProductionRow",
-        "type": "object"
-      },
-      "ProductionTotal": {
-        "properties": {
-          "total": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Total",
-            "type": "string"
-          },
-          "unit": {
-            "$ref": "#/components/schemas/Unit"
-          }
-        },
-        "required": [
-          "unit",
-          "total"
-        ],
-        "title": "ProductionTotal",
         "type": "object"
       },
       "ProfitabilityReport": {
@@ -4432,6 +4438,169 @@
         ]
       }
     },
+    "/api/v1/farms/{farm_id}/reports/aggregate": {
+      "get": {
+        "description": "Dispatches on `type` and returns uniform `{bucket, group, measure, value}` rows.\n\n- production / observation: SUM(quantity) grouped by unit\n- mortality / acquisition: SUM(quantity) as headcount, no grouping\n- inventory: net flow within window (increments minus decrements).   Pass `adjustment=reset|increment|decrement` to isolate one kind.\n- expense / income: SUM(amount) grouped by currency\n- reproductive: COUNT(*) of events\n\nFilters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.",
+        "operationId": "reports_aggregate_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bucket",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Bucket",
+              "default": "day"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Unit"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "adjustment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InventoryAdjustment"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Adjustment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Currency"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AggregateReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Generic time-bucketed aggregate over events of one type",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/api/v1/farms/{farm_id}/reports/cost-per-unit": {
       "get": {
         "description": "Requires `unit` (what counts as one produced unit). One row per (asset, currency). Assets without BOTH production (in the given unit) and expense events are omitted \u2014 a currency cannot be inferred without an expense row. The expense total is not unit-filtered: all of the asset's expenses are attributed to the queried production unit, so this number is only meaningful for single-output assets.",
@@ -4863,267 +5032,6 @@
           }
         ],
         "summary": "R5 \u2014 current on-hand inventory across material assets",
-        "tags": [
-          "reports"
-        ]
-      }
-    },
-    "/api/v1/farms/{farm_id}/reports/production": {
-      "get": {
-        "description": "Default type=production. Pass type=observation + unit=unit to get headcount deltas. Grouped by (bucket, asset_id, unit, category_id).",
-        "operationId": "reports_production",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "farm_id",
-            "required": true,
-            "schema": {
-              "title": "Farm Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "date_from",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Date From"
-            }
-          },
-          {
-            "in": "query",
-            "name": "date_to",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Date To"
-            }
-          },
-          {
-            "in": "query",
-            "name": "asset_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Asset Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "type",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/EventType",
-              "default": "production"
-            }
-          },
-          {
-            "in": "query",
-            "name": "unit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/Unit"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Unit"
-            }
-          },
-          {
-            "in": "query",
-            "name": "bucket",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/Bucket",
-              "default": "day"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductionReport"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "summary": "R2 \u2014 SUM(quantity) bucketed over time",
-        "tags": [
-          "reports"
-        ]
-      }
-    },
-    "/api/v1/farms/{farm_id}/reports/production/pdf": {
-      "get": {
-        "operationId": "reports_production_pdf",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "farm_id",
-            "required": true,
-            "schema": {
-              "title": "Farm Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "date_from",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Date From"
-            }
-          },
-          {
-            "in": "query",
-            "name": "date_to",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Date To"
-            }
-          },
-          {
-            "in": "query",
-            "name": "asset_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Asset Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "type",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/EventType",
-              "default": "production"
-            }
-          },
-          {
-            "in": "query",
-            "name": "unit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/Unit"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Unit"
-            }
-          },
-          {
-            "in": "query",
-            "name": "bucket",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/Bucket",
-              "default": "day"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "summary": "R2 \u2014 PDF download",
         "tags": [
           "reports"
         ]
