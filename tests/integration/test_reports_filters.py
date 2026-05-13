@@ -1,7 +1,7 @@
 """Report filter / bucket / edge-case tests (companion to test_reports.py)."""
 
 from collections.abc import Awaitable, Callable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from httpx import AsyncClient
@@ -92,49 +92,6 @@ class TestProfitabilityFilters:
         rows = resp.json()["data"]
         assert len(rows) == 1
         assert rows[0]["asset_id"] == a2
-
-
-class TestProductionFilters:
-    async def test_week_bucket_collapses_days(
-        self, client: AsyncClient, authed_user: AuthedUser
-    ) -> None:
-        asset_id = await _asset(authed_user.farm_id)
-        monday = datetime(2026, 4, 6, tzinfo=UTC)  # ISO week start
-        for offset in range(3):
-            await _event(
-                authed_user.farm_id,
-                asset_id,
-                authed_user.user_id,
-                quantity=Decimal("10"),
-                unit="unit",
-                when=monday + timedelta(days=offset),
-            )
-
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production",
-            headers=authed_user.headers,
-            params={"bucket": "week"},
-        )
-        data = resp.json()["data"]
-        assert len(data) == 1
-        assert Decimal(data[0]["total"]) == Decimal("30")
-
-    async def test_asset_id_filter(self, client: AsyncClient, authed_user: AuthedUser) -> None:
-        a1 = await _asset(authed_user.farm_id, name="A1")
-        a2 = await _asset(authed_user.farm_id, name="A2")
-        for aid in (a1, a2):
-            await _event(
-                authed_user.farm_id, aid, authed_user.user_id, quantity=Decimal("5"), unit="unit"
-            )
-
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production",
-            headers=authed_user.headers,
-            params={"asset_id": a1},
-        )
-        rows = resp.json()["data"]
-        assert len(rows) == 1
-        assert rows[0]["asset_id"] == a1
 
 
 class TestCostPerUnitEdges:

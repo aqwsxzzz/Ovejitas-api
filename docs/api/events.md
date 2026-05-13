@@ -22,6 +22,16 @@ Body is a discriminated union on `type`. Reproductive events require `kind=anima
 - `201` → EventRead — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
+## GET /api/v1/farms/{farm_id}/assets/{asset_id}/events/balance
+
+_Current on-hand inventory for a material asset_
+
+Returns the derived on-hand balance per (asset, unit), computed from INVENTORY events: sum of increments minus decrements since the most recent reset. Only meaningful for assets with kind=material.
+
+**Responses:**
+- `200` → InventoryBalance — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
 ## GET /api/v1/farms/{farm_id}/assets/{asset_id}/events/{event_id}
 
 _Get one event_
@@ -43,6 +53,7 @@ _Update an event_
 - `quantity` (number | string | null, optional)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, optional)
 - `amount` (number | string | null, optional)
+- `adjustment` ('increment' | 'decrement' | 'reset' | null, optional)
 - `notes` (string | null, optional)
 - `payload` (object | null, optional)
 
@@ -94,6 +105,19 @@ _Delete an event_
 - `type` (string, required)
 - `amount` (number | string, required)
 
+### EventInventoryCreate
+
+- `occurred_at` (string (date-time), required)
+- `individual_id` (integer | null, optional)
+- `category_id` (integer | null, optional)
+- `notes` (string | null, optional)
+- `payload` (object, optional)
+- `idempotency_key` (string | null, optional)
+- `type` (string, required)
+- `adjustment` ('increment' | 'decrement' | 'reset', required)
+- `quantity` (number | string, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
+
 ### EventMortalityCreate
 
 - `occurred_at` (string (date-time), required)
@@ -133,13 +157,14 @@ _Delete an event_
 - `farm_id` (integer, required)
 - `asset_id` (integer, required)
 - `individual_id` (integer | null, required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality' | 'inventory', required)
 - `category_id` (integer | null, required)
 - `occurred_at` (string (date-time), required)
 - `quantity` (string | null, required)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, required)
 - `amount` (string | null, required)
 - `currency` (string | null, required)
+- `adjustment` ('increment' | 'decrement' | 'reset' | null, required)
 - `notes` (string | null, required)
 - `payload` (object, required)
 - `idempotency_key` (string | null, required)
@@ -165,12 +190,24 @@ _Delete an event_
 - `quantity` (number | string | null, optional)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, optional)
 - `amount` (number | string | null, optional)
+- `adjustment` ('increment' | 'decrement' | 'reset' | null, optional)
 - `notes` (string | null, optional)
 - `payload` (object | null, optional)
 
 ### HTTPValidationError
 
 - `detail` (ValidationError[], optional)
+
+### InventoryBalance
+
+- `asset_id` (integer, required)
+- `balances` (InventoryBalanceRow[], required)
+
+### InventoryBalanceRow
+
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
+- `on_hand` (string, required)
+- `last_reset_at` (string (date-time) | null, required)
 
 ### PageMeta
 
@@ -194,7 +231,11 @@ _Delete an event_
 
 ### EventType
 
-**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality`
+**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality` | `inventory`
+
+### InventoryAdjustment
+
+**Values:** `increment` | `decrement` | `reset`
 
 ### Unit
 

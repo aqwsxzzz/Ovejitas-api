@@ -1,5 +1,6 @@
 import logging
 import time
+from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, Request
 from starlette.responses import Response
@@ -29,7 +30,10 @@ def _method_color(method: str) -> str:
 
 def register_request_logging(app: FastAPI) -> None:
     @app.middleware("http")
-    async def log_requests(request: Request, call_next) -> Response:  # type: ignore[no-untyped-def]
+    async def log_requests(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         start = time.perf_counter()
         response = await call_next(request)
         duration_ms = (time.perf_counter() - start) * 1000

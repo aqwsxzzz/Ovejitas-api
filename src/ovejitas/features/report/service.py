@@ -11,15 +11,18 @@ from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.models import Event
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.individual.models import Individual
+from ovejitas.features.report.aggregate import aggregate as run_aggregate
 from ovejitas.features.report.schemas import (
+    AggregateMeta,
+    AggregateQuery,
+    AggregateRow,
     CostPerUnitQuery,
     CostPerUnitRow,
     CostPerUnitTotal,
-    ProductionQuery,
-    ProductionRow,
-    ProductionTotal,
+    InventorySummaryQuery,
+    InventorySummaryRow,
     ProfitabilityQuery,
     ProfitabilityRow,
     ProfitabilityTotal,
@@ -37,13 +40,6 @@ def _profitability_totals(rows: list[ProfitabilityRow]) -> list[ProfitabilityTot
         bucket["expense_total"] += r.expense_total
         bucket["net"] += r.net
     return [ProfitabilityTotal(currency=cur, **vals) for cur, vals in sorted(by_currency.items())]
-
-
-def _production_totals(rows: list[ProductionRow]) -> list[ProductionTotal]:
-    by_unit: dict[Any, Decimal] = defaultdict(lambda: Decimal(0))
-    for r in rows:
-        by_unit[r.unit] += r.total
-    return [ProductionTotal(unit=u, total=t) for u, t in sorted(by_unit.items())]
 
 
 def _cost_per_unit_totals(rows: list[CostPerUnitRow]) -> list[CostPerUnitTotal]:
@@ -117,33 +113,10 @@ class ReportService:
         totals = _profitability_totals(data)
         return data, totals
 
-    async def production(
-        self, farm_id: int, q: ProductionQuery
-    ) -> tuple[list[ProductionRow], list[ProductionTotal]]:
-        bucket_col = func.date_trunc(q.bucket.value, Event.occurred_at)
-        stmt = (
-            select(
-                bucket_col.label("bucket_start"),
-                Event.asset_id.label("asset_id"),
-                Event.unit.label("unit"),
-                Event.category_id.label("category_id"),
-                func.sum(Event.quantity).label("total"),
-            )
-            .where(
-                Event.type == q.type,
-                Event.quantity.is_not(None),
-                Event.unit.is_not(None),
-            )
-            .group_by(bucket_col, Event.asset_id, Event.unit, Event.category_id)
-            .order_by(bucket_col, Event.asset_id)
-        )
-        stmt = _scope(stmt, farm_id, q.date_from, q.date_to, q.asset_id)
-        if q.unit is not None:
-            stmt = stmt.where(Event.unit == q.unit)
-        rows = (await self.db.execute(stmt)).mappings().all()
-        data = [ProductionRow.model_validate(r) for r in rows]
-        totals = _production_totals(data)
-        return data, totals
+    async def aggregate(
+        self, farm_id: int, q: AggregateQuery
+    ) -> tuple[list[AggregateRow], AggregateMeta]:
+        return await run_aggregate(self.db, farm_id, q)
 
     async def cost_per_unit(
         self, farm_id: int, q: CostPerUnitQuery
@@ -199,6 +172,56 @@ class ReportService:
         data = [CostPerUnitRow.model_validate(r) for r in rows]
         totals = _cost_per_unit_totals(data)
         return data, totals
+
+    async def inventory_summary(
+        self, farm_id: int, q: InventorySummaryQuery
+    ) -> list[InventorySummaryRow]:
+        stmt = (
+            select(
+                Event.asset_id,
+                Asset.name.label("asset_name"),
+                Event.adjustment,
+                Event.unit,
+                Event.quantity,
+                Event.occurred_at,
+                Event.id,
+            )
+            .join(Asset, Asset.id == Event.asset_id)
+            .where(
+                Asset.farm_id == farm_id,
+                Event.type == EventType.INVENTORY,
+            )
+            .order_by(Event.asset_id, Event.occurred_at.asc(), Event.id.asc())
+        )
+        stmt = apply_date_range(stmt, Event.occurred_at, q.date_from, q.date_to)
+        if q.asset_id is not None:
+            stmt = stmt.where(Event.asset_id == q.asset_id)
+        rows = (await self.db.execute(stmt)).all()
+
+        buckets: dict[tuple[int, Any], dict[str, Any]] = defaultdict(
+            lambda: {"on_hand": Decimal(0), "asset_name": ""}
+        )
+        for asset_id, asset_name, adjustment, unit, quantity, _occurred_at, _id in rows:
+            key = (asset_id, unit)
+            bucket = buckets[key]
+            bucket["asset_name"] = asset_name
+            if adjustment is InventoryAdjustment.RESET:
+                bucket["on_hand"] = Decimal(quantity)
+            elif adjustment is InventoryAdjustment.INCREMENT:
+                bucket["on_hand"] = Decimal(bucket["on_hand"]) + Decimal(quantity)
+            elif adjustment is InventoryAdjustment.DECREMENT:
+                bucket["on_hand"] = Decimal(bucket["on_hand"]) - Decimal(quantity)
+        return [
+            InventorySummaryRow(
+                asset_id=asset_id,
+                asset_name=vals["asset_name"],
+                unit=unit,
+                on_hand=Decimal(vals["on_hand"]),
+            )
+            for (asset_id, unit), vals in sorted(
+                buckets.items(), key=lambda kv: (kv[1]["asset_name"], kv[0][1].value)
+            )
+        ]
 
     async def timeline(
         self,

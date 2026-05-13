@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Select
 from sqlalchemy.orm import InstrumentedAttribute
@@ -14,11 +15,11 @@ class FilterParams(StrictModel):
 
 
 def apply_date_range(
-    stmt: Select,
-    column: InstrumentedAttribute,
+    stmt: Select[Any],
+    column: InstrumentedAttribute[Any],
     date_from: datetime | None,
     date_to: datetime | None,
-) -> Select:
+) -> Select[Any]:
     if date_from is not None:
         stmt = stmt.where(column >= date_from)
     if date_to is not None:

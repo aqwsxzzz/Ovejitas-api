@@ -20,7 +20,7 @@ API_PREFIX = "/api/v1"
 
 def _operation_id(route: APIRoute) -> str:
     """Produce `{tag}_{name}` operation IDs so generated clients get clean method names."""
-    tag = (route.tags[0] if route.tags else "default").replace(" ", "_")
+    tag = str(route.tags[0] if route.tags else "default").replace(" ", "_")
     return f"{tag}_{route.name}"
 
 

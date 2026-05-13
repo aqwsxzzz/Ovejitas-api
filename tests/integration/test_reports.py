@@ -145,103 +145,6 @@ class TestProfitability:
         assert Decimal(rows["ARS"]["income_total"]) == Decimal("1000")
 
 
-class TestProduction:
-    async def test_bucketed_sum(self, client: AsyncClient, authed_user: AuthedUser) -> None:
-        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
-        day1 = datetime(2026, 4, 1, tzinfo=UTC)
-        day2 = datetime(2026, 4, 2, tzinfo=UTC)
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            quantity=Decimal("10"),
-            unit="unit",
-            when=day1,
-        )
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            quantity=Decimal("5"),
-            unit="unit",
-            when=day1,
-        )
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            quantity=Decimal("7"),
-            unit="unit",
-            when=day2,
-        )
-
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production",
-            headers=authed_user.headers,
-            params={"bucket": "day"},
-        )
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["type"] == "production"
-        totals = {row["bucket_start"][:10]: Decimal(row["total"]) for row in body["data"]}
-        assert totals["2026-04-01"] == Decimal("15")
-        assert totals["2026-04-02"] == Decimal("7")
-
-    async def test_totals_grouped_by_unit(
-        self, client: AsyncClient, authed_user: AuthedUser
-    ) -> None:
-        a1 = await _asset(authed_user.farm_id, name="Gallinas")
-        a2 = await _asset(authed_user.farm_id, name="Vacas")
-        await _event(
-            authed_user.farm_id, a1, authed_user.user_id, quantity=Decimal("12"), unit="unit"
-        )
-        await _event(
-            authed_user.farm_id, a1, authed_user.user_id, quantity=Decimal("8"), unit="unit"
-        )
-        await _event(
-            authed_user.farm_id, a2, authed_user.user_id, quantity=Decimal("18.5"), unit="l"
-        )
-        await _event(
-            authed_user.farm_id, a2, authed_user.user_id, quantity=Decimal("17.5"), unit="l"
-        )
-
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production", headers=authed_user.headers
-        )
-        totals = {t["unit"]: Decimal(t["total"]) for t in resp.json()["totals"]}
-        assert totals == {"unit": Decimal("20"), "l": Decimal("36")}
-
-    async def test_observation_headcount(
-        self, client: AsyncClient, authed_user: AuthedUser
-    ) -> None:
-        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            type=EventType.OBSERVATION,
-            quantity=Decimal("200"),
-            unit="unit",
-        )
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            type=EventType.OBSERVATION,
-            quantity=Decimal("-5"),
-            unit="unit",
-        )
-
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production",
-            headers=authed_user.headers,
-            params={"type": "observation", "unit": "unit"},
-        )
-        assert resp.status_code == 200
-        total = sum(Decimal(r["total"]) for r in resp.json()["data"])
-        assert total == Decimal("195")
-
-
 class TestCostPerUnit:
     async def test_expense_over_production(
         self, client: AsyncClient, authed_user: AuthedUser
@@ -385,15 +288,6 @@ class TestPdfDownload:
         assert resp.headers["content-type"] == "application/pdf"
         assert resp.content[:4] == b"%PDF"
         assert "rentabilidad.pdf" in resp.headers["content-disposition"]
-
-    async def test_production_pdf_empty_dataset(
-        self, client: AsyncClient, authed_user: AuthedUser
-    ) -> None:
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production/pdf", headers=authed_user.headers
-        )
-        assert resp.status_code == 200
-        assert resp.content[:4] == b"%PDF"
 
     async def test_cost_per_unit_pdf(self, client: AsyncClient, authed_user: AuthedUser) -> None:
         asset_id = await _asset(authed_user.farm_id, name="Gallinas")

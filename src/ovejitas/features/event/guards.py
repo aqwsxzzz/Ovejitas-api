@@ -11,6 +11,8 @@ from ovejitas.features.individual.models import Individual
 async def validate_type_against_asset(event_type: EventType, asset: Asset) -> None:
     if event_type is EventType.REPRODUCTIVE and asset.kind is not AssetKind.ANIMAL:
         raise ValidationError("Reproductive events require an animal asset")
+    if event_type is EventType.INVENTORY and asset.kind is not AssetKind.MATERIAL:
+        raise ValidationError("Inventory events require a material asset")
 
 
 async def validate_individual(

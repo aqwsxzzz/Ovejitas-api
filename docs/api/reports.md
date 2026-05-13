@@ -12,14 +12,22 @@ One row per (asset, currency). Events with NULL amount/currency are excluded. Di
 - `200` → ProfitabilityReport — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
-## GET /api/v1/farms/{farm_id}/reports/production
+## GET /api/v1/farms/{farm_id}/reports/aggregate
 
-_R2 — SUM(quantity) bucketed over time_
+_Generic time-bucketed aggregate over events of one type_
 
-Default type=production. Pass type=observation + unit=unit to get headcount deltas. Grouped by (bucket, asset_id, unit, category_id).
+Dispatches on `type` and returns uniform `{bucket, group, measure, value}` rows.
+
+- production / observation: SUM(quantity) grouped by unit
+- mortality / acquisition: SUM(quantity) as headcount, no grouping
+- inventory: net flow within window (increments minus decrements).   Pass `adjustment=reset|increment|decrement` to isolate one kind.
+- expense / income: SUM(amount) grouped by currency
+- reproductive: COUNT(*) of events
+
+Filters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.
 
 **Responses:**
-- `200` → ProductionReport — Successful Response
+- `200` → AggregateReport — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
 ## GET /api/v1/farms/{farm_id}/reports/cost-per-unit
@@ -40,20 +48,22 @@ _R1 — PDF download_
 - `200` → any — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
-## GET /api/v1/farms/{farm_id}/reports/production/pdf
-
-_R2 — PDF download_
-
-**Responses:**
-- `200` → any — Successful Response
-- `422` → HTTPValidationError — Validation Error
-
 ## GET /api/v1/farms/{farm_id}/reports/cost-per-unit/pdf
 
 _R3 — PDF download_
 
 **Responses:**
 - `200` → any — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
+## GET /api/v1/farms/{farm_id}/reports/inventory-summary
+
+_R5 — current on-hand inventory across material assets_
+
+One row per (material asset, unit). On-hand is derived from INVENTORY events: sum of increments minus decrements since the most recent reset. Date filters bound the events considered, not the resulting balance.
+
+**Responses:**
+- `200` → InventorySummaryReport — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
 ## GET /api/v1/farms/{farm_id}/reports/individuals/{individual_id}/timeline
@@ -65,6 +75,25 @@ _R4 — paginated event timeline for one individual_
 - `422` → HTTPValidationError — Validation Error
 
 ## Types
+
+### AggregateMeta
+
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality' | 'inventory', required)
+- `measure` ('sum_quantity' | 'sum_amount' | 'count', required)
+- `bucket` ('day' | 'week' | 'month', required)
+- `group_key` (string | null, required)
+
+### AggregateReport
+
+- `data` (AggregateRow[], required)
+- `meta` (AggregateMeta, required)
+
+### AggregateRow
+
+- `bucket` (string (date-time), required)
+- `group` (string | null, required)
+- `measure` ('sum_quantity' | 'sum_amount' | 'count', required)
+- `value` (string, required)
 
 ### CostPerUnitReport
 
@@ -94,13 +123,14 @@ _R4 — paginated event timeline for one individual_
 - `farm_id` (integer, required)
 - `asset_id` (integer, required)
 - `individual_id` (integer | null, required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
+- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality' | 'inventory', required)
 - `category_id` (integer | null, required)
 - `occurred_at` (string (date-time), required)
 - `quantity` (string | null, required)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, required)
 - `amount` (string | null, required)
 - `currency` (string | null, required)
+- `adjustment` ('increment' | 'decrement' | 'reset' | null, required)
 - `notes` (string | null, required)
 - `payload` (object, required)
 - `idempotency_key` (string | null, required)
@@ -111,6 +141,17 @@ _R4 — paginated event timeline for one individual_
 ### HTTPValidationError
 
 - `detail` (ValidationError[], optional)
+
+### InventorySummaryReport
+
+- `data` (InventorySummaryRow[], required)
+
+### InventorySummaryRow
+
+- `asset_id` (integer, required)
+- `asset_name` (string, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
+- `on_hand` (string, required)
 
 ### PageMeta
 
@@ -123,26 +164,6 @@ _R4 — paginated event timeline for one individual_
 
 - `data` (EventRead[], required)
 - `meta` (PageMeta, required)
-
-### ProductionReport
-
-- `data` (ProductionRow[], required)
-- `totals` (ProductionTotal[], required)
-- `bucket` ('day' | 'week' | 'month', required)
-- `type` ('production' | 'expense' | 'income' | 'observation' | 'reproductive' | 'acquisition' | 'mortality', required)
-
-### ProductionRow
-
-- `bucket_start` (string (date-time), required)
-- `asset_id` (integer, required)
-- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
-- `category_id` (integer | null, required)
-- `total` (string, required)
-
-### ProductionTotal
-
-- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
-- `total` (string, required)
 
 ### ProfitabilityReport
 
@@ -173,13 +194,21 @@ _R4 — paginated event timeline for one individual_
 - `input` (any, optional)
 - `ctx` (object, optional)
 
+### AggregateMeasure
+
+**Values:** `sum_quantity` | `sum_amount` | `count`
+
 ### Bucket
 
 **Values:** `day` | `week` | `month`
 
 ### EventType
 
-**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality`
+**Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality` | `inventory`
+
+### InventoryAdjustment
+
+**Values:** `increment` | `decrement` | `reset`
 
 ### Unit
 

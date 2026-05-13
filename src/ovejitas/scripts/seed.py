@@ -20,7 +20,7 @@ from ovejitas.core.db import engine, session_factory
 from ovejitas.core.security import hash_password
 from ovejitas.features.asset.models import Asset, AssetKind, AssetMode
 from ovejitas.features.event.models import Event
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.farm.models import Farm
 from ovejitas.features.farm_member.models import FarmMember, FarmRole
 from ovejitas.features.individual.models import Individual, IndividualStatus
@@ -172,6 +172,56 @@ async def _seed_vacas(db: AsyncSession, user: User, farm: Farm) -> list[Individu
     return [mother, father, calf]
 
 
+async def _seed_feed_stock(db: AsyncSession, user: User, farm: Farm) -> None:
+    asset = Asset(
+        farm_id=farm.id,
+        name="Maíz molido",
+        kind=AssetKind.MATERIAL,
+        mode=AssetMode.AGGREGATED,
+        location="Silo principal",
+    )
+    db.add(asset)
+    await db.flush()
+
+    db.add_all(
+        [
+            Event(
+                farm_id=farm.id,
+                asset_id=asset.id,
+                type=EventType.INVENTORY,
+                adjustment=InventoryAdjustment.RESET,
+                occurred_at=TODAY - timedelta(days=20),
+                quantity=Decimal("500"),
+                unit="kg",
+                notes="Saldo inicial",
+                created_by=user.id,
+            ),
+            Event(
+                farm_id=farm.id,
+                asset_id=asset.id,
+                type=EventType.INVENTORY,
+                adjustment=InventoryAdjustment.INCREMENT,
+                occurred_at=TODAY - timedelta(days=10),
+                quantity=Decimal("250"),
+                unit="kg",
+                notes="Compra mensual",
+                created_by=user.id,
+            ),
+            Event(
+                farm_id=farm.id,
+                asset_id=asset.id,
+                type=EventType.INVENTORY,
+                adjustment=InventoryAdjustment.DECREMENT,
+                occurred_at=TODAY - timedelta(days=2),
+                quantity=Decimal("75"),
+                unit="kg",
+                notes="Consumo semanal",
+                created_by=user.id,
+            ),
+        ]
+    )
+
+
 async def seed() -> None:
     env = get_settings().app_env
     if env != "development":
@@ -187,6 +237,7 @@ async def seed() -> None:
         user, farm = await _seed_user_and_farm(db)
         await _seed_gallinas(db, user, farm)
         await _seed_vacas(db, user, farm)
+        await _seed_feed_stock(db, user, farm)
         await db.commit()
         logger.info("Seed complete — login as %s / %s", DEMO_EMAIL, DEMO_PASSWORD)
     await engine.dispose()

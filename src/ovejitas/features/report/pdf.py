@@ -8,7 +8,7 @@ from typing import Any
 from babel.dates import format_date, format_datetime
 from babel.numbers import format_decimal
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from weasyprint import HTML
+from weasyprint import HTML  # type: ignore[import-untyped]
 
 _LOCALE = "es"
 _TEMPLATES = Path(__file__).parent / "templates"
@@ -66,4 +66,5 @@ def render_pdf(
         date_to=_fmt_date(date_to),
         **context,
     )
-    return HTML(string=html).write_pdf()
+    pdf: bytes = HTML(string=html).write_pdf()
+    return pdf

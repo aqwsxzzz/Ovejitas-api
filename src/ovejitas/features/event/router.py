@@ -11,6 +11,7 @@ from ovejitas.features.event.schemas import (
     EventFilters,
     EventRead,
     EventUpdate,
+    InventoryBalance,
 )
 from ovejitas.features.event.service import EventService
 
@@ -65,6 +66,23 @@ async def create_event(
     current_user: CurrentUser,
 ) -> EventRead:
     return EventRead.model_validate(await svc.create(asset, current_user.id, data))
+
+
+@router.get(
+    "/balance",
+    response_model=InventoryBalance,
+    summary="Current on-hand inventory for a material asset",
+    description=(
+        "Returns the derived on-hand balance per (asset, unit), computed from "
+        "INVENTORY events: sum of increments minus decrements since the most "
+        "recent reset. Only meaningful for assets with kind=material."
+    ),
+)
+async def asset_inventory_balance(
+    asset: AssetDep,
+    svc: EventSvc,
+) -> InventoryBalance:
+    return await svc.inventory_balance(asset)
 
 
 @router.get(
