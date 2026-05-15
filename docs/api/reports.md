@@ -16,7 +16,7 @@ One row per (asset, currency). Events with NULL amount/currency are excluded. Di
 
 _Generic time-bucketed aggregate over events of one type_
 
-Dispatches on `type` and returns uniform `{bucket, group, measure, value}` rows.
+Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.
 
 - production / observation: SUM(quantity) grouped by unit
 - mortality / acquisition: SUM(quantity) as headcount, no grouping
@@ -25,6 +25,16 @@ Dispatches on `type` and returns uniform `{bucket, group, measure, value}` rows.
 - reproductive: COUNT(*) of events
 
 Filters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.
+
+**`group_by=asset`** breaks rows down per asset. Each row then carries a stable `group` key (the asset id as a string), a `group_label` (the asset name), and an `asset_id`. When `group_by` is omitted, rows are unchanged: `group_label` and `asset_id` stay `null`.
+
+Compatibility matrix — `type` vs `group_by`:
+
+| type | group_by=asset |
+| --- | --- |
+| mortality | supported |
+| acquisition | supported |
+| production / observation / inventory / expense / income / reproductive | rejected with 422 |
 
 **Responses:**
 - `200` → AggregateReport — Successful Response
@@ -82,6 +92,7 @@ _R4 — paginated event timeline for one individual_
 - `measure` ('sum_quantity' | 'sum_amount' | 'count', required)
 - `bucket` ('day' | 'week' | 'month', required)
 - `group_key` (string | null, required)
+- `group_by` ('asset' | null, optional)
 
 ### AggregateReport
 
@@ -92,8 +103,10 @@ _R4 — paginated event timeline for one individual_
 
 - `bucket` (string (date-time), required)
 - `group` (string | null, required)
+- `group_label` (string | null, optional)
 - `measure` ('sum_quantity' | 'sum_amount' | 'count', required)
 - `value` (string, required)
+- `asset_id` (integer | null, optional)
 
 ### CostPerUnitReport
 
@@ -205,6 +218,10 @@ _R4 — paginated event timeline for one individual_
 ### EventType
 
 **Values:** `production` | `expense` | `income` | `observation` | `reproductive` | `acquisition` | `mortality` | `inventory`
+
+### GroupBy
+
+**Values:** `asset`
 
 ### InventoryAdjustment
 

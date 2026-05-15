@@ -14,6 +14,10 @@ class Bucket(StrEnum):
     MONTH = "month"
 
 
+class GroupBy(StrEnum):
+    ASSET = "asset"
+
+
 class ProfitabilityRow(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -46,8 +50,10 @@ class AggregateMeasure(StrEnum):
 class AggregateRow(BaseModel):
     bucket: datetime
     group: str | None
+    group_label: str | None = None
     measure: AggregateMeasure
     value: Decimal
+    asset_id: int | None = None
 
 
 class AggregateMeta(BaseModel):
@@ -55,6 +61,7 @@ class AggregateMeta(BaseModel):
     measure: AggregateMeasure
     bucket: Bucket
     group_key: str | None
+    group_by: GroupBy | None = None
 
 
 class AggregateReport(BaseModel):
@@ -65,6 +72,7 @@ class AggregateReport(BaseModel):
 class AggregateQuery(FilterParams):
     type: EventType
     bucket: Bucket = Bucket.DAY
+    group_by: GroupBy | None = None
     asset_id: int | None = None
     unit: Unit | None = None
     adjustment: InventoryAdjustment | None = None

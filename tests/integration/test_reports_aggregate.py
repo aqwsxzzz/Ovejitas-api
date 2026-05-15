@@ -81,6 +81,7 @@ class TestProductionAndObservation:
             "measure": "sum_quantity",
             "bucket": "day",
             "group_key": "unit",
+            "group_by": None,
         }
         by_day = {r["bucket"][:10]: Decimal(r["value"]) for r in body["data"]}
         assert by_day == {"2026-04-01": Decimal("15"), "2026-04-02": Decimal("7")}
@@ -382,3 +383,183 @@ class TestFilters:
         rows = resp.json()["data"]
         assert len(rows) == 1
         assert Decimal(rows[0]["value"]) == Decimal("5")
+
+
+async def _mortality(farm_id: int, asset_id: int, user_id: int, **kw: object) -> None:
+    await _event(
+        farm_id,
+        asset_id,
+        user_id,
+        type=EventType.MORTALITY,
+        unit=None,
+        **kw,
+    )
+
+
+class TestGroupByAsset:
+    async def test_group_by_asset_returns_one_row_per_asset(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        vacas = await _asset(authed_user.farm_id, name="Vacas")
+        ovejas = await _asset(authed_user.farm_id, name="Ovejas")
+        await _mortality(authed_user.farm_id, vacas, authed_user.user_id, quantity=Decimal("2"))
+        await _mortality(authed_user.farm_id, vacas, authed_user.user_id, quantity=Decimal("1"))
+        await _mortality(authed_user.farm_id, ovejas, authed_user.user_id, quantity=Decimal("4"))
+
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "mortality", "bucket": "month", "group_by": "asset"},
+        )
+
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        by_asset = {r["group_label"]: r for r in body["data"]}
+        assert by_asset["Vacas"]["group"] == str(vacas)
+        assert by_asset["Vacas"]["asset_id"] == vacas
+        assert Decimal(by_asset["Vacas"]["value"]) == Decimal("3")
+        assert by_asset["Ovejas"]["asset_id"] == ovejas
+        assert Decimal(by_asset["Ovejas"]["value"]) == Decimal("4")
+
+    async def test_group_by_asset_sets_meta_group_by(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _asset(authed_user.farm_id, name="Vacas")
+        await _mortality(authed_user.farm_id, asset_id, authed_user.user_id, quantity=Decimal("1"))
+
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "mortality", "group_by": "asset"},
+        )
+
+        meta = resp.json()["meta"]
+        assert meta["group_by"] == "asset"
+        assert meta["group_key"] == "asset"
+
+    async def test_acquisition_supports_group_by_asset(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _asset(authed_user.farm_id, name="Pollos")
+        await _event(
+            authed_user.farm_id,
+            asset_id,
+            authed_user.user_id,
+            type=EventType.ACQUISITION,
+            quantity=Decimal("5"),
+            unit=None,
+        )
+
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "acquisition", "group_by": "asset"},
+        )
+
+        assert resp.status_code == 200, resp.text
+        row = resp.json()["data"][0]
+        assert row["asset_id"] == asset_id
+        assert row["group_label"] == "Pollos"
+
+    async def test_mortality_without_group_by_keeps_legacy_shape(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _asset(authed_user.farm_id, name="Vacas")
+        await _mortality(authed_user.farm_id, asset_id, authed_user.user_id, quantity=Decimal("2"))
+
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "mortality"},
+        )
+
+        body = resp.json()
+        assert body["meta"]["group_by"] is None
+        row = body["data"][0]
+        assert row["group"] is None
+        assert row["group_label"] is None
+        assert row["asset_id"] is None
+
+    async def test_invalid_group_by_value_returns_422(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "mortality", "group_by": "banana"},
+        )
+        assert resp.status_code == 422
+
+    async def test_group_by_asset_with_incompatible_type_returns_422(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "expense", "group_by": "asset"},
+        )
+        assert resp.status_code == 422
+
+    async def test_group_by_asset_empty_result(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "mortality", "group_by": "asset"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["data"] == []
+        assert body["meta"]["group_by"] == "asset"
+
+    async def test_group_by_asset_respects_date_filter(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _asset(authed_user.farm_id, name="Vacas")
+        await _mortality(
+            authed_user.farm_id,
+            asset_id,
+            authed_user.user_id,
+            quantity=Decimal("2"),
+            when=datetime(2026, 3, 1, tzinfo=UTC),
+        )
+        await _mortality(
+            authed_user.farm_id,
+            asset_id,
+            authed_user.user_id,
+            quantity=Decimal("5"),
+            when=datetime(2026, 4, 1, tzinfo=UTC),
+        )
+
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={
+                "type": "mortality",
+                "group_by": "asset",
+                "date_from": "2026-03-20T00:00:00Z",
+            },
+        )
+
+        rows = resp.json()["data"]
+        assert len(rows) == 1
+        assert Decimal(rows[0]["value"]) == Decimal("5")
+
+    async def test_group_by_asset_respects_asset_id_filter(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        vacas = await _asset(authed_user.farm_id, name="Vacas")
+        ovejas = await _asset(authed_user.farm_id, name="Ovejas")
+        await _mortality(authed_user.farm_id, vacas, authed_user.user_id, quantity=Decimal("2"))
+        await _mortality(authed_user.farm_id, ovejas, authed_user.user_id, quantity=Decimal("4"))
+
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "mortality", "group_by": "asset", "asset_id": vacas},
+        )
+
+        rows = resp.json()["data"]
+        assert len(rows) == 1
+        assert rows[0]["asset_id"] == vacas
