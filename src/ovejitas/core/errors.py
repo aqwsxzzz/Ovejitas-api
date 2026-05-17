@@ -34,6 +34,12 @@ class ValidationError(AppError):
     message = "Validation failed"
 
 
+class InsufficientStockError(AppError):
+    status_code = status.HTTP_409_CONFLICT
+    code = "insufficient_stock"
+    message = "Operation would drive material stock below zero"
+
+
 class ForbiddenError(AppError):
     status_code = status.HTTP_403_FORBIDDEN
     code = "forbidden"

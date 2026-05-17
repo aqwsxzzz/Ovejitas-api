@@ -18,6 +18,8 @@ from ovejitas.features.report.schemas import (
     CostPerUnitReport,
     InventorySummaryQuery,
     InventorySummaryReport,
+    MaterialConsumptionAggregateQuery,
+    MaterialConsumptionAggregateReport,
     ProfitabilityQuery,
     ProfitabilityReport,
     TimelineQuery,
@@ -102,6 +104,31 @@ async def aggregate_report(
 ) -> AggregateReport:
     rows, meta = await svc.aggregate(membership.farm_id, q)
     return AggregateReport(data=rows, meta=meta)
+
+
+@router.get(
+    "/material-consumption-aggregate",
+    response_model=MaterialConsumptionAggregateReport,
+    summary="Day/week material-consumption totals, bucketed and grouped",
+    description=(
+        "Time-bucketed SUM(quantity) over recorded material consumptions.\n\n"
+        "- `bucket=day|week|month` — `date_trunc` window\n"
+        "- `group_by=material|consumer|both` — each row carries a `group` key, a "
+        "`group_label`, and the `unit` (quantities never sum across units)\n"
+        "- optional filters: `material_asset_id`, `consumer_asset_id`, `reason`, "
+        "`date_from`, `date_to`\n\n"
+        "`totals` carries the per-(group, unit) `total_qty` across all buckets."
+    ),
+)
+async def material_consumption_aggregate(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[MaterialConsumptionAggregateQuery, Depends()],
+) -> MaterialConsumptionAggregateReport:
+    rows, totals = await svc.material_consumption_aggregate(membership.farm_id, q)
+    return MaterialConsumptionAggregateReport(
+        data=rows, totals=totals, bucket=q.bucket, group_by=q.group_by
+    )
 
 
 @router.get(

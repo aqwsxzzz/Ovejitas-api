@@ -115,6 +115,16 @@
           "measure": {
             "$ref": "#/components/schemas/AggregateMeasure"
           },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "value": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Value",
@@ -335,6 +345,24 @@
           "month"
         ],
         "title": "Bucket",
+        "type": "string"
+      },
+      "ConsumptionGroupBy": {
+        "enum": [
+          "material",
+          "consumer",
+          "both"
+        ],
+        "title": "ConsumptionGroupBy",
+        "type": "string"
+      },
+      "ConsumptionReason": {
+        "enum": [
+          "feeding",
+          "waste",
+          "spoilage"
+        ],
+        "title": "ConsumptionReason",
         "type": "string"
       },
       "CostPerUnitReport": {
@@ -2045,6 +2073,700 @@
         "title": "LoginInput",
         "type": "object"
       },
+      "MaterialConsumptionAggregateReport": {
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/Bucket"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AggregateRow"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "group_by": {
+            "$ref": "#/components/schemas/ConsumptionGroupBy"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialConsumptionAggregateTotal"
+            },
+            "title": "Totals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data",
+          "totals",
+          "bucket",
+          "group_by"
+        ],
+        "title": "MaterialConsumptionAggregateReport",
+        "type": "object"
+      },
+      "MaterialConsumptionAggregateTotal": {
+        "properties": {
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group"
+          },
+          "group_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Label"
+          },
+          "total_qty": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Qty",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "group",
+          "group_label",
+          "unit",
+          "total_qty"
+        ],
+        "title": "MaterialConsumptionAggregateTotal",
+        "type": "object"
+      },
+      "MaterialConsumptionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "consumer_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumer Asset Id"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Individual Id"
+          },
+          "material_asset_id": {
+            "title": "Material Asset Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ConsumptionReason"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "material_asset_id",
+          "occurred_at",
+          "quantity",
+          "unit",
+          "reason"
+        ],
+        "title": "MaterialConsumptionCreate",
+        "type": "object"
+      },
+      "MaterialConsumptionRead": {
+        "properties": {
+          "consumer_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumer Asset Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "farm_id": {
+            "title": "Farm Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Individual Id"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "material_asset_id": {
+            "title": "Material Asset Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ConsumptionReason"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "farm_id",
+          "material_asset_id",
+          "consumer_asset_id",
+          "individual_id",
+          "inventory_event_id",
+          "occurred_at",
+          "quantity",
+          "unit",
+          "reason",
+          "notes",
+          "meta",
+          "idempotency_key",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MaterialConsumptionRead",
+        "type": "object"
+      },
+      "MaterialConsumptionUpdate": {
+        "additionalProperties": false,
+        "description": "PATCH body. ``material_asset_id`` is immutable \u2014 a different material is a\ndifferent consumption record.",
+        "properties": {
+          "consumer_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumer Asset Id"
+          },
+          "individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Individual Id"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsumptionReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "MaterialConsumptionUpdate",
+        "type": "object"
+      },
+      "MaterialPurchaseCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "material_asset_id": {
+            "title": "Material Asset Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "supplier": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "material_asset_id",
+          "occurred_at",
+          "quantity",
+          "unit",
+          "amount"
+        ],
+        "title": "MaterialPurchaseCreate",
+        "type": "object"
+      },
+      "MaterialPurchaseRead": {
+        "properties": {
+          "amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "expense_event_id": {
+            "title": "Expense Event Id",
+            "type": "integer"
+          },
+          "farm_id": {
+            "title": "Farm Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "material_asset_id": {
+            "title": "Material Asset Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "supplier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "farm_id",
+          "material_asset_id",
+          "inventory_event_id",
+          "expense_event_id",
+          "occurred_at",
+          "quantity",
+          "unit",
+          "amount",
+          "currency",
+          "supplier",
+          "notes",
+          "meta",
+          "idempotency_key",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MaterialPurchaseRead",
+        "type": "object"
+      },
+      "MaterialPurchaseUpdate": {
+        "additionalProperties": false,
+        "description": "PATCH body. ``material_asset_id`` is immutable \u2014 a different material is a\ndifferent purchase.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "supplier": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "MaterialPurchaseUpdate",
+        "type": "object"
+      },
       "MeResponse": {
         "properties": {
           "memberships": {
@@ -2171,6 +2893,46 @@
           "meta"
         ],
         "title": "Page[IndividualRead]",
+        "type": "object"
+      },
+      "Page_MaterialConsumptionRead_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialConsumptionRead"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Page[MaterialConsumptionRead]",
+        "type": "object"
+      },
+      "Page_MaterialPurchaseRead_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialPurchaseRead"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Page[MaterialPurchaseRead]",
         "type": "object"
       },
       "ProfitabilityReport": {
@@ -4477,6 +5239,800 @@
         ]
       }
     },
+    "/api/v1/farms/{farm_id}/material-consumptions": {
+      "get": {
+        "operationId": "material-consumptions_list_material_consumptions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Search notes",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search notes",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "e.g. -occurred_at,quantity",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -occurred_at,quantity",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "consumer_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Consumer Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reason",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConsumptionReason"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_MaterialConsumptionRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List material consumptions in a farm",
+        "tags": [
+          "material-consumptions"
+        ]
+      },
+      "post": {
+        "description": "Atomically records the consumption and decrements the material's stock via a paired INVENTORY event. `reason=feeding` requires `consumer_asset_id`; `waste`/`spoilage` must omit it. The consumed `unit` must match a unit the material already holds stock in. Rejects with 409 `insufficient_stock` if stock would go negative. Replaying an `idempotency_key` returns the original record with status 200.",
+        "operationId": "material-consumptions_create_material_consumption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialConsumptionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a material consumption",
+        "tags": [
+          "material-consumptions"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/material-consumptions/{consumption_id}": {
+      "delete": {
+        "description": "Hard-deletes the record and reverses its stock effect.",
+        "operationId": "material-consumptions_delete_material_consumption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consumption_id",
+            "required": true,
+            "schema": {
+              "title": "Consumption Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete a material consumption",
+        "tags": [
+          "material-consumptions"
+        ]
+      },
+      "get": {
+        "operationId": "material-consumptions_get_material_consumption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consumption_id",
+            "required": true,
+            "schema": {
+              "title": "Consumption Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get one material consumption",
+        "tags": [
+          "material-consumptions"
+        ]
+      },
+      "patch": {
+        "description": "`material_asset_id` is immutable. Changing `quantity`/`unit`/`occurred_at` reconciles the paired inventory event and re-checks stock.",
+        "operationId": "material-consumptions_update_material_consumption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consumption_id",
+            "required": true,
+            "schema": {
+              "title": "Consumption Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialConsumptionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update a material consumption",
+        "tags": [
+          "material-consumptions"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/material-purchases": {
+      "get": {
+        "operationId": "material-purchases_list_material_purchases",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Search notes and supplier",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search notes and supplier",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "e.g. -occurred_at,amount",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -occurred_at,amount",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_MaterialPurchaseRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List material purchases in a farm",
+        "tags": [
+          "material-purchases"
+        ]
+      },
+      "post": {
+        "description": "Atomically records the purchase, increments the material's stock, and books an expense for the amount paid \u2014 via a paired INVENTORY and EXPENSE event. The purchased `unit` must match how the material is already tracked (any unit is allowed for a material with no inventory history). Replaying an `idempotency_key` returns the original record with status 200.",
+        "operationId": "material-purchases_create_material_purchase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialPurchaseCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialPurchaseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a material purchase",
+        "tags": [
+          "material-purchases"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/material-purchases/{purchase_id}": {
+      "delete": {
+        "description": "Hard-deletes the record and reverses both the stock increment and the expense. Rejected with 409 if reversing the stock would go negative.",
+        "operationId": "material-purchases_delete_material_purchase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "title": "Purchase Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete a material purchase",
+        "tags": [
+          "material-purchases"
+        ]
+      },
+      "get": {
+        "operationId": "material-purchases_get_material_purchase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "title": "Purchase Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialPurchaseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get one material purchase",
+        "tags": [
+          "material-purchases"
+        ]
+      },
+      "patch": {
+        "description": "`material_asset_id` is immutable. Changing `quantity`/`unit`/`occurred_at` reconciles the inventory event; `amount`/`occurred_at` reconciles the expense. An edit that would drive stock negative is rejected with 409.",
+        "operationId": "material-purchases_update_material_purchase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "title": "Purchase Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialPurchaseUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialPurchaseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update a material purchase",
+        "tags": [
+          "material-purchases"
+        ]
+      }
+    },
     "/api/v1/farms/{farm_id}/reports/aggregate": {
       "get": {
         "description": "Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.\n\n- production / observation: SUM(quantity) grouped by unit\n- mortality / acquisition: SUM(quantity) as headcount, no grouping\n- inventory: net flow within window (increments minus decrements).   Pass `adjustment=reset|increment|decrement` to isolate one kind.\n- expense / income: SUM(amount) grouped by currency\n- reproductive: COUNT(*) of events\n\nFilters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.\n\n**`group_by=asset`** breaks rows down per asset. Each row then carries a stable `group` key (the asset id as a string), a `group_label` (the asset name), and an `asset_id`. When `group_by` is omitted, rows are unchanged: `group_label` and `asset_id` stay `null`.\n\nCompatibility matrix \u2014 `type` vs `group_by`:\n\n| type | group_by=asset |\n| --- | --- |\n| mortality | supported |\n| acquisition | supported |\n| production / observation / inventory / expense / income / reproductive | rejected with 422 |",
@@ -5087,6 +6643,154 @@
           }
         ],
         "summary": "R5 \u2014 current on-hand inventory across material assets",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/material-consumption-aggregate": {
+      "get": {
+        "description": "Time-bucketed SUM(quantity) over recorded material consumptions.\n\n- `bucket=day|week|month` \u2014 `date_trunc` window\n- `group_by=material|consumer|both` \u2014 each row carries a `group` key, a `group_label`, and the `unit` (quantities never sum across units)\n- optional filters: `material_asset_id`, `consumer_asset_id`, `reason`, `date_from`, `date_to`\n\n`totals` carries the per-(group, unit) `total_qty` across all buckets.",
+        "operationId": "reports_material_consumption_aggregate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bucket",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Bucket",
+              "default": "day"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group_by",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ConsumptionGroupBy",
+              "default": "material"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "consumer_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Consumer Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reason",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConsumptionReason"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionAggregateReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Day/week material-consumption totals, bucketed and grouped",
         "tags": [
           "reports"
         ]

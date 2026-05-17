@@ -24,8 +24,9 @@ build/
 htmlcov/
 coverage.xml
 
-# uv
+# uv / tool caches
 .uv-cache/
+.cache/
 
 # Editors
 .vscode/

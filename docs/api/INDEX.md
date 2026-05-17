@@ -13,4 +13,6 @@ Source of truth: [`openapi.json`](../../openapi.json)
 | [farms](./farms.md) | 2 |
 | [health](./health.md) | 1 |
 | [individuals](./individuals.md) | 5 |
-| [reports](./reports.md) | 7 |
+| [material-consumptions](./material-consumptions.md) | 5 |
+| [material-purchases](./material-purchases.md) | 5 |
+| [reports](./reports.md) | 8 |

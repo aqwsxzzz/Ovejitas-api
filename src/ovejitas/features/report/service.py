@@ -14,6 +14,9 @@ from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.individual.models import Individual
 from ovejitas.features.report.aggregate import aggregate as run_aggregate
+from ovejitas.features.report.material_consumption import (
+    material_consumption_aggregate as run_material_consumption_aggregate,
+)
 from ovejitas.features.report.schemas import (
     AggregateMeta,
     AggregateQuery,
@@ -23,6 +26,8 @@ from ovejitas.features.report.schemas import (
     CostPerUnitTotal,
     InventorySummaryQuery,
     InventorySummaryRow,
+    MaterialConsumptionAggregateQuery,
+    MaterialConsumptionAggregateTotal,
     ProfitabilityQuery,
     ProfitabilityRow,
     ProfitabilityTotal,
@@ -117,6 +122,11 @@ class ReportService:
         self, farm_id: int, q: AggregateQuery
     ) -> tuple[list[AggregateRow], AggregateMeta]:
         return await run_aggregate(self.db, farm_id, q)
+
+    async def material_consumption_aggregate(
+        self, farm_id: int, q: MaterialConsumptionAggregateQuery
+    ) -> tuple[list[AggregateRow], list[MaterialConsumptionAggregateTotal]]:
+        return await run_material_consumption_aggregate(self.db, farm_id, q)
 
     async def cost_per_unit(
         self, farm_id: int, q: CostPerUnitQuery

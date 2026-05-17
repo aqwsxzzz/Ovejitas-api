@@ -40,6 +40,22 @@ Compatibility matrix — `type` vs `group_by`:
 - `200` → AggregateReport — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
+## GET /api/v1/farms/{farm_id}/reports/material-consumption-aggregate
+
+_Day/week material-consumption totals, bucketed and grouped_
+
+Time-bucketed SUM(quantity) over recorded material consumptions.
+
+- `bucket=day|week|month` — `date_trunc` window
+- `group_by=material|consumer|both` — each row carries a `group` key, a `group_label`, and the `unit` (quantities never sum across units)
+- optional filters: `material_asset_id`, `consumer_asset_id`, `reason`, `date_from`, `date_to`
+
+`totals` carries the per-(group, unit) `total_qty` across all buckets.
+
+**Responses:**
+- `200` → MaterialConsumptionAggregateReport — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
 ## GET /api/v1/farms/{farm_id}/reports/cost-per-unit
 
 _R3 — expense total ÷ produced quantity, per asset_
@@ -107,6 +123,7 @@ _R4 — paginated event timeline for one individual_
 - `measure` ('sum_quantity' | 'sum_amount' | 'count', required)
 - `value` (string, required)
 - `asset_id` (integer | null, optional)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head' | null, optional)
 
 ### CostPerUnitReport
 
@@ -166,6 +183,20 @@ _R4 — paginated event timeline for one individual_
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
 - `on_hand` (string, required)
 
+### MaterialConsumptionAggregateReport
+
+- `data` (AggregateRow[], required)
+- `totals` (MaterialConsumptionAggregateTotal[], required)
+- `bucket` ('day' | 'week' | 'month', required)
+- `group_by` ('material' | 'consumer' | 'both', required)
+
+### MaterialConsumptionAggregateTotal
+
+- `group` (string | null, required)
+- `group_label` (string | null, required)
+- `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
+- `total_qty` (string, required)
+
 ### PageMeta
 
 - `page` (integer, required)
@@ -214,6 +245,14 @@ _R4 — paginated event timeline for one individual_
 ### Bucket
 
 **Values:** `day` | `week` | `month`
+
+### ConsumptionGroupBy
+
+**Values:** `material` | `consumer` | `both`
+
+### ConsumptionReason
+
+**Values:** `feeding` | `waste` | `spoilage`
 
 ### EventType
 
