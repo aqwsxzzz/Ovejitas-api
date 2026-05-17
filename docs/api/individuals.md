@@ -14,7 +14,7 @@ _List individuals under an asset_
 
 _Create an individual under an asset_
 
-Asset must be in `individual` mode. Parents (if any) must belong to the same farm.
+Asset must be in `individual` mode. Parents (if any) must belong to the same farm. Atomically emits an ACQUISITION event; a `purchased` acquisition also books a paired EXPENSE event for `amount` in the farm's default currency.
 
 **Request body:**
 - `tag` (string, required)
@@ -23,6 +23,9 @@ Asset must be in `individual` mode. Parents (if any) must belong to the same far
 - `mother_id` (integer | null, optional)
 - `father_id` (integer | null, optional)
 - `extra` (object, optional)
+- `acquired_at` (string (date-time), optional)
+- `acquisition_method` ('purchased' | 'born' | 'other', optional)
+- `amount` (number | string | null, optional)
 
 **Responses:**
 - `201` → IndividualRead — Successful Response
@@ -40,6 +43,8 @@ _Get one individual_
 
 _Update an individual_
 
+Transitioning `status` to `deceased` emits a MORTALITY event; `died_at` (defaults to now) and `cause` are recorded on it. Transitioning `status` to `sold` emits an INCOME event; `sale_amount` is required, `sold_at` (defaults to now) and `buyer` are optional. Transitioning away from either state reverses its event. Death/sale fields are rejected unless the individual is (or is becoming) deceased/sold respectively.
+
 **Request body:**
 - `name` (string | null, optional)
 - `tag` (string | null, optional)
@@ -48,6 +53,14 @@ _Update an individual_
 - `father_id` (integer | null, optional)
 - `status` ('active' | 'sold' | 'deceased' | 'archived' | null, optional)
 - `extra` (object | null, optional)
+- `acquired_at` (string (date-time) | null, optional)
+- `acquisition_method` ('purchased' | 'born' | 'other' | null, optional)
+- `amount` (number | string | null, optional)
+- `died_at` (string (date-time) | null, optional)
+- `cause` (string | null, optional)
+- `sale_amount` (number | string | null, optional)
+- `sold_at` (string (date-time) | null, optional)
+- `buyer` (string | null, optional)
 
 **Responses:**
 - `200` → IndividualRead — Successful Response
@@ -75,6 +88,9 @@ _Delete an individual_
 - `mother_id` (integer | null, optional)
 - `father_id` (integer | null, optional)
 - `extra` (object, optional)
+- `acquired_at` (string (date-time), optional)
+- `acquisition_method` ('purchased' | 'born' | 'other', optional)
+- `amount` (number | string | null, optional)
 
 ### IndividualRead
 
@@ -88,6 +104,10 @@ _Delete an individual_
 - `father_id` (integer | null, required)
 - `status` ('active' | 'sold' | 'deceased' | 'archived', required)
 - `extra` (object, required)
+- `acquisition_event_id` (integer | null, required)
+- `acquisition_expense_event_id` (integer | null, required)
+- `mortality_event_id` (integer | null, required)
+- `sale_event_id` (integer | null, required)
 - `created_at` (string (date-time), required)
 - `updated_at` (string (date-time), required)
 
@@ -100,6 +120,14 @@ _Delete an individual_
 - `father_id` (integer | null, optional)
 - `status` ('active' | 'sold' | 'deceased' | 'archived' | null, optional)
 - `extra` (object | null, optional)
+- `acquired_at` (string (date-time) | null, optional)
+- `acquisition_method` ('purchased' | 'born' | 'other' | null, optional)
+- `amount` (number | string | null, optional)
+- `died_at` (string (date-time) | null, optional)
+- `cause` (string | null, optional)
+- `sale_amount` (number | string | null, optional)
+- `sold_at` (string (date-time) | null, optional)
+- `buyer` (string | null, optional)
 
 ### PageMeta
 
@@ -120,6 +148,10 @@ _Delete an individual_
 - `type` (string, required)
 - `input` (any, optional)
 - `ctx` (object, optional)
+
+### AcquisitionMethod
+
+**Values:** `purchased` | `born` | `other`
 
 ### IndividualStatus
 

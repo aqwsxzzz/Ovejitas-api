@@ -104,7 +104,7 @@ class TestListIndividuals:
         await client.patch(
             individual_url(authed_user.farm_id, asset_id, created_c),
             headers=authed_user.headers,
-            json={"status": "sold"},
+            json={"status": "sold", "sale_amount": "100.00"},
         )
 
         response = await client.get(
@@ -153,7 +153,7 @@ class TestGetUpdateDelete:
         response = await client.patch(
             individual_url(authed_user.farm_id, asset_id, individual_id),
             headers=authed_user.headers,
-            json={"status": "sold"},
+            json={"status": "sold", "sale_amount": "100.00"},
         )
 
         assert response.status_code == 200
