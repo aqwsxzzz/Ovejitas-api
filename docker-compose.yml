@@ -20,6 +20,9 @@ services:
     build:
       context: .
       target: runtime
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
     env_file: .env
     ports:
       - "7777:7777"
