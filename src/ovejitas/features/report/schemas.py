@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 
 from ovejitas.core.filters import FilterParams
 from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
+from ovejitas.features.material_consumption.types import ConsumptionReason
 
 
 class Bucket(StrEnum):
@@ -54,6 +55,7 @@ class AggregateRow(BaseModel):
     measure: AggregateMeasure
     value: Decimal
     asset_id: int | None = None
+    unit: Unit | None = None
 
 
 class AggregateMeta(BaseModel):
@@ -131,3 +133,31 @@ class InventorySummaryReport(BaseModel):
 
 class InventorySummaryQuery(FilterParams):
     asset_id: int | None = None
+
+
+class ConsumptionGroupBy(StrEnum):
+    MATERIAL = "material"
+    CONSUMER = "consumer"
+    BOTH = "both"
+
+
+class MaterialConsumptionAggregateQuery(FilterParams):
+    bucket: Bucket = Bucket.DAY
+    group_by: ConsumptionGroupBy = ConsumptionGroupBy.MATERIAL
+    material_asset_id: int | None = None
+    consumer_asset_id: int | None = None
+    reason: ConsumptionReason | None = None
+
+
+class MaterialConsumptionAggregateTotal(BaseModel):
+    group: str | None
+    group_label: str | None
+    unit: Unit
+    total_qty: Decimal
+
+
+class MaterialConsumptionAggregateReport(BaseModel):
+    data: list[AggregateRow]
+    totals: list[MaterialConsumptionAggregateTotal]
+    bucket: Bucket
+    group_by: ConsumptionGroupBy
