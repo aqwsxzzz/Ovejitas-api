@@ -52,6 +52,33 @@ class Individual(Base, TimestampMixin):
         nullable=False,
         default=IndividualStatus.ACTIVE,
     )
+    # Paired events emitted by the acquisition flow. Nullable at the schema
+    # level — the service is the single writer and always sets the acquisition
+    # event; the expense event exists only for purchased acquisitions.
+    acquisition_event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("event.id", ondelete="RESTRICT"),
+        nullable=True,
+        unique=True,
+    )
+    acquisition_expense_event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("event.id", ondelete="RESTRICT"),
+        nullable=True,
+        unique=True,
+    )
+    # Set by the mortality flow when status transitions to ``deceased``;
+    # cleared when that transition is reversed.
+    mortality_event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("event.id", ondelete="RESTRICT"),
+        nullable=True,
+        unique=True,
+    )
+    # Set by the sale flow when status transitions to ``sold``;
+    # cleared when that transition is reversed.
+    sale_event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("event.id", ondelete="RESTRICT"),
+        nullable=True,
+        unique=True,
+    )
     extra: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,

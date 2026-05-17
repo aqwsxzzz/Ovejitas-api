@@ -1,6 +1,16 @@
 {
   "components": {
     "schemas": {
+      "AcquisitionMethod": {
+        "description": "How an individual entered the herd. Stored on the acquisition event's\npayload; ``purchased`` is the only method that books a paired expense.",
+        "enum": [
+          "purchased",
+          "born",
+          "other"
+        ],
+        "title": "AcquisitionMethod",
+        "type": "string"
+      },
       "AggregateMeasure": {
         "enum": [
           "sum_quantity",
@@ -465,107 +475,6 @@
         "title": "CostPerUnitTotal",
         "type": "object"
       },
-      "EventAcquisitionCreate": {
-        "additionalProperties": false,
-        "properties": {
-          "amount": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Amount"
-          },
-          "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
-          },
-          "idempotency_key": {
-            "anyOf": [
-              {
-                "maxLength": 128,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Idempotency Key"
-          },
-          "individual_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Individual Id"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "occurred_at": {
-            "format": "date-time",
-            "title": "Occurred At",
-            "type": "string"
-          },
-          "payload": {
-            "additionalProperties": true,
-            "title": "Payload",
-            "type": "object"
-          },
-          "quantity": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              }
-            ],
-            "title": "Quantity"
-          },
-          "type": {
-            "const": "acquisition",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "occurred_at",
-          "type",
-          "quantity"
-        ],
-        "title": "EventAcquisitionCreate",
-        "type": "object"
-      },
       "EventCategoryCreate": {
         "additionalProperties": false,
         "properties": {
@@ -967,91 +876,6 @@
           "unit"
         ],
         "title": "EventInventoryCreate",
-        "type": "object"
-      },
-      "EventMortalityCreate": {
-        "additionalProperties": false,
-        "properties": {
-          "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
-          },
-          "idempotency_key": {
-            "anyOf": [
-              {
-                "maxLength": 128,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Idempotency Key"
-          },
-          "individual_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Individual Id"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "occurred_at": {
-            "format": "date-time",
-            "title": "Occurred At",
-            "type": "string"
-          },
-          "payload": {
-            "additionalProperties": true,
-            "title": "Payload",
-            "type": "object"
-          },
-          "quantity": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              }
-            ],
-            "title": "Quantity"
-          },
-          "type": {
-            "const": "mortality",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "occurred_at",
-          "type",
-          "quantity"
-        ],
-        "title": "EventMortalityCreate",
         "type": "object"
       },
       "EventObservationCreate": {
@@ -1687,6 +1511,31 @@
       "IndividualCreate": {
         "additionalProperties": false,
         "properties": {
+          "acquired_at": {
+            "format": "date-time",
+            "title": "Acquired At",
+            "type": "string"
+          },
+          "acquisition_method": {
+            "$ref": "#/components/schemas/AcquisitionMethod",
+            "default": "other"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
           "birth_date": {
             "anyOf": [
               {
@@ -1753,6 +1602,28 @@
       },
       "IndividualRead": {
         "properties": {
+          "acquisition_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquisition Event Id"
+          },
+          "acquisition_expense_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquisition Expense Event Id"
+          },
           "asset_id": {
             "title": "Asset Id",
             "type": "integer"
@@ -1798,6 +1669,17 @@
             "title": "Id",
             "type": "integer"
           },
+          "mortality_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mortality Event Id"
+          },
           "mother_id": {
             "anyOf": [
               {
@@ -1819,6 +1701,17 @@
               }
             ],
             "title": "Name"
+          },
+          "sale_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sale Event Id"
           },
           "status": {
             "$ref": "#/components/schemas/IndividualStatus"
@@ -1844,6 +1737,10 @@
           "father_id",
           "status",
           "extra",
+          "acquisition_event_id",
+          "acquisition_expense_event_id",
+          "mortality_event_id",
+          "sale_event_id",
           "created_at",
           "updated_at"
         ],
@@ -1863,6 +1760,44 @@
       "IndividualUpdate": {
         "additionalProperties": false,
         "properties": {
+          "acquired_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquired At"
+          },
+          "acquisition_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AcquisitionMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
           "birth_date": {
             "anyOf": [
               {
@@ -1874,6 +1809,42 @@
               }
             ],
             "title": "Birth Date"
+          },
+          "buyer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer"
+          },
+          "cause": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cause"
+          },
+          "died_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Died At"
           },
           "extra": {
             "anyOf": [
@@ -1920,6 +1891,34 @@
               }
             ],
             "title": "Name"
+          },
+          "sale_amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sale Amount"
+          },
+          "sold_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sold At"
           },
           "status": {
             "anyOf": [
@@ -4090,11 +4089,9 @@
               "schema": {
                 "discriminator": {
                   "mapping": {
-                    "acquisition": "#/components/schemas/EventAcquisitionCreate",
                     "expense": "#/components/schemas/EventExpenseCreate",
                     "income": "#/components/schemas/EventIncomeCreate",
                     "inventory": "#/components/schemas/EventInventoryCreate",
-                    "mortality": "#/components/schemas/EventMortalityCreate",
                     "observation": "#/components/schemas/EventObservationCreate",
                     "production": "#/components/schemas/EventProductionCreate",
                     "reproductive": "#/components/schemas/EventReproductiveCreate"
@@ -4116,12 +4113,6 @@
                   },
                   {
                     "$ref": "#/components/schemas/EventReproductiveCreate"
-                  },
-                  {
-                    "$ref": "#/components/schemas/EventAcquisitionCreate"
-                  },
-                  {
-                    "$ref": "#/components/schemas/EventMortalityCreate"
                   },
                   {
                     "$ref": "#/components/schemas/EventInventoryCreate"
@@ -4583,7 +4574,7 @@
         ]
       },
       "post": {
-        "description": "Asset must be in `individual` mode. Parents (if any) must belong to the same farm.",
+        "description": "Asset must be in `individual` mode. Parents (if any) must belong to the same farm. Atomically emits an ACQUISITION event; a `purchased` acquisition also books a paired EXPENSE event for `amount` in the farm's default currency.",
         "operationId": "individuals_create_individual",
         "parameters": [
           {
@@ -4769,6 +4760,7 @@
         ]
       },
       "patch": {
+        "description": "Transitioning `status` to `deceased` emits a MORTALITY event; `died_at` (defaults to now) and `cause` are recorded on it. Transitioning `status` to `sold` emits an INCOME event; `sale_amount` is required, `sold_at` (defaults to now) and `buyer` are optional. Transitioning away from either state reverses its event. Death/sale fields are rejected unless the individual is (or is becoming) deceased/sold respectively.",
         "operationId": "individuals_update_individual",
         "parameters": [
           {

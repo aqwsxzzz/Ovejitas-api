@@ -7,12 +7,25 @@ from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
 from ovejitas.features.asset.models import Asset, AssetMode
+from ovejitas.features.event.types import AcquisitionMethod
+from ovejitas.features.farm.models import Farm
+from ovejitas.features.individual.acquisition import (
+    emit_acquisition,
+    reconcile_acquisition,
+    reverse_acquisition,
+)
 from ovejitas.features.individual.models import Individual, IndividualStatus
+from ovejitas.features.individual.mortality import apply_mortality, reverse_mortality
+from ovejitas.features.individual.sale import apply_sale, reverse_sale
 from ovejitas.features.individual.schemas import (
     IndividualCreate,
     IndividualFilters,
     IndividualUpdate,
 )
+
+_ACQUISITION_INPUT = {"acquired_at", "acquisition_method", "amount"}
+_MORTALITY_INPUT = {"died_at", "cause"}
+_SALE_INPUT = {"sale_amount", "sold_at", "buyer"}
 
 SEARCH_COLUMNS = [Individual.name, Individual.tag]
 SORT_ALLOWED = {
@@ -29,18 +42,40 @@ class IndividualService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def create(self, asset: Asset, data: IndividualCreate) -> Individual:
+    async def create(self, asset: Asset, user_id: int, data: IndividualCreate) -> Individual:
         if asset.mode is not AssetMode.INDIVIDUAL:
             raise ValidationError("Cannot create an individual under an aggregated asset")
         await self._validate_parents(asset.farm_id, data.mother_id, data.father_id)
+        currency = (
+            await self._farm_currency(asset.farm_id)
+            if data.acquisition_method is AcquisitionMethod.PURCHASED
+            else None
+        )
         individual = Individual(
             farm_id=asset.farm_id,
             asset_id=asset.id,
             status=IndividualStatus.ACTIVE,
-            **data.model_dump(),
+            **data.model_dump(exclude=_ACQUISITION_INPUT),
         )
         self.db.add(individual)
-        await self.db.commit()
+        try:
+            await self.db.flush()
+            acquisition, expense = await emit_acquisition(
+                self.db,
+                individual=individual,
+                asset=asset,
+                method=data.acquisition_method,
+                occurred_at=data.acquired_at,
+                amount=data.amount,
+                currency=currency,
+                user_id=user_id,
+            )
+            individual.acquisition_event_id = acquisition.id
+            individual.acquisition_expense_event_id = expense.id if expense is not None else None
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
         await self.db.refresh(individual)
         return individual
 
@@ -53,7 +88,9 @@ class IndividualService:
             raise NotFoundError("Individual not found")
         return individual
 
-    async def update(self, asset: Asset, individual_id: int, data: IndividualUpdate) -> Individual:
+    async def update(
+        self, asset: Asset, individual_id: int, user_id: int, data: IndividualUpdate
+    ) -> Individual:
         individual = await self.get(asset.id, individual_id)
         updates = data.model_dump(exclude_unset=True)
         if "mother_id" in updates or "father_id" in updates:
@@ -64,16 +101,64 @@ class IndividualService:
             if mother is not None and mother == father:
                 raise ValidationError("Mother and father cannot be the same individual")
             await self._validate_parents(asset.farm_id, mother, father)
-        for key, value in updates.items():
-            setattr(individual, key, value)
-        await self.db.commit()
+        acquisition_updates = {k: updates.pop(k) for k in _ACQUISITION_INPUT if k in updates}
+        mortality_updates = {k: updates.pop(k) for k in _MORTALITY_INPUT if k in updates}
+        sale_updates = {k: updates.pop(k) for k in _SALE_INPUT if k in updates}
+        new_status = updates.get("status")
+        try:
+            currency = await self._farm_currency(asset.farm_id)
+            if acquisition_updates:
+                await reconcile_acquisition(
+                    self.db,
+                    individual=individual,
+                    asset=asset,
+                    updates=acquisition_updates,
+                    currency=currency,
+                    user_id=user_id,
+                )
+            await apply_mortality(
+                self.db,
+                asset=asset,
+                individual=individual,
+                new_status=new_status,
+                updates=mortality_updates,
+                user_id=user_id,
+            )
+            await apply_sale(
+                self.db,
+                asset=asset,
+                individual=individual,
+                new_status=new_status,
+                updates=sale_updates,
+                currency=currency,
+                user_id=user_id,
+            )
+            for key, value in updates.items():
+                setattr(individual, key, value)
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
         await self.db.refresh(individual)
         return individual
 
     async def delete(self, asset_id: int, individual_id: int) -> None:
         individual = await self.get(asset_id, individual_id)
-        await self.db.delete(individual)
-        await self.db.commit()
+        try:
+            await reverse_acquisition(self.db, individual=individual)
+            await reverse_mortality(self.db, individual=individual)
+            await reverse_sale(self.db, individual=individual)
+            await self.db.delete(individual)
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def _farm_currency(self, farm_id: int) -> str:
+        farm = await self.db.get(Farm, farm_id)
+        if farm is None:
+            raise NotFoundError("Farm not found")
+        return farm.default_currency
 
     async def list_individuals(
         self,

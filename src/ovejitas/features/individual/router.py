@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from ovejitas.core.deps import DBSession
 from ovejitas.core.pagination import Page, PageParams
 from ovejitas.features.asset.deps import AssetDep
+from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.individual.schemas import (
     IndividualCreate,
     IndividualFilters,
@@ -51,15 +52,18 @@ async def list_individuals(
     status_code=status.HTTP_201_CREATED,
     summary="Create an individual under an asset",
     description=(
-        "Asset must be in `individual` mode. Parents (if any) must belong to the same farm."
+        "Asset must be in `individual` mode. Parents (if any) must belong to the same farm. "
+        "Atomically emits an ACQUISITION event; a `purchased` acquisition also books a "
+        "paired EXPENSE event for `amount` in the farm's default currency."
     ),
 )
 async def create_individual(
     asset: AssetDep,
     data: IndividualCreate,
     svc: IndividualSvc,
+    membership: FarmMembership,
 ) -> IndividualRead:
-    return IndividualRead.model_validate(await svc.create(asset, data))
+    return IndividualRead.model_validate(await svc.create(asset, membership.user_id, data))
 
 
 @router.get(
@@ -79,14 +83,25 @@ async def get_individual(
     "/{individual_id}",
     response_model=IndividualRead,
     summary="Update an individual",
+    description=(
+        "Transitioning `status` to `deceased` emits a MORTALITY event; `died_at` "
+        "(defaults to now) and `cause` are recorded on it. Transitioning `status` "
+        "to `sold` emits an INCOME event; `sale_amount` is required, `sold_at` "
+        "(defaults to now) and `buyer` are optional. Transitioning away from either "
+        "state reverses its event. Death/sale fields are rejected unless the "
+        "individual is (or is becoming) deceased/sold respectively."
+    ),
 )
 async def update_individual(
     asset: AssetDep,
     individual_id: int,
     data: IndividualUpdate,
     svc: IndividualSvc,
+    membership: FarmMembership,
 ) -> IndividualRead:
-    return IndividualRead.model_validate(await svc.update(asset, individual_id, data))
+    return IndividualRead.model_validate(
+        await svc.update(asset, individual_id, membership.user_id, data)
+    )
 
 
 @router.delete(
