@@ -1,5 +1,6 @@
 from collections.abc import Awaitable, Callable
 
+import pytest
 from httpx import AsyncClient
 
 from tests.conftest import AuthedUser
@@ -360,3 +361,22 @@ class TestFarmScope:
             headers=bob.headers,
         )
         assert response.status_code == 403
+
+
+class TestActionOwnedTypesRejected:
+    """ACQUISITION and MORTALITY events are owned by individual lifecycle
+    actions and must not be hand-written via POST /events (Philosophy 1)."""
+
+    @pytest.mark.parametrize("event_type", ["acquisition", "mortality"])
+    async def test_action_owned_type_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser, event_type: str
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_INDIVIDUAL)
+
+        response = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={"type": event_type, "occurred_at": OCCURRED, "quantity": "1"},
+        )
+
+        assert response.status_code == 422

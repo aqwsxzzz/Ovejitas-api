@@ -475,107 +475,6 @@
         "title": "CostPerUnitTotal",
         "type": "object"
       },
-      "EventAcquisitionCreate": {
-        "additionalProperties": false,
-        "properties": {
-          "amount": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Amount"
-          },
-          "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
-          },
-          "idempotency_key": {
-            "anyOf": [
-              {
-                "maxLength": 128,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Idempotency Key"
-          },
-          "individual_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Individual Id"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "occurred_at": {
-            "format": "date-time",
-            "title": "Occurred At",
-            "type": "string"
-          },
-          "payload": {
-            "additionalProperties": true,
-            "title": "Payload",
-            "type": "object"
-          },
-          "quantity": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              }
-            ],
-            "title": "Quantity"
-          },
-          "type": {
-            "const": "acquisition",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "occurred_at",
-          "type",
-          "quantity"
-        ],
-        "title": "EventAcquisitionCreate",
-        "type": "object"
-      },
       "EventCategoryCreate": {
         "additionalProperties": false,
         "properties": {
@@ -977,91 +876,6 @@
           "unit"
         ],
         "title": "EventInventoryCreate",
-        "type": "object"
-      },
-      "EventMortalityCreate": {
-        "additionalProperties": false,
-        "properties": {
-          "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
-          },
-          "idempotency_key": {
-            "anyOf": [
-              {
-                "maxLength": 128,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Idempotency Key"
-          },
-          "individual_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Individual Id"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "occurred_at": {
-            "format": "date-time",
-            "title": "Occurred At",
-            "type": "string"
-          },
-          "payload": {
-            "additionalProperties": true,
-            "title": "Payload",
-            "type": "object"
-          },
-          "quantity": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              }
-            ],
-            "title": "Quantity"
-          },
-          "type": {
-            "const": "mortality",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "occurred_at",
-          "type",
-          "quantity"
-        ],
-        "title": "EventMortalityCreate",
         "type": "object"
       },
       "EventObservationCreate": {
@@ -4275,11 +4089,9 @@
               "schema": {
                 "discriminator": {
                   "mapping": {
-                    "acquisition": "#/components/schemas/EventAcquisitionCreate",
                     "expense": "#/components/schemas/EventExpenseCreate",
                     "income": "#/components/schemas/EventIncomeCreate",
                     "inventory": "#/components/schemas/EventInventoryCreate",
-                    "mortality": "#/components/schemas/EventMortalityCreate",
                     "observation": "#/components/schemas/EventObservationCreate",
                     "production": "#/components/schemas/EventProductionCreate",
                     "reproductive": "#/components/schemas/EventReproductiveCreate"
@@ -4301,12 +4113,6 @@
                   },
                   {
                     "$ref": "#/components/schemas/EventReproductiveCreate"
-                  },
-                  {
-                    "$ref": "#/components/schemas/EventAcquisitionCreate"
-                  },
-                  {
-                    "$ref": "#/components/schemas/EventMortalityCreate"
                   },
                   {
                     "$ref": "#/components/schemas/EventInventoryCreate"

@@ -43,15 +43,9 @@ class EventReproductiveCreate(_EventCreateBase):
     individual_id: int
 
 
-class EventAcquisitionCreate(_EventCreateBase):
-    type: Literal[EventType.ACQUISITION]
-    quantity: Decimal = Field(gt=0)
-    amount: Decimal | None = Field(default=None, gt=0)
-
-
-class EventMortalityCreate(_EventCreateBase):
-    type: Literal[EventType.MORTALITY]
-    quantity: Decimal = Field(gt=0)
+# NOTE: ACQUISITION and MORTALITY events are deliberately absent from EventCreate.
+# They are owned by individual lifecycle actions (IndividualService.create /
+# .update) and must never be hand-written via POST /events — see Philosophy 1.
 
 
 class EventInventoryCreate(_EventCreateBase):
@@ -73,8 +67,6 @@ EventCreate = Annotated[
     | EventIncomeCreate
     | EventObservationCreate
     | EventReproductiveCreate
-    | EventAcquisitionCreate
-    | EventMortalityCreate
     | EventInventoryCreate,
     Field(discriminator="type"),
 ]

@@ -71,18 +71,6 @@ _Delete an event_
 
 ## Types
 
-### EventAcquisitionCreate
-
-- `occurred_at` (string (date-time), required)
-- `individual_id` (integer | null, optional)
-- `category_id` (integer | null, optional)
-- `notes` (string | null, optional)
-- `payload` (object, optional)
-- `idempotency_key` (string | null, optional)
-- `type` (string, required)
-- `quantity` (number | string, required)
-- `amount` (number | string | null, optional)
-
 ### EventExpenseCreate
 
 - `occurred_at` (string (date-time), required)
@@ -117,17 +105,6 @@ _Delete an event_
 - `adjustment` ('increment' | 'decrement' | 'reset', required)
 - `quantity` (number | string, required)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
-
-### EventMortalityCreate
-
-- `occurred_at` (string (date-time), required)
-- `individual_id` (integer | null, optional)
-- `category_id` (integer | null, optional)
-- `notes` (string | null, optional)
-- `payload` (object, optional)
-- `idempotency_key` (string | null, optional)
-- `type` (string, required)
-- `quantity` (number | string, required)
 
 ### EventObservationCreate
 
