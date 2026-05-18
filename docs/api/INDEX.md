@@ -18,4 +18,4 @@ Source of truth: [`openapi.json`](../../openapi.json)
 | [material-consumptions](./material-consumptions.md) | 5 |
 | [material-purchases](./material-purchases.md) | 5 |
 | [material-sales](./material-sales.md) | 1 |
-| [reports](./reports.md) | 7 |
+| [reports](./reports.md) | 8 |

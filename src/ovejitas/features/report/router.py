@@ -179,6 +179,27 @@ async def profitability_pdf(
     return _pdf_response(pdf, "rentabilidad.pdf")
 
 
+@router.get("/cost-per-unit/pdf", summary="R3 — PDF download")
+async def cost_per_unit_pdf(
+    membership: FarmMembership,
+    current_user: CurrentUser,
+    svc: ReportSvc,
+    db: DBSession,
+    q: Annotated[CostPerUnitQuery, Depends()],
+) -> Response:
+    report = await svc.cost_per_unit(membership.farm_id, q)
+    pdf = render_pdf(
+        "cost_per_unit.html",
+        farm_name=await _farm_name(db, membership.farm_id),
+        title="Costo por unidad",
+        generated_by=current_user.name,
+        date_from=q.date_from,
+        date_to=q.date_to,
+        context={"rows": report.data, "unit": report.unit},
+    )
+    return _pdf_response(pdf, "costo-por-unidad.pdf")
+
+
 @router.get(
     "/inventory-summary",
     response_model=InventorySummaryReport,

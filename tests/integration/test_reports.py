@@ -355,6 +355,33 @@ class TestCostPerUnit:
         rows = await _cost_rows(client, authed_user)
         assert Decimal(rows[0]["cost_per_unit"]) == Decimal("0.5")
 
+    async def test_cost_per_unit_rounded_to_cents(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("3"),
+            unit="unit",
+        )
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.EXPENSE,
+            amount=Decimal("100"),
+            currency="USD",
+            quantity=None,
+            unit=None,
+        )
+
+        rows = await _cost_rows(client, authed_user)
+        # 100 / 3 = 33.333... — quantized to cents, not a 28-digit decimal
+        assert rows[0]["cost_per_unit"] == "33.33"
+
     async def test_missing_unit_rejected(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
@@ -427,6 +454,35 @@ class TestPdfDownload:
         assert resp.headers["content-type"] == "application/pdf"
         assert resp.content[:4] == b"%PDF"
         assert "rentabilidad.pdf" in resp.headers["content-disposition"]
+
+    async def test_cost_per_unit_pdf(self, client: AsyncClient, authed_user: AuthedUser) -> None:
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.EXPENSE,
+            amount=Decimal("100"),
+            currency="USD",
+            quantity=None,
+            unit=None,
+        )
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/cost-per-unit/pdf",
+            headers=authed_user.headers,
+            params={"unit": "unit"},
+        )
+        assert resp.status_code == 200
+        assert resp.content[:4] == b"%PDF"
+        assert "costo-por-unidad.pdf" in resp.headers["content-disposition"]
 
     async def test_pdf_requires_membership(
         self,
