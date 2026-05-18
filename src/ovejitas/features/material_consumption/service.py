@@ -57,6 +57,7 @@ class MaterialConsumptionService:
                 quantity=data.quantity,
                 occurred_at=data.occurred_at,
                 created_by=user_id,
+                source="material_consumption",
             )
             consumption = MaterialConsumption(
                 farm_id=farm_id,

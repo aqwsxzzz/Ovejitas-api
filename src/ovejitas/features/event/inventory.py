@@ -19,16 +19,13 @@ from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 
-_CONSUMPTION_PAYLOAD = {"source": "material_consumption"}
-_PURCHASE_PAYLOAD = {"source": "material_purchase"}
-
 
 async def _lock_material(db: AsyncSession, asset_id: int) -> None:
     """Serialize concurrent stock mutations on one material asset."""
     await db.execute(select(Asset.id).where(Asset.id == asset_id).with_for_update())
 
 
-async def _on_hand(db: AsyncSession, asset_id: int, unit: Unit) -> Decimal:
+async def on_hand(db: AsyncSession, asset_id: int, unit: Unit) -> Decimal:
     """Replay INVENTORY events to the current on-hand balance for one unit."""
     stmt = (
         select(Event.adjustment, Event.quantity)
@@ -51,7 +48,7 @@ async def _on_hand(db: AsyncSession, asset_id: int, unit: Unit) -> Decimal:
 
 
 async def _assert_non_negative(db: AsyncSession, asset_id: int, unit: Unit) -> None:
-    if await _on_hand(db, asset_id, unit) < 0:
+    if await on_hand(db, asset_id, unit) < 0:
         raise InsufficientStockError(f"Operation would drive '{unit.value}' stock below zero")
 
 
@@ -63,8 +60,12 @@ async def emit_decrement(
     quantity: Decimal,
     occurred_at: datetime,
     created_by: int,
+    source: str,
 ) -> Event:
-    """Create the paired INVENTORY decrement event; reject if it oversells stock."""
+    """Create the paired INVENTORY decrement event; reject if it oversells stock.
+
+    ``source`` tags ``payload.source`` to identify the action that emitted it.
+    """
     await _lock_material(db, material.id)
     event = Event(
         farm_id=material.farm_id,
@@ -74,7 +75,7 @@ async def emit_decrement(
         occurred_at=occurred_at,
         quantity=quantity,
         unit=unit,
-        payload=dict(_CONSUMPTION_PAYLOAD),
+        payload={"source": source},
         created_by=created_by,
     )
     db.add(event)
@@ -118,9 +119,13 @@ async def emit_increment(
     quantity: Decimal,
     occurred_at: datetime,
     created_by: int,
+    source: str,
 ) -> Event:
     """Create the paired INVENTORY increment event. Increments only raise stock,
-    so no guard or lock is needed at create time."""
+    so no guard or lock is needed at create time.
+
+    ``source`` tags ``payload.source`` to identify the action that emitted it.
+    """
     event = Event(
         farm_id=material.farm_id,
         asset_id=material.id,
@@ -129,7 +134,7 @@ async def emit_increment(
         occurred_at=occurred_at,
         quantity=quantity,
         unit=unit,
-        payload=dict(_PURCHASE_PAYLOAD),
+        payload={"source": source},
         created_by=created_by,
     )
     db.add(event)

@@ -199,11 +199,12 @@ async def cost_per_unit_pdf(
 @router.get(
     "/inventory-summary",
     response_model=InventorySummaryReport,
-    summary="R5 — current on-hand inventory across material assets",
+    summary="R5 — current on-hand inventory per asset",
     description=(
-        "One row per (material asset, unit). On-hand is derived from INVENTORY "
-        "events: sum of increments minus decrements since the most recent reset. "
-        "Date filters bound the events considered, not the resulting balance."
+        "One row per (asset, unit) for any asset that carries INVENTORY events — "
+        "material assets and aggregated animal flocks. On-hand is derived from "
+        "those events: sum of increments minus decrements since the most recent "
+        "reset. Date filters bound the events considered, not the resulting balance."
     ),
 )
 async def inventory_summary(
