@@ -4723,6 +4723,7 @@
     },
     "/api/v1/farms/{farm_id}/assets/{asset_id}/events/{event_id}": {
       "delete": {
+        "description": "Events emitted by an action (those carrying a `payload.source`) cannot be deleted here. Deleting an inventory event is rejected if it would drive the stock balance negative.",
         "operationId": "events_delete_event",
         "parameters": [
           {
@@ -4842,7 +4843,7 @@
         ]
       },
       "patch": {
-        "description": "`type` is immutable. Guards still apply to `individual_id` / `category_id`.",
+        "description": "`type` is immutable. Events emitted by an action (those carrying a `payload.source`) cannot be edited here \u2014 edit them via their action. Fields must match the event's type, and inventory edits are re-checked against the stock balance.",
         "operationId": "events_update_event",
         "parameters": [
           {

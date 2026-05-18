@@ -102,7 +102,12 @@ async def get_event(
     "/{event_id}",
     response_model=EventRead,
     summary="Update an event",
-    description="`type` is immutable. Guards still apply to `individual_id` / `category_id`.",
+    description=(
+        "`type` is immutable. Events emitted by an action (those carrying a "
+        "`payload.source`) cannot be edited here — edit them via their action. "
+        "Fields must match the event's type, and inventory edits are re-checked "
+        "against the stock balance."
+    ),
 )
 async def update_event(
     asset: AssetDep,
@@ -117,6 +122,11 @@ async def update_event(
     "/{event_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an event",
+    description=(
+        "Events emitted by an action (those carrying a `payload.source`) cannot "
+        "be deleted here. Deleting an inventory event is rejected if it would "
+        "drive the stock balance negative."
+    ),
 )
 async def delete_event(
     asset: AssetDep,

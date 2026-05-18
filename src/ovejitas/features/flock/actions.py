@@ -63,7 +63,8 @@ def _finance_event(
 async def create_flock_acquisition(
     db: AsyncSession, *, asset: Asset, user_id: int, data: FlockAcquisitionCreate
 ) -> FlockActionRead:
-    """Increment the flock headcount; book a paired expense when an amount is paid."""
+    """Increment the flock headcount; emit an ACQUISITION event for it; book a
+    paired expense when an amount is paid."""
     validate_flock_asset(asset)
     try:
         increment = await emit_increment(
@@ -74,6 +75,20 @@ async def create_flock_acquisition(
             occurred_at=data.occurred_at,
             created_by=user_id,
             source=_ACQUISITION_SOURCE,
+        )
+        # Mirror flock mortality (which emits a MORTALITY event beside its
+        # decrement): the ACQUISITION event keeps flock herd-growth visible to
+        # the acquisition report, uniform with individual acquisitions.
+        db.add(
+            Event(
+                farm_id=asset.farm_id,
+                asset_id=asset.id,
+                type=EventType.ACQUISITION,
+                occurred_at=data.occurred_at,
+                quantity=Decimal(data.quantity),
+                payload={"source": _ACQUISITION_SOURCE},
+                created_by=user_id,
+            )
         )
         expense_id: int | None = None
         if data.amount is not None:

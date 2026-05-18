@@ -1,6 +1,16 @@
-from httpx import AsyncClient
+from decimal import Decimal
 
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ovejitas.core.errors import ValidationError
+from ovejitas.features.asset.models import AssetKind, AssetMode
+from ovejitas.features.event.types import Unit
+from ovejitas.features.harvest.actions import create_harvest
+from ovejitas.features.harvest.schemas import HarvestCreate
 from tests.conftest import AuthedUser
+from tests.factories import AssetFactory, FarmFactory, UserFactory
 
 ANIMAL_FLOCK = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
 CROP_FIELD = {"name": "Tomateras", "kind": "crop", "mode": "aggregated"}
@@ -201,3 +211,32 @@ class TestProduceLinkValidation:
         resp = await _link_produce(client, authed_user, equipment, produce)
 
         assert resp.status_code == 422
+
+
+class TestHarvestCrossFarmGuard:
+    async def test_harvest_rejects_produce_asset_in_another_farm(
+        self, db_session: AsyncSession
+    ) -> None:
+        # The PATCH link endpoint already blocks cross-farm produce links, so this
+        # state is unreachable via the API — build it directly and assert the
+        # action still refuses it (defence in depth).
+        farm_a = await FarmFactory.create_async()
+        farm_b = await FarmFactory.create_async()
+        produce = await AssetFactory.create_async(
+            farm_id=farm_b.id, kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+        )
+        source = await AssetFactory.create_async(
+            farm_id=farm_a.id,
+            kind=AssetKind.ANIMAL,
+            mode=AssetMode.AGGREGATED,
+            produce_asset_id=produce.id,
+        )
+        user = await UserFactory.create_async()
+
+        with pytest.raises(ValidationError, match="different farm"):
+            await create_harvest(
+                db_session,
+                asset=source,
+                user_id=user.id,
+                data=HarvestCreate(quantity=Decimal("5"), unit=Unit.UNIT),
+            )

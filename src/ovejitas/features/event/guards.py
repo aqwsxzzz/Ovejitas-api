@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,3 +61,25 @@ async def validate_category(
         raise ValidationError("Category not found in this farm")
     if category.type is not event_type:
         raise ValidationError("Category type does not match event type")
+
+
+_TYPE_SPECIFIC_FIELDS: dict[EventType, frozenset[str]] = {
+    EventType.PRODUCTION: frozenset({"quantity", "unit"}),
+    EventType.OBSERVATION: frozenset({"quantity", "unit"}),
+    EventType.EXPENSE: frozenset({"amount"}),
+    EventType.INCOME: frozenset({"amount"}),
+    EventType.INVENTORY: frozenset({"quantity", "unit", "adjustment"}),
+    EventType.REPRODUCTIVE: frozenset(),
+}
+_COMMON_EVENT_FIELDS: frozenset[str] = frozenset(
+    {"occurred_at", "individual_id", "category_id", "notes", "payload"}
+)
+
+
+def assert_fields_valid_for_type(event_type: EventType, fields: Iterable[str]) -> None:
+    """Reject EventUpdate fields that make no sense for the event's type — e.g.
+    an ``amount`` on a production event or an ``adjustment`` on an observation."""
+    allowed = _COMMON_EVENT_FIELDS | _TYPE_SPECIFIC_FIELDS.get(event_type, frozenset())
+    invalid = sorted(set(fields) - allowed)
+    if invalid:
+        raise ValidationError(f"Fields {invalid} are not valid for a {event_type.value} event")

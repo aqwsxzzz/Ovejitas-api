@@ -9,7 +9,7 @@ Create-only: no reconcile/reverse. The router calls ``create_harvest`` directly.
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ovejitas.core.errors import NotFoundError
+from ovejitas.core.errors import NotFoundError, ValidationError
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.guards import validate_category
 from ovejitas.features.event.inventory import emit_increment, on_hand
@@ -30,6 +30,10 @@ async def create_harvest(
     produce_asset = await db.get(Asset, asset.produce_asset_id)
     if produce_asset is None:
         raise NotFoundError("Linked produce asset not found")
+    # Defence in depth — the link is farm-scoped when set, but the action must
+    # not trust it: a cross-farm produce asset would split the event pair.
+    if produce_asset.farm_id != asset.farm_id:
+        raise ValidationError("Linked produce asset belongs to a different farm")
     await validate_produce_unit(db, produce_asset.id, data.unit)
     await validate_category(db, asset.farm_id, EventType.PRODUCTION, data.category_id)
     try:

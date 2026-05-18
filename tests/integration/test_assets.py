@@ -16,6 +16,12 @@ def asset_url(farm_id: int, asset_id: int) -> str:
 AGGREGATED_ANIMAL = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
 
 
+async def _create(client: AsyncClient, authed: AuthedUser, body: dict[str, str]) -> int:
+    resp = await client.post(assets_url(authed.farm_id), headers=authed.headers, json=body)
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
 class TestCreateAsset:
     async def test_creates_and_returns_asset(
         self, client: AsyncClient, authed_user: AuthedUser
@@ -236,3 +242,39 @@ class TestFarmScope:
     ) -> None:
         response = await client.get(assets_url(authed_user.farm_id))
         assert response.status_code == 401
+
+
+class TestStructuralImmutability:
+    """kind/mode are structural — once an asset has events, changing them would
+    orphan that history, so the change is rejected."""
+
+    async def test_kind_change_blocked_once_events_exist(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create(client, authed_user, AGGREGATED_ANIMAL)
+        event = await client.post(
+            f"{asset_url(authed_user.farm_id, asset_id)}/events",
+            headers=authed_user.headers,
+            json={"type": "observation", "occurred_at": "2026-04-20T10:00:00Z"},
+        )
+        assert event.status_code == 201, event.text
+
+        patched = await client.patch(
+            asset_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={"kind": "crop"},
+        )
+        assert patched.status_code == 422
+
+    async def test_kind_change_allowed_with_no_events(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create(client, authed_user, AGGREGATED_ANIMAL)
+
+        patched = await client.patch(
+            asset_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={"kind": "crop"},
+        )
+        assert patched.status_code == 200
+        assert patched.json()["kind"] == "crop"
