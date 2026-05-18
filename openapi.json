@@ -3122,6 +3122,112 @@
         "title": "MaterialPurchaseUpdate",
         "type": "object"
       },
+      "MaterialSaleCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "buyer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "quantity",
+          "unit",
+          "amount"
+        ],
+        "title": "MaterialSaleCreate",
+        "type": "object"
+      },
+      "MaterialSaleRead": {
+        "description": "The two events a sale emitted, plus the material's resulting on-hand\nbalance in the sold unit.",
+        "properties": {
+          "income_event_id": {
+            "title": "Income Event Id",
+            "type": "integer"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "on_hand": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "On Hand",
+            "type": "string"
+          }
+        },
+        "required": [
+          "inventory_event_id",
+          "income_event_id",
+          "on_hand"
+        ],
+        "title": "MaterialSaleRead",
+        "type": "object"
+      },
       "MeResponse": {
         "properties": {
           "memberships": {
@@ -5576,6 +5682,73 @@
         "summary": "Record a birth on a mother individual",
         "tags": [
           "individuals"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/sales": {
+      "post": {
+        "description": "Sells stock from a `material` asset: decrements the asset's inventory by `quantity` and books a paired INCOME event for `amount` in the farm's default currency. `unit` must match a unit the asset already holds stock in. Rejected with 409 if it would drive stock below zero.",
+        "operationId": "material-sales_create_sale",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialSaleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialSaleRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a material sale",
+        "tags": [
+          "material-sales"
         ]
       }
     },
