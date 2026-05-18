@@ -12,6 +12,7 @@ Source of truth: [`openapi.json`](../../openapi.json)
 | [events](./events.md) | 6 |
 | [farms](./farms.md) | 2 |
 | [flock](./flock.md) | 3 |
+| [harvest](./harvest.md) | 1 |
 | [health](./health.md) | 1 |
 | [individuals](./individuals.md) | 6 |
 | [material-consumptions](./material-consumptions.md) | 5 |
