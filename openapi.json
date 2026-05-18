@@ -264,6 +264,17 @@
             "title": "Name",
             "type": "string"
           },
+          "produce_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Produce Asset Id"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -278,6 +289,7 @@
           "mode",
           "location",
           "description",
+          "produce_asset_id",
           "created_at",
           "updated_at"
         ],
@@ -343,6 +355,17 @@
               }
             ],
             "title": "Name"
+          },
+          "produce_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Produce Asset Id"
           }
         },
         "title": "AssetUpdate",
@@ -1747,6 +1770,86 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HarvestCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "quantity",
+          "unit"
+        ],
+        "title": "HarvestCreate",
+        "type": "object"
+      },
+      "HarvestRead": {
+        "description": "The two events a harvest emitted, plus the produce asset's resulting\non-hand balance in the harvested unit.",
+        "properties": {
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "produce_balance": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Produce Balance",
+            "type": "string"
+          },
+          "production_event_id": {
+            "title": "Production Event Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "production_event_id",
+          "inventory_event_id",
+          "produce_balance"
+        ],
+        "title": "HarvestRead",
         "type": "object"
       },
       "IndividualCreate": {
@@ -4905,6 +5008,73 @@
         "summary": "Record a flock sale",
         "tags": [
           "flock"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/harvests": {
+      "post": {
+        "description": "Collects produce from an `animal` or `crop` asset: emits a PRODUCTION event on the source asset and an INVENTORY increment on the produce asset linked via the source's `produce_asset_id`. `quantity` and `unit` feed both events; `unit` must match the produce asset's existing stock unit. The source asset must have a produce asset linked.",
+        "operationId": "harvest_create_harvest_endpoint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarvestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarvestRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a harvest",
+        "tags": [
+          "harvest"
         ]
       }
     },

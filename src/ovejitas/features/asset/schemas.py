@@ -21,6 +21,7 @@ class AssetUpdate(StrictModel):
     mode: AssetMode | None = None
     location: OptionalStr = Field(default=None, max_length=255)
     description: OptionalStr = Field(default=None, max_length=1024)
+    produce_asset_id: int | None = None
 
 
 class AssetRead(BaseModel):
@@ -33,6 +34,7 @@ class AssetRead(BaseModel):
     mode: AssetMode
     location: str | None
     description: str | None
+    produce_asset_id: int | None
     created_at: datetime
     updated_at: datetime
 

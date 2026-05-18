@@ -43,6 +43,7 @@ _Update an asset_
 - `mode` ('aggregated' | 'individual' | null, optional)
 - `location` (string | null, optional)
 - `description` (string | null, optional)
+- `produce_asset_id` (integer | null, optional)
 
 **Responses:**
 - `200` → AssetRead — Successful Response
@@ -75,6 +76,7 @@ _Delete an asset_
 - `mode` ('aggregated' | 'individual', required)
 - `location` (string | null, required)
 - `description` (string | null, required)
+- `produce_asset_id` (integer | null, required)
 - `created_at` (string (date-time), required)
 - `updated_at` (string (date-time), required)
 
@@ -85,6 +87,7 @@ _Delete an asset_
 - `mode` ('aggregated' | 'individual' | null, optional)
 - `location` (string | null, optional)
 - `description` (string | null, optional)
+- `produce_asset_id` (integer | null, optional)
 
 ### HTTPValidationError
 
