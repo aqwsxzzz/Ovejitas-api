@@ -461,6 +461,38 @@ class TestGroupByAsset:
         assert row["asset_id"] == asset_id
         assert row["group_label"] == "Pollos"
 
+    async def test_production_supports_group_by_asset(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        gallinas = await _asset(authed_user.farm_id, name="Gallinas")
+        patos = await _asset(authed_user.farm_id, name="Patos")
+        await _event(
+            authed_user.farm_id,
+            gallinas,
+            authed_user.user_id,
+            quantity=Decimal("12"),
+            unit=Unit.UNIT,
+        )
+        await _event(
+            authed_user.farm_id,
+            patos,
+            authed_user.user_id,
+            quantity=Decimal("4"),
+            unit=Unit.UNIT,
+        )
+
+        resp = await client.get(
+            aggregate_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"type": "production", "bucket": "month", "group_by": "asset"},
+        )
+
+        assert resp.status_code == 200, resp.text
+        by_asset = {r["asset_id"]: r for r in resp.json()["data"]}
+        assert by_asset[gallinas]["group_label"] == "Gallinas"
+        assert by_asset[gallinas]["value"] == "12"
+        assert by_asset[patos]["value"] == "4"
+
     async def test_mortality_without_group_by_keeps_legacy_shape(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:

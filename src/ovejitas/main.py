@@ -17,6 +17,7 @@ from ovejitas.features.harvest.router import router as harvest_router
 from ovejitas.features.individual.router import router as individual_router
 from ovejitas.features.material_consumption.router import router as material_consumption_router
 from ovejitas.features.material_purchase.router import router as material_purchase_router
+from ovejitas.features.material_sale.router import router as material_sale_router
 from ovejitas.features.report.router import router as report_router
 
 API_PREFIX = "/api/v1"
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
     app.include_router(material_purchase_router, prefix=API_PREFIX)
     app.include_router(flock_router, prefix=API_PREFIX)
     app.include_router(harvest_router, prefix=API_PREFIX)
+    app.include_router(material_sale_router, prefix=API_PREFIX)
     app.include_router(report_router, prefix=API_PREFIX)
 
     @app.get("/health", tags=["health"], summary="Liveness check")

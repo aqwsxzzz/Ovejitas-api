@@ -3122,6 +3122,112 @@
         "title": "MaterialPurchaseUpdate",
         "type": "object"
       },
+      "MaterialSaleCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "buyer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "quantity",
+          "unit",
+          "amount"
+        ],
+        "title": "MaterialSaleCreate",
+        "type": "object"
+      },
+      "MaterialSaleRead": {
+        "description": "The two events a sale emitted, plus the material's resulting on-hand\nbalance in the sold unit.",
+        "properties": {
+          "income_event_id": {
+            "title": "Income Event Id",
+            "type": "integer"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "on_hand": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "On Hand",
+            "type": "string"
+          }
+        },
+        "required": [
+          "inventory_event_id",
+          "income_event_id",
+          "on_hand"
+        ],
+        "title": "MaterialSaleRead",
+        "type": "object"
+      },
       "MeResponse": {
         "properties": {
           "memberships": {
@@ -5579,6 +5685,73 @@
         ]
       }
     },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/sales": {
+      "post": {
+        "description": "Sells stock from a `material` asset: decrements the asset's inventory by `quantity` and books a paired INCOME event for `amount` in the farm's default currency. `unit` must match a unit the asset already holds stock in. Rejected with 409 if it would drive stock below zero.",
+        "operationId": "material-sales_create_sale",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialSaleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialSaleRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a material sale",
+        "tags": [
+          "material-sales"
+        ]
+      }
+    },
     "/api/v1/farms/{farm_id}/event-categories": {
       "get": {
         "operationId": "event-categories_list_event_categories",
@@ -6772,7 +6945,7 @@
     },
     "/api/v1/farms/{farm_id}/reports/aggregate": {
       "get": {
-        "description": "Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.\n\n- production / observation: SUM(quantity) grouped by unit\n- mortality / acquisition: SUM(quantity) as headcount, no grouping\n- inventory: net flow within window (increments minus decrements).   Pass `adjustment=reset|increment|decrement` to isolate one kind.\n- expense / income: SUM(amount) grouped by currency\n- reproductive: COUNT(*) of events\n\nFilters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.\n\n**`group_by=asset`** breaks rows down per asset. Each row then carries a stable `group` key (the asset id as a string), a `group_label` (the asset name), and an `asset_id`. When `group_by` is omitted, rows are unchanged: `group_label` and `asset_id` stay `null`.\n\nCompatibility matrix \u2014 `type` vs `group_by`:\n\n| type | group_by=asset |\n| --- | --- |\n| mortality | supported |\n| acquisition | supported |\n| production / observation / inventory / expense / income / reproductive | rejected with 422 |",
+        "description": "Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.\n\n- production / observation: SUM(quantity) grouped by unit\n- mortality / acquisition: SUM(quantity) as headcount, no grouping\n- inventory: net flow within window (increments minus decrements).   Pass `adjustment=reset|increment|decrement` to isolate one kind.\n- expense / income: SUM(amount) grouped by currency\n- reproductive: COUNT(*) of events\n\nFilters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.\n\n**`group_by=asset`** breaks rows down per asset. Each row then carries a stable `group` key (the asset id as a string), a `group_label` (the asset name), and an `asset_id`. When `group_by` is omitted, rows are unchanged: `group_label` and `asset_id` stay `null`.\n\nCompatibility matrix \u2014 `type` vs `group_by`:\n\n| type | group_by=asset |\n| --- | --- |\n| mortality | supported |\n| acquisition | supported |\n| production | supported (quantity summed per asset across units) |\n| observation / inventory / expense / income / reproductive | rejected with 422 |",
         "operationId": "reports_aggregate_report",
         "parameters": [
           {
