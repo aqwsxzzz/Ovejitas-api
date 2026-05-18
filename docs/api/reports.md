@@ -75,6 +75,14 @@ _R1 — PDF download_
 - `200` → any — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
+## GET /api/v1/farms/{farm_id}/reports/cost-per-unit/pdf
+
+_R3 — PDF download_
+
+**Responses:**
+- `200` → any — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
 ## GET /api/v1/farms/{farm_id}/reports/inventory-summary
 
 _R5 — current on-hand inventory per asset_

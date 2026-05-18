@@ -7,7 +7,7 @@ fed) / its production quantity``. Read-only; computed live, no persistence.
 
 from collections import defaultdict
 from datetime import datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -150,7 +150,11 @@ async def production_cost(db: AsyncSession, farm_id: int, q: CostPerUnitQuery) -
                 direct_expense_total=direct_total,
                 consumed_material_cost=consumed,
                 total_cost=total,
-                cost_per_unit=(total / produced if produced > 0 else None),
+                cost_per_unit=(
+                    (total / produced).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    if produced > 0
+                    else None
+                ),
                 has_unvalued_consumption=asset_id in unvalued,
             )
         )
