@@ -8,11 +8,21 @@ from ovejitas.features.event_category.models import EventCategory
 from ovejitas.features.individual.models import Individual
 
 
+def _asset_tracks_inventory(asset: Asset) -> bool:
+    """Inventory events are valid for a material asset, or for a flock — an
+    animal asset counted in aggregate."""
+    if asset.kind is AssetKind.MATERIAL:
+        return True
+    return asset.kind is AssetKind.ANIMAL and asset.mode is AssetMode.AGGREGATED
+
+
 async def validate_type_against_asset(event_type: EventType, asset: Asset) -> None:
     if event_type is EventType.REPRODUCTIVE and asset.kind is not AssetKind.ANIMAL:
         raise ValidationError("Reproductive events require an animal asset")
-    if event_type is EventType.INVENTORY and asset.kind is not AssetKind.MATERIAL:
-        raise ValidationError("Inventory events require a material asset")
+    if event_type is EventType.INVENTORY and not _asset_tracks_inventory(asset):
+        raise ValidationError(
+            "Inventory events require a material asset or an aggregated animal asset"
+        )
 
 
 async def validate_individual(

@@ -4,6 +4,7 @@ from tests.conftest import AuthedUser
 
 MATERIAL_AGGREGATED = {"name": "Maíz", "kind": "material", "mode": "aggregated"}
 ANIMAL_AGGREGATED = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
+ANIMAL_INDIVIDUAL = {"name": "Vacas", "kind": "animal", "mode": "individual"}
 
 
 def assets_url(farm_id: int) -> str:
@@ -84,7 +85,7 @@ class TestCreateInventory:
         )
         assert resp.status_code == 422
 
-    async def test_non_material_asset_rejected(
+    async def test_aggregated_animal_asset_accepted(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
@@ -96,11 +97,27 @@ class TestCreateInventory:
                 "occurred_at": "2026-04-20T10:00:00Z",
                 "adjustment": "increment",
                 "quantity": "10",
-                "unit": "kg",
+                "unit": "head",
+            },
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_individual_mode_asset_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_INDIVIDUAL)
+        resp = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={
+                "type": "inventory",
+                "occurred_at": "2026-04-20T10:00:00Z",
+                "adjustment": "increment",
+                "quantity": "10",
+                "unit": "head",
             },
         )
         assert resp.status_code == 422
-        assert "material" in resp.json()["detail"].lower()
 
 
 class TestBalance:

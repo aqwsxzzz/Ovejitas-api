@@ -37,6 +37,7 @@ async def emit_pair(
         quantity=data.quantity,
         occurred_at=data.occurred_at,
         created_by=user_id,
+        source="material_purchase",
     )
     expense = await emit_expense(
         db,

@@ -348,6 +348,101 @@
         "title": "AssetUpdate",
         "type": "object"
       },
+      "BirthCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "father_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Father Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "offspring": {
+            "items": {
+              "$ref": "#/components/schemas/OffspringCreate"
+            },
+            "minItems": 1,
+            "title": "Offspring",
+            "type": "array"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          }
+        },
+        "required": [
+          "offspring"
+        ],
+        "title": "BirthCreate",
+        "type": "object"
+      },
+      "BirthRead": {
+        "properties": {
+          "mother_id": {
+            "title": "Mother Id",
+            "type": "integer"
+          },
+          "offspring": {
+            "items": {
+              "$ref": "#/components/schemas/IndividualRead"
+            },
+            "title": "Offspring",
+            "type": "array"
+          },
+          "reproductive_event_id": {
+            "title": "Reproductive Event Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reproductive_event_id",
+          "mother_id",
+          "offspring"
+        ],
+        "title": "BirthRead",
+        "type": "object"
+      },
       "Bucket": {
         "enum": [
           "day",
@@ -1488,6 +1583,152 @@
         "title": "FarmUpdate",
         "type": "object"
       },
+      "FlockAcquisitionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity"
+        ],
+        "title": "FlockAcquisitionCreate",
+        "type": "object"
+      },
+      "FlockActionRead": {
+        "description": "The events a flock action emitted, plus the resulting on-hand headcount.\n\n``paired_event_id`` is the expense (acquisition), income (sale), or\nmortality (mortality) event \u2014 null only for an acquisition with no amount.",
+        "properties": {
+          "headcount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Headcount",
+            "type": "string"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "paired_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paired Event Id"
+          }
+        },
+        "required": [
+          "inventory_event_id",
+          "paired_event_id",
+          "headcount"
+        ],
+        "title": "FlockActionRead",
+        "type": "object"
+      },
+      "FlockMortalityCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "cause": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cause"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity"
+        ],
+        "title": "FlockMortalityCreate",
+        "type": "object"
+      },
+      "FlockSaleCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "buyer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity",
+          "amount"
+        ],
+        "title": "FlockSaleCreate",
+        "type": "object"
+      },
       "GroupBy": {
         "enum": [
           "asset"
@@ -1640,6 +1881,17 @@
             ],
             "title": "Birth Date"
           },
+          "birth_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Event Id"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -1741,6 +1993,7 @@
           "acquisition_expense_event_id",
           "mortality_event_id",
           "sale_event_id",
+          "birth_event_id",
           "created_at",
           "updated_at"
         ],
@@ -2784,6 +3037,51 @@
           "memberships"
         ],
         "title": "MeResponse",
+        "type": "object"
+      },
+      "OffspringCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "birth_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "extra": {
+            "additionalProperties": true,
+            "title": "Extra",
+            "type": "object"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "tag": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tag",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag"
+        ],
+        "title": "OffspringCreate",
         "type": "object"
       },
       "PageMeta": {
@@ -4409,6 +4707,207 @@
         ]
       }
     },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/flock/acquisitions": {
+      "post": {
+        "description": "Increments the flock headcount by `quantity` head via an INVENTORY event; when `amount` is given, also books a paired EXPENSE in the farm's default currency. The asset must be `animal` + `aggregated`.",
+        "operationId": "flock_create_acquisition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlockAcquisitionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlockActionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a flock acquisition",
+        "tags": [
+          "flock"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/flock/mortalities": {
+      "post": {
+        "description": "Decrements the flock headcount by `quantity` head and emits a paired MORTALITY event. Rejected with 409 if it would drive the headcount below zero.",
+        "operationId": "flock_create_mortality",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlockMortalityCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlockActionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a flock mortality",
+        "tags": [
+          "flock"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/flock/sales": {
+      "post": {
+        "description": "Decrements the flock headcount by `quantity` head and books a paired INCOME event for `amount`. Rejected with 409 if it would drive the headcount below zero.",
+        "operationId": "flock_create_sale",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlockSaleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlockActionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a flock sale",
+        "tags": [
+          "flock"
+        ]
+      }
+    },
     "/api/v1/farms/{farm_id}/assets/{asset_id}/individuals": {
       "get": {
         "operationId": "individuals_list_individuals",
@@ -4829,6 +5328,82 @@
           }
         ],
         "summary": "Update an individual",
+        "tags": [
+          "individuals"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/individuals/{mother_id}/births": {
+      "post": {
+        "description": "Atomically emits a REPRODUCTIVE event on the mother and creates the offspring individuals, each with an ACQUISITION(`born`) event and its `birth_event_id` linked to that reproductive event. The mother must be `active` and under an `animal` asset.",
+        "operationId": "individuals_create_birth_endpoint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mother_id",
+            "required": true,
+            "schema": {
+              "title": "Mother Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BirthCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BirthRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a birth on a mother individual",
         "tags": [
           "individuals"
         ]
@@ -6544,7 +7119,7 @@
     },
     "/api/v1/farms/{farm_id}/reports/inventory-summary": {
       "get": {
-        "description": "One row per (material asset, unit). On-hand is derived from INVENTORY events: sum of increments minus decrements since the most recent reset. Date filters bound the events considered, not the resulting balance.",
+        "description": "One row per (asset, unit) for any asset that carries INVENTORY events \u2014 material assets and aggregated animal flocks. On-hand is derived from those events: sum of increments minus decrements since the most recent reset. Date filters bound the events considered, not the resulting balance.",
         "operationId": "reports_inventory_summary",
         "parameters": [
           {
@@ -6634,7 +7209,7 @@
             "OAuth2PasswordBearer": []
           }
         ],
-        "summary": "R5 \u2014 current on-hand inventory across material assets",
+        "summary": "R5 \u2014 current on-hand inventory per asset",
         "tags": [
           "reports"
         ]

@@ -79,6 +79,14 @@ class Individual(Base, TimestampMixin):
         nullable=True,
         unique=True,
     )
+    # Set by the birth action on each offspring — points at the shared
+    # REPRODUCTIVE event of the birth that produced it. Many offspring reference
+    # one event, so this is indexed but NOT unique.
+    birth_event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("event.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
     extra: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
