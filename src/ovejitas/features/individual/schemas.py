@@ -70,9 +70,32 @@ class IndividualRead(BaseModel):
     acquisition_expense_event_id: int | None
     mortality_event_id: int | None
     sale_event_id: int | None
+    birth_event_id: int | None
     created_at: datetime
     updated_at: datetime
 
 
 class IndividualFilters(FilterParams):
     status: IndividualStatus | None = None
+
+
+class OffspringCreate(StrictModel):
+    tag: str = Field(min_length=1, max_length=128)
+    name: OptionalStr = Field(default=None, max_length=255)
+    birth_date: date | None = None
+    extra: dict[str, Any] = Field(default_factory=dict)
+
+
+class BirthCreate(StrictModel):
+    occurred_at: datetime = Field(default_factory=_utc_now)
+    father_id: int | None = None
+    category_id: int | None = None
+    notes: OptionalStr = Field(default=None, max_length=500)
+    outcome: OptionalStr = Field(default=None, max_length=255)
+    offspring: list[OffspringCreate] = Field(min_length=1)
+
+
+class BirthRead(BaseModel):
+    reproductive_event_id: int
+    mother_id: int
+    offspring: list[IndividualRead]

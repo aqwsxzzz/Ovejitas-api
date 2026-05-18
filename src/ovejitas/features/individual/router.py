@@ -6,7 +6,10 @@ from ovejitas.core.deps import DBSession
 from ovejitas.core.pagination import Page, PageParams
 from ovejitas.features.asset.deps import AssetDep
 from ovejitas.features.farm_member.deps import FarmMembership
+from ovejitas.features.individual.birth import create_birth
 from ovejitas.features.individual.schemas import (
+    BirthCreate,
+    BirthRead,
     IndividualCreate,
     IndividualFilters,
     IndividualRead,
@@ -101,6 +104,35 @@ async def update_individual(
 ) -> IndividualRead:
     return IndividualRead.model_validate(
         await svc.update(asset, individual_id, membership.user_id, data)
+    )
+
+
+@router.post(
+    "/{mother_id}/births",
+    response_model=BirthRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record a birth on a mother individual",
+    description=(
+        "Atomically emits a REPRODUCTIVE event on the mother and creates the "
+        "offspring individuals, each with an ACQUISITION(`born`) event and its "
+        "`birth_event_id` linked to that reproductive event. The mother must be "
+        "`active` and under an `animal` asset."
+    ),
+)
+async def create_birth_endpoint(
+    asset: AssetDep,
+    mother_id: int,
+    data: BirthCreate,
+    db: DBSession,
+    membership: FarmMembership,
+) -> BirthRead:
+    reproductive, offspring = await create_birth(
+        db, asset=asset, mother_id=mother_id, user_id=membership.user_id, data=data
+    )
+    return BirthRead(
+        reproductive_event_id=reproductive.id,
+        mother_id=mother_id,
+        offspring=[IndividualRead.model_validate(c) for c in offspring],
     )
 
 

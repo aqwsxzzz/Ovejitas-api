@@ -74,7 +74,40 @@ _Delete an individual_
 - `204` → any — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
+## POST /api/v1/farms/{farm_id}/assets/{asset_id}/individuals/{mother_id}/births
+
+_Record a birth on a mother individual_
+
+Atomically emits a REPRODUCTIVE event on the mother and creates the offspring individuals, each with an ACQUISITION(`born`) event and its `birth_event_id` linked to that reproductive event. The mother must be `active` and under an `animal` asset.
+
+**Request body:**
+- `occurred_at` (string (date-time), optional)
+- `father_id` (integer | null, optional)
+- `category_id` (integer | null, optional)
+- `notes` (string | null, optional)
+- `outcome` (string | null, optional)
+- `offspring` (OffspringCreate[], required)
+
+**Responses:**
+- `201` → BirthRead — Successful Response
+- `422` → HTTPValidationError — Validation Error
+
 ## Types
+
+### BirthCreate
+
+- `occurred_at` (string (date-time), optional)
+- `father_id` (integer | null, optional)
+- `category_id` (integer | null, optional)
+- `notes` (string | null, optional)
+- `outcome` (string | null, optional)
+- `offspring` (OffspringCreate[], required)
+
+### BirthRead
+
+- `reproductive_event_id` (integer, required)
+- `mother_id` (integer, required)
+- `offspring` (IndividualRead[], required)
 
 ### HTTPValidationError
 
@@ -108,6 +141,7 @@ _Delete an individual_
 - `acquisition_expense_event_id` (integer | null, required)
 - `mortality_event_id` (integer | null, required)
 - `sale_event_id` (integer | null, required)
+- `birth_event_id` (integer | null, required)
 - `created_at` (string (date-time), required)
 - `updated_at` (string (date-time), required)
 
@@ -128,6 +162,13 @@ _Delete an individual_
 - `sale_amount` (number | string | null, optional)
 - `sold_at` (string (date-time) | null, optional)
 - `buyer` (string | null, optional)
+
+### OffspringCreate
+
+- `tag` (string, required)
+- `name` (string | null, optional)
+- `birth_date` (string (date) | null, optional)
+- `extra` (object, optional)
 
 ### PageMeta
 

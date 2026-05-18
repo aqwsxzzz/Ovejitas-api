@@ -348,6 +348,101 @@
         "title": "AssetUpdate",
         "type": "object"
       },
+      "BirthCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "father_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Father Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "offspring": {
+            "items": {
+              "$ref": "#/components/schemas/OffspringCreate"
+            },
+            "minItems": 1,
+            "title": "Offspring",
+            "type": "array"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          }
+        },
+        "required": [
+          "offspring"
+        ],
+        "title": "BirthCreate",
+        "type": "object"
+      },
+      "BirthRead": {
+        "properties": {
+          "mother_id": {
+            "title": "Mother Id",
+            "type": "integer"
+          },
+          "offspring": {
+            "items": {
+              "$ref": "#/components/schemas/IndividualRead"
+            },
+            "title": "Offspring",
+            "type": "array"
+          },
+          "reproductive_event_id": {
+            "title": "Reproductive Event Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reproductive_event_id",
+          "mother_id",
+          "offspring"
+        ],
+        "title": "BirthRead",
+        "type": "object"
+      },
       "Bucket": {
         "enum": [
           "day",
@@ -1640,6 +1735,17 @@
             ],
             "title": "Birth Date"
           },
+          "birth_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Event Id"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -1741,6 +1847,7 @@
           "acquisition_expense_event_id",
           "mortality_event_id",
           "sale_event_id",
+          "birth_event_id",
           "created_at",
           "updated_at"
         ],
@@ -2784,6 +2891,51 @@
           "memberships"
         ],
         "title": "MeResponse",
+        "type": "object"
+      },
+      "OffspringCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "birth_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "extra": {
+            "additionalProperties": true,
+            "title": "Extra",
+            "type": "object"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "tag": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tag",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag"
+        ],
+        "title": "OffspringCreate",
         "type": "object"
       },
       "PageMeta": {
@@ -4829,6 +4981,82 @@
           }
         ],
         "summary": "Update an individual",
+        "tags": [
+          "individuals"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/individuals/{mother_id}/births": {
+      "post": {
+        "description": "Atomically emits a REPRODUCTIVE event on the mother and creates the offspring individuals, each with an ACQUISITION(`born`) event and its `birth_event_id` linked to that reproductive event. The mother must be `active` and under an `animal` asset.",
+        "operationId": "individuals_create_birth_endpoint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mother_id",
+            "required": true,
+            "schema": {
+              "title": "Mother Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BirthCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BirthRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a birth on a mother individual",
         "tags": [
           "individuals"
         ]
