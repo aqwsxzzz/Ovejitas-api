@@ -34,10 +34,11 @@ from ovejitas.features.report.schemas import (
 )
 
 
-async def _headcount_by_asset(
+async def _sum_quantity_by_asset(
     db: AsyncSession, farm_id: int, q: AggregateQuery
 ) -> list[AggregateRow]:
-    """SUM(quantity) headcount, one row per (bucket, asset)."""
+    """SUM(quantity), one row per (bucket, asset). Unit is not a grouping
+    dimension here — quantity is summed across units per asset."""
     b = _bucket_col(q.bucket)
     stmt = (
         select(
@@ -80,7 +81,9 @@ _DISPATCH: dict[EventType, tuple[Builder, AggregateMeasure, str | None]] = {
 }
 
 # Event types whose rows can be broken down per asset via group_by=asset.
-_ASSET_GROUPABLE: frozenset[EventType] = frozenset({EventType.MORTALITY, EventType.ACQUISITION})
+_ASSET_GROUPABLE: frozenset[EventType] = frozenset(
+    {EventType.MORTALITY, EventType.ACQUISITION, EventType.PRODUCTION}
+)
 
 
 async def aggregate(
@@ -93,7 +96,7 @@ async def aggregate(
     if q.group_by is GroupBy.ASSET:
         if q.type not in _ASSET_GROUPABLE:
             raise ValidationError(f"group_by=asset is not supported for type={q.type.value}")
-        builder = _headcount_by_asset
+        builder = _sum_quantity_by_asset
         group_key = "asset"
     rows = await builder(db, farm_id, q)
     meta = AggregateMeta(

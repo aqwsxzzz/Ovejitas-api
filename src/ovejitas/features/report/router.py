@@ -93,7 +93,8 @@ async def profitability(
         "| --- | --- |\n"
         "| mortality | supported |\n"
         "| acquisition | supported |\n"
-        "| production / observation / inventory / expense / income / reproductive | "
+        "| production | supported (quantity summed per asset across units) |\n"
+        "| observation / inventory / expense / income / reproductive | "
         "rejected with 422 |\n"
     ),
 )

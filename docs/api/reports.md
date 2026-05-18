@@ -34,7 +34,8 @@ Compatibility matrix — `type` vs `group_by`:
 | --- | --- |
 | mortality | supported |
 | acquisition | supported |
-| production / observation / inventory / expense / income / reproductive | rejected with 422 |
+| production | supported (quantity summed per asset across units) |
+| observation / inventory / expense / income / reproductive | rejected with 422 |
 
 **Responses:**
 - `200` → AggregateReport — Successful Response
