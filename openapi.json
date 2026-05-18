@@ -502,20 +502,12 @@
             "title": "Data",
             "type": "array"
           },
-          "totals": {
-            "items": {
-              "$ref": "#/components/schemas/CostPerUnitTotal"
-            },
-            "title": "Totals",
-            "type": "array"
-          },
           "unit": {
             "$ref": "#/components/schemas/Unit"
           }
         },
         "required": [
           "data",
-          "totals",
           "unit"
         ],
         "title": "CostPerUnitReport",
@@ -531,23 +523,44 @@
             "title": "Asset Name",
             "type": "string"
           },
-          "cost_per_unit": {
+          "consumed_material_cost": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Cost Per Unit",
+            "title": "Consumed Material Cost",
             "type": "string"
+          },
+          "cost_per_unit": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Unit"
           },
           "currency": {
             "title": "Currency",
             "type": "string"
           },
-          "expense_total": {
+          "direct_expense_total": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Expense Total",
+            "title": "Direct Expense Total",
             "type": "string"
           },
-          "quantity": {
+          "has_unvalued_consumption": {
+            "title": "Has Unvalued Consumption",
+            "type": "boolean"
+          },
+          "production_quantity": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Quantity",
+            "title": "Production Quantity",
+            "type": "string"
+          },
+          "total_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Cost",
             "type": "string"
           }
         },
@@ -555,42 +568,14 @@
           "asset_id",
           "asset_name",
           "currency",
-          "quantity",
-          "expense_total",
-          "cost_per_unit"
+          "production_quantity",
+          "direct_expense_total",
+          "consumed_material_cost",
+          "total_cost",
+          "cost_per_unit",
+          "has_unvalued_consumption"
         ],
         "title": "CostPerUnitRow",
-        "type": "object"
-      },
-      "CostPerUnitTotal": {
-        "properties": {
-          "cost_per_unit": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Cost Per Unit",
-            "type": "string"
-          },
-          "currency": {
-            "title": "Currency",
-            "type": "string"
-          },
-          "expense_total": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Expense Total",
-            "type": "string"
-          },
-          "quantity": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Quantity",
-            "type": "string"
-          }
-        },
-        "required": [
-          "currency",
-          "quantity",
-          "expense_total",
-          "cost_per_unit"
-        ],
-        "title": "CostPerUnitTotal",
         "type": "object"
       },
       "EventCategoryCreate": {
@@ -7125,7 +7110,7 @@
     },
     "/api/v1/farms/{farm_id}/reports/cost-per-unit": {
       "get": {
-        "description": "Requires `unit` (what counts as one produced unit). One row per (asset, currency). Assets without BOTH production (in the given unit) and expense events are omitted \u2014 a currency cannot be inferred without an expense row. The expense total is not unit-filtered: all of the asset's expenses are attributed to the queried production unit, so this number is only meaningful for single-output assets.",
+        "description": "Requires `unit` (what counts as one produced unit). One row per producer asset (any asset with `production` events in that unit). `cost_per_unit = (direct expense events on the producer + the average-cost value of the feed it was fed) / its production quantity`. Feed is attributed via `material_consumption` with `reason=feeding` and `consumer_asset_id` = the producer; a material's average cost is its full purchase history (not bounded by `date_from`). `date_from`/`date_to` bound production and direct expenses. A producer that made nothing in the window still appears with `cost_per_unit` null; `has_unvalued_consumption` flags rows whose feed has no purchase history to value it.",
         "operationId": "reports_cost_per_unit",
         "parameters": [
           {
@@ -7223,110 +7208,7 @@
             "OAuth2PasswordBearer": []
           }
         ],
-        "summary": "R3 \u2014 expense total \u00f7 produced quantity, per asset",
-        "tags": [
-          "reports"
-        ]
-      }
-    },
-    "/api/v1/farms/{farm_id}/reports/cost-per-unit/pdf": {
-      "get": {
-        "operationId": "reports_cost_per_unit_pdf",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "farm_id",
-            "required": true,
-            "schema": {
-              "title": "Farm Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "date_from",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Date From"
-            }
-          },
-          {
-            "in": "query",
-            "name": "date_to",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Date To"
-            }
-          },
-          {
-            "in": "query",
-            "name": "asset_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Asset Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "unit",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Unit"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "summary": "R3 \u2014 PDF download",
+        "summary": "R3 \u2014 cost per produced unit, per producer asset",
         "tags": [
           "reports"
         ]
@@ -7463,7 +7345,7 @@
     },
     "/api/v1/farms/{farm_id}/reports/inventory-summary": {
       "get": {
-        "description": "One row per (asset, unit) for any asset that carries INVENTORY events \u2014 material assets and aggregated animal flocks. On-hand is derived from those events: sum of increments minus decrements since the most recent reset. Date filters bound the events considered, not the resulting balance.",
+        "description": "One row per (asset, unit) for any asset that carries INVENTORY events \u2014 material assets and aggregated animal flocks. On-hand is derived from those events: sum of increments minus decrements since the most recent reset. `date_to` gives the balance as of that moment (default: now); `date_from` does not apply to a running balance and is ignored.",
         "operationId": "reports_inventory_summary",
         "parameters": [
           {

@@ -193,3 +193,26 @@ class TestInventorySummaryReport:
         assert resp.status_code == 200, resp.text
         rows = {(r["asset_id"], r["unit"]): r["on_hand"] for r in resp.json()["data"]}
         assert rows == {(a, "kg"): "30", (b, "kg"): "5"}
+
+    async def test_summary_ignores_date_from_in_balance_replay(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, MATERIAL_AGGREGATED)
+        await _post_inventory(
+            client, authed_user, asset_id, "reset", "100", occurred_at="2026-04-01T10:00:00Z"
+        )
+        await _post_inventory(
+            client, authed_user, asset_id, "increment", "50", occurred_at="2026-04-10T10:00:00Z"
+        )
+
+        resp = await client.get(
+            inventory_summary_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"date_from": "2026-04-05T00:00:00Z"},
+        )
+
+        assert resp.status_code == 200, resp.text
+        rows = {r["asset_id"]: r["on_hand"] for r in resp.json()["data"]}
+        # the pre-window RESET to 100 must still count — date_from must not
+        # truncate the replay (the bug made this return "50")
+        assert rows[asset_id] == "150"
