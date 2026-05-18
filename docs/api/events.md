@@ -44,7 +44,7 @@ _Get one event_
 
 _Update an event_
 
-`type` is immutable. Guards still apply to `individual_id` / `category_id`.
+`type` is immutable. Events emitted by an action (those carrying a `payload.source`) cannot be edited here — edit them via their action. Fields must match the event's type, and inventory edits are re-checked against the stock balance.
 
 **Request body:**
 - `occurred_at` (string (date-time) | null, optional)
@@ -64,6 +64,8 @@ _Update an event_
 ## DELETE /api/v1/farms/{farm_id}/assets/{asset_id}/events/{event_id}
 
 _Delete an event_
+
+Events emitted by an action (those carrying a `payload.source`) cannot be deleted here. Deleting an inventory event is rejected if it would drive the stock balance negative.
 
 **Responses:**
 - `204` → any — Successful Response

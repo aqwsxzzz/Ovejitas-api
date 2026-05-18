@@ -135,15 +135,19 @@ async def material_consumption_aggregate(
 @router.get(
     "/cost-per-unit",
     response_model=CostPerUnitReport,
-    summary="R3 — expense total ÷ produced quantity, per asset",
+    summary="R3 — cost per produced unit, per producer asset",
     description=(
-        "Requires `unit` (what counts as one produced unit). "
-        "One row per (asset, currency). "
-        "Assets without BOTH production (in the given unit) and expense events "
-        "are omitted — a currency cannot be inferred without an expense row. "
-        "The expense total is not unit-filtered: all of the asset's expenses "
-        "are attributed to the queried production unit, so this number is only "
-        "meaningful for single-output assets."
+        "Requires `unit` (what counts as one produced unit). One row per "
+        "producer asset (any asset with `production` events in that unit). "
+        "`cost_per_unit = (direct expense events on the producer + the "
+        "average-cost value of the feed it was fed) / its production quantity`. "
+        "Feed is attributed via `material_consumption` with `reason=feeding` and "
+        "`consumer_asset_id` = the producer; a material's average cost is its "
+        "full purchase history (not bounded by `date_from`). `date_from`/"
+        "`date_to` bound production and direct expenses. A producer that made "
+        "nothing in the window still appears with `cost_per_unit` null; "
+        "`has_unvalued_consumption` flags rows whose feed has no purchase "
+        "history to value it."
     ),
 )
 async def cost_per_unit(
@@ -151,8 +155,7 @@ async def cost_per_unit(
     svc: ReportSvc,
     q: Annotated[CostPerUnitQuery, Depends()],
 ) -> CostPerUnitReport:
-    rows, totals = await svc.cost_per_unit(membership.farm_id, q)
-    return CostPerUnitReport(data=rows, totals=totals, unit=q.unit)
+    return await svc.cost_per_unit(membership.farm_id, q)
 
 
 @router.get("/profitability/pdf", summary="R1 — PDF download")
@@ -176,27 +179,6 @@ async def profitability_pdf(
     return _pdf_response(pdf, "rentabilidad.pdf")
 
 
-@router.get("/cost-per-unit/pdf", summary="R3 — PDF download")
-async def cost_per_unit_pdf(
-    membership: FarmMembership,
-    current_user: CurrentUser,
-    svc: ReportSvc,
-    db: DBSession,
-    q: Annotated[CostPerUnitQuery, Depends()],
-) -> Response:
-    rows, totals = await svc.cost_per_unit(membership.farm_id, q)
-    pdf = render_pdf(
-        "cost_per_unit.html",
-        farm_name=await _farm_name(db, membership.farm_id),
-        title="Costo por unidad",
-        generated_by=current_user.name,
-        date_from=q.date_from,
-        date_to=q.date_to,
-        context={"rows": rows, "totals": totals, "unit": q.unit},
-    )
-    return _pdf_response(pdf, "costo-por-unidad.pdf")
-
-
 @router.get(
     "/inventory-summary",
     response_model=InventorySummaryReport,
@@ -205,7 +187,8 @@ async def cost_per_unit_pdf(
         "One row per (asset, unit) for any asset that carries INVENTORY events — "
         "material assets and aggregated animal flocks. On-hand is derived from "
         "those events: sum of increments minus decrements since the most recent "
-        "reset. Date filters bound the events considered, not the resulting balance."
+        "reset. `date_to` gives the balance as of that moment (default: now); "
+        "`date_from` does not apply to a running balance and is ignored."
     ),
 )
 async def inventory_summary(

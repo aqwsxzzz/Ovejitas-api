@@ -59,9 +59,9 @@ Time-bucketed SUM(quantity) over recorded material consumptions.
 
 ## GET /api/v1/farms/{farm_id}/reports/cost-per-unit
 
-_R3 — expense total ÷ produced quantity, per asset_
+_R3 — cost per produced unit, per producer asset_
 
-Requires `unit` (what counts as one produced unit). One row per (asset, currency). Assets without BOTH production (in the given unit) and expense events are omitted — a currency cannot be inferred without an expense row. The expense total is not unit-filtered: all of the asset's expenses are attributed to the queried production unit, so this number is only meaningful for single-output assets.
+Requires `unit` (what counts as one produced unit). One row per producer asset (any asset with `production` events in that unit). `cost_per_unit = (direct expense events on the producer + the average-cost value of the feed it was fed) / its production quantity`. Feed is attributed via `material_consumption` with `reason=feeding` and `consumer_asset_id` = the producer; a material's average cost is its full purchase history (not bounded by `date_from`). `date_from`/`date_to` bound production and direct expenses. A producer that made nothing in the window still appears with `cost_per_unit` null; `has_unvalued_consumption` flags rows whose feed has no purchase history to value it.
 
 **Responses:**
 - `200` → CostPerUnitReport — Successful Response
@@ -75,19 +75,11 @@ _R1 — PDF download_
 - `200` → any — Successful Response
 - `422` → HTTPValidationError — Validation Error
 
-## GET /api/v1/farms/{farm_id}/reports/cost-per-unit/pdf
-
-_R3 — PDF download_
-
-**Responses:**
-- `200` → any — Successful Response
-- `422` → HTTPValidationError — Validation Error
-
 ## GET /api/v1/farms/{farm_id}/reports/inventory-summary
 
 _R5 — current on-hand inventory per asset_
 
-One row per (asset, unit) for any asset that carries INVENTORY events — material assets and aggregated animal flocks. On-hand is derived from those events: sum of increments minus decrements since the most recent reset. Date filters bound the events considered, not the resulting balance.
+One row per (asset, unit) for any asset that carries INVENTORY events — material assets and aggregated animal flocks. On-hand is derived from those events: sum of increments minus decrements since the most recent reset. `date_to` gives the balance as of that moment (default: now); `date_from` does not apply to a running balance and is ignored.
 
 **Responses:**
 - `200` → InventorySummaryReport — Successful Response
@@ -129,7 +121,6 @@ _R4 — paginated event timeline for one individual_
 ### CostPerUnitReport
 
 - `data` (CostPerUnitRow[], required)
-- `totals` (CostPerUnitTotal[], required)
 - `unit` ('g' | 'kg' | 'lb' | 't' | 'ml' | 'l' | 'gal' | 'unit' | 'dozen' | 'head', required)
 
 ### CostPerUnitRow
@@ -137,16 +128,12 @@ _R4 — paginated event timeline for one individual_
 - `asset_id` (integer, required)
 - `asset_name` (string, required)
 - `currency` (string, required)
-- `quantity` (string, required)
-- `expense_total` (string, required)
-- `cost_per_unit` (string, required)
-
-### CostPerUnitTotal
-
-- `currency` (string, required)
-- `quantity` (string, required)
-- `expense_total` (string, required)
-- `cost_per_unit` (string, required)
+- `production_quantity` (string, required)
+- `direct_expense_total` (string, required)
+- `consumed_material_cost` (string, required)
+- `total_cost` (string, required)
+- `cost_per_unit` (string | null, required)
+- `has_unvalued_consumption` (boolean, required)
 
 ### EventRead
 

@@ -85,6 +85,19 @@ class TestFlockAcquisition:
 
         assert await _events(client, authed_user, asset_id, "expense") == []
 
+    async def test_acquisition_emits_acquisition_event(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+
+        await _flock(client, authed_user, asset_id, "acquisitions", {"quantity": 12})
+
+        # flock herd growth must be visible to the acquisition report, uniform
+        # with individual acquisitions
+        acquisitions = await _events(client, authed_user, asset_id, "acquisition")
+        assert len(acquisitions) == 1
+        assert acquisitions[0]["quantity"] == "12"
+
 
 class TestFlockSale:
     async def test_sale_decrements_headcount_and_books_income(

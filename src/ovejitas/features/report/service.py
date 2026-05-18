@@ -17,13 +17,13 @@ from ovejitas.features.report.aggregate import aggregate as run_aggregate
 from ovejitas.features.report.material_consumption import (
     material_consumption_aggregate as run_material_consumption_aggregate,
 )
+from ovejitas.features.report.production_cost import production_cost
 from ovejitas.features.report.schemas import (
     AggregateMeta,
     AggregateQuery,
     AggregateRow,
     CostPerUnitQuery,
-    CostPerUnitRow,
-    CostPerUnitTotal,
+    CostPerUnitReport,
     InventorySummaryQuery,
     InventorySummaryRow,
     MaterialConsumptionAggregateQuery,
@@ -45,25 +45,6 @@ def _profitability_totals(rows: list[ProfitabilityRow]) -> list[ProfitabilityTot
         bucket["expense_total"] += r.expense_total
         bucket["net"] += r.net
     return [ProfitabilityTotal(currency=cur, **vals) for cur, vals in sorted(by_currency.items())]
-
-
-def _cost_per_unit_totals(rows: list[CostPerUnitRow]) -> list[CostPerUnitTotal]:
-    by_currency: dict[str, dict[str, Decimal]] = defaultdict(
-        lambda: {"quantity": Decimal(0), "expense_total": Decimal(0)}
-    )
-    for r in rows:
-        bucket = by_currency[r.currency]
-        bucket["quantity"] += r.quantity
-        bucket["expense_total"] += r.expense_total
-    return [
-        CostPerUnitTotal(
-            currency=cur,
-            quantity=v["quantity"],
-            expense_total=v["expense_total"],
-            cost_per_unit=v["expense_total"] / v["quantity"] if v["quantity"] else Decimal(0),
-        )
-        for cur, v in sorted(by_currency.items())
-    ]
 
 
 def _scope(
@@ -128,60 +109,8 @@ class ReportService:
     ) -> tuple[list[AggregateRow], list[MaterialConsumptionAggregateTotal]]:
         return await run_material_consumption_aggregate(self.db, farm_id, q)
 
-    async def cost_per_unit(
-        self, farm_id: int, q: CostPerUnitQuery
-    ) -> tuple[list[CostPerUnitRow], list[CostPerUnitTotal]]:
-        prod_stmt = (
-            select(
-                Event.asset_id.label("asset_id"),
-                func.sum(Event.quantity).label("quantity"),
-            )
-            .where(
-                Event.type == EventType.PRODUCTION,
-                Event.unit == q.unit,
-                Event.quantity.is_not(None),
-            )
-            .group_by(Event.asset_id)
-        )
-        prod_cte = _scope(prod_stmt, farm_id, q.date_from, q.date_to, q.asset_id).cte(
-            "production_totals"
-        )
-
-        exp_stmt = (
-            select(
-                Event.asset_id.label("asset_id"),
-                Event.currency.label("currency"),
-                func.sum(Event.amount).label("expense_total"),
-            )
-            .where(
-                Event.type == EventType.EXPENSE,
-                Event.amount.is_not(None),
-                Event.currency.is_not(None),
-            )
-            .group_by(Event.asset_id, Event.currency)
-        )
-        exp_cte = _scope(exp_stmt, farm_id, q.date_from, q.date_to, q.asset_id).cte(
-            "expense_totals"
-        )
-
-        stmt = (
-            select(
-                Asset.id.label("asset_id"),
-                Asset.name.label("asset_name"),
-                exp_cte.c.currency,
-                prod_cte.c.quantity,
-                exp_cte.c.expense_total,
-                (exp_cte.c.expense_total / prod_cte.c.quantity).label("cost_per_unit"),
-            )
-            .join(prod_cte, prod_cte.c.asset_id == Asset.id)
-            .join(exp_cte, exp_cte.c.asset_id == Asset.id)
-            .where(Asset.farm_id == farm_id, prod_cte.c.quantity > 0)
-            .order_by(Asset.name, exp_cte.c.currency)
-        )
-        rows = (await self.db.execute(stmt)).mappings().all()
-        data = [CostPerUnitRow.model_validate(r) for r in rows]
-        totals = _cost_per_unit_totals(data)
-        return data, totals
+    async def cost_per_unit(self, farm_id: int, q: CostPerUnitQuery) -> CostPerUnitReport:
+        return await production_cost(self.db, farm_id, q)
 
     async def inventory_summary(
         self, farm_id: int, q: InventorySummaryQuery
@@ -203,7 +132,11 @@ class ReportService:
             )
             .order_by(Event.asset_id, Event.occurred_at.asc(), Event.id.asc())
         )
-        stmt = apply_date_range(stmt, Event.occurred_at, q.date_from, q.date_to)
+        # On-hand is a running balance — it must replay the full event history,
+        # so date_from must NOT truncate it (dropping a prior RESET would make
+        # the replay start mid-stream). date_to is an honest upper bound: the
+        # balance "as of" that moment.
+        stmt = apply_date_range(stmt, Event.occurred_at, None, q.date_to)
         if q.asset_id is not None:
             stmt = stmt.where(Event.asset_id == q.asset_id)
         rows = (await self.db.execute(stmt)).all()

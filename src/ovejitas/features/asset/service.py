@@ -8,6 +8,7 @@ from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
 from ovejitas.features.asset.models import Asset, AssetKind
 from ovejitas.features.asset.schemas import AssetCreate, AssetFilters, AssetUpdate
+from ovejitas.features.event.balance import asset_has_events
 
 SEARCH_COLUMNS = [Asset.name, Asset.description, Asset.location]
 SORT_ALLOWED = {
@@ -42,6 +43,11 @@ class AssetService:
         if updates.get("produce_asset_id") is not None:
             source_kind = updates.get("kind", asset.kind)
             await self._validate_produce_link(farm_id, source_kind, updates["produce_asset_id"])
+        structural_changed = ("kind" in updates and updates["kind"] != asset.kind) or (
+            "mode" in updates and updates["mode"] != asset.mode
+        )
+        if structural_changed and await asset_has_events(self.db, asset_id):
+            raise ValidationError("Cannot change kind or mode of an asset that already has events")
         for key, value in updates.items():
             setattr(asset, key, value)
         await self.db.commit()

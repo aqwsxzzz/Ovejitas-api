@@ -82,26 +82,22 @@ class AggregateQuery(FilterParams):
 
 
 class CostPerUnitRow(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     asset_id: int
     asset_name: str
     currency: str
-    quantity: Decimal
-    expense_total: Decimal
-    cost_per_unit: Decimal
-
-
-class CostPerUnitTotal(BaseModel):
-    currency: str
-    quantity: Decimal
-    expense_total: Decimal
-    cost_per_unit: Decimal
+    production_quantity: Decimal
+    direct_expense_total: Decimal
+    consumed_material_cost: Decimal
+    total_cost: Decimal
+    # null when the producer made nothing in the window (no divide-by-zero)
+    cost_per_unit: Decimal | None
+    # true when feed it consumed has no purchase history to value it — the
+    # cost is then understated and the row says so rather than hide it
+    has_unvalued_consumption: bool
 
 
 class CostPerUnitReport(BaseModel):
     data: list[CostPerUnitRow]
-    totals: list[CostPerUnitTotal]
     unit: Unit
 
 
