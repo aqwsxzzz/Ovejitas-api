@@ -1,0 +1,66 @@
+tag: flock
+operations:
+- method: POST
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/flock/acquisitions
+  summary: Record a flock acquisition
+  description: Increments the flock headcount by `quantity` head via an INVENTORY event; when `amount` is given, also books
+    a paired EXPENSE in the farm's default currency. The asset must be `animal` + `aggregated`.
+  body: FlockAcquisitionCreate
+  responses: {'201': FlockActionRead, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/flock/sales
+  summary: Record a flock sale
+  description: Decrements the flock headcount by `quantity` head and books a paired INCOME event for `amount`. Rejected with
+    409 if it would drive the headcount below zero.
+  body: FlockSaleCreate
+  responses: {'201': FlockActionRead, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/flock/mortalities
+  summary: Record a flock mortality
+  description: Decrements the flock headcount by `quantity` head and emits a paired MORTALITY event. Rejected with 409 if
+    it would drive the headcount below zero.
+  body: FlockMortalityCreate
+  responses: {'201': FlockActionRead, '422': HTTPValidationError}
+types:
+  FlockAcquisitionCreate:
+    kind: object
+    required: [quantity]
+    fields:
+      occurred_at: string (date-time)
+      quantity: integer
+      amount: number | string | null
+  FlockActionRead:
+    kind: object
+    required: [inventory_event_id, paired_event_id, headcount]
+    fields:
+      inventory_event_id: integer
+      paired_event_id: integer | null
+      headcount: string
+  FlockMortalityCreate:
+    kind: object
+    required: [quantity]
+    fields:
+      occurred_at: string (date-time)
+      quantity: integer
+      cause: string | null
+  FlockSaleCreate:
+    kind: object
+    required: [quantity, amount]
+    fields:
+      occurred_at: string (date-time)
+      quantity: integer
+      amount: number | string
+      buyer: string | null
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

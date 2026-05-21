@@ -1,0 +1,39 @@
+tag: farms
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}
+  summary: Get a farm
+  responses: {'200': FarmRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}
+  summary: Update a farm
+  body: FarmUpdate
+  responses: {'200': FarmRead, '422': HTTPValidationError}
+types:
+  FarmRead:
+    kind: object
+    required: [id, name, default_currency, created_at, updated_at]
+    fields:
+      id: integer
+      name: string
+      default_currency: string
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  FarmUpdate:
+    kind: object
+    fields:
+      name: string | null
+      default_currency: string | null
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

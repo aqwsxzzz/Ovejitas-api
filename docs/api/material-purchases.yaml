@@ -1,0 +1,105 @@
+tag: material-purchases
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/material-purchases
+  summary: List material purchases in a farm
+  responses: {'200': Page_MaterialPurchaseRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/material-purchases
+  summary: Record a material purchase
+  description: Atomically records the purchase, increments the material's stock, and books an expense for the amount paid
+    — via a paired INVENTORY and EXPENSE event. The purchased `unit` must match how the material is already tracked (any unit
+    is allowed for a material with no inventory history). Replaying an `idempotency_key` returns the original record with
+    status 200.
+  body: MaterialPurchaseCreate
+  responses: {'201': MaterialPurchaseRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/material-purchases/{purchase_id}
+  summary: Get one material purchase
+  responses: {'200': MaterialPurchaseRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/material-purchases/{purchase_id}
+  summary: Update a material purchase
+  description: '`material_asset_id` is immutable. Changing `quantity`/`unit`/`occurred_at` reconciles the inventory event;
+    `amount`/`occurred_at` reconciles the expense. An edit that would drive stock negative is rejected with 409.'
+  body: MaterialPurchaseUpdate
+  responses: {'200': MaterialPurchaseRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/material-purchases/{purchase_id}
+  summary: Delete a material purchase
+  description: Hard-deletes the record and reverses both the stock increment and the expense. Rejected with 409 if reversing
+    the stock would go negative.
+  responses: {'204': any, '422': HTTPValidationError}
+types:
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  MaterialPurchaseCreate:
+    kind: object
+    required: [material_asset_id, occurred_at, quantity, unit, amount]
+    fields:
+      material_asset_id: integer
+      occurred_at: string (date-time)
+      quantity: number | string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      amount: number | string
+      supplier: string | null
+      notes: string | null
+      meta: object
+      idempotency_key: string | null
+  MaterialPurchaseRead:
+    kind: object
+    required: [id, farm_id, material_asset_id, inventory_event_id, expense_event_id, occurred_at, quantity, unit, amount,
+      currency, supplier, notes, meta, idempotency_key, created_by, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      material_asset_id: integer
+      inventory_event_id: integer
+      expense_event_id: integer
+      occurred_at: string (date-time)
+      quantity: string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      amount: string
+      currency: string
+      supplier: string | null
+      notes: string | null
+      meta: object
+      idempotency_key: string | null
+      created_by: integer
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  MaterialPurchaseUpdate:
+    kind: object
+    fields:
+      occurred_at: string (date-time) | null
+      quantity: number | string | null
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
+      amount: number | string | null
+      supplier: string | null
+      notes: string | null
+      meta: object | null
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_MaterialPurchaseRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: MaterialPurchaseRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object
