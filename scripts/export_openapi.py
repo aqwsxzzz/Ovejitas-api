@@ -1,14 +1,17 @@
-"""Export the FastAPI OpenAPI schema + per-tag markdown for agents and codegen.
+"""Export the FastAPI OpenAPI schema + per-tag YAML for agents and codegen.
 
 Source of truth is the running FastAPI app; this script imports it and calls
 `app.openapi()`. Re-run whenever routes or schemas change — the pre-commit hook
 handles this automatically. Outputs:
 
 - openapi.json                full spec (used by @hey-api/openapi-ts)
-- docs/api/INDEX.md           one-line table of resources
-- docs/api/{tag}.md           per-resource human/agent-readable markdown,
-                              with enum values inlined and referenced types
-                              expanded in a "Types" section at the bottom.
+- docs/api/INDEX.yaml         resource index
+- docs/api/{tag}.yaml         per-resource agent-readable spec, with enum
+                              values inlined and referenced types expanded
+                              under a `types:` section.
+
+YAML is used over markdown for ~40% lower token cost while keeping the
+structure parseable by both humans and LLM agents.
 """
 
 from __future__ import annotations
@@ -18,6 +21,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import yaml  # type: ignore[import-untyped]
+
 _SRC = Path(__file__).resolve().parent.parent / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
@@ -25,6 +30,26 @@ if str(_SRC) not in sys.path:
 from ovejitas.main import app  # noqa: E402
 
 HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head"}
+
+
+class _Flow(dict[str, Any]):
+    """Dict rendered in YAML flow style (one line)."""
+
+
+class _FlowList(list[Any]):
+    """List rendered in YAML flow style (one line)."""
+
+
+def _flow_dict_rep(dumper: yaml.Dumper, data: _Flow) -> yaml.MappingNode:
+    return dumper.represent_mapping("tag:yaml.org,2002:map", data, flow_style=True)
+
+
+def _flow_list_rep(dumper: yaml.Dumper, data: _FlowList) -> yaml.SequenceNode:
+    return dumper.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True)
+
+
+yaml.add_representer(_Flow, _flow_dict_rep)
+yaml.add_representer(_FlowList, _flow_list_rep)
 
 
 def _ref_name(ref: str) -> str:
@@ -37,7 +62,7 @@ def _describe(schema: dict[str, Any], components: dict[str, Any]) -> str:
         name = _ref_name(schema["$ref"])
         ref_schema = components.get("schemas", {}).get(name, {})
         if "enum" in ref_schema:
-            return " | ".join(f"'{v}'" for v in ref_schema["enum"])
+            return " | ".join(str(v) for v in ref_schema["enum"])
         return name
     type_ = schema.get("type")
     if type_ == "array":
@@ -49,19 +74,18 @@ def _describe(schema: dict[str, Any], components: dict[str, Any]) -> str:
     return type_ or "any"
 
 
-def _fields(schema: dict[str, Any], components: dict[str, Any]) -> list[str]:
-    """Bullet list of properties in a schema (resolves $ref once)."""
+def _fields_to_dict(schema: dict[str, Any], components: dict[str, Any]) -> dict[str, Any]:
+    """Map of property name → type string, or flow-dict if a description exists."""
     if "$ref" in schema:
         schema = components.get("schemas", {}).get(_ref_name(schema["$ref"]), {})
-    required = set(schema.get("required", []))
-    lines: list[str] = []
+    fields: dict[str, Any] = {}
     for name, spec in schema.get("properties", {}).items():
-        flag = "required" if name in required else "optional"
-        line = f"- `{name}` ({_describe(spec, components)}, {flag})"
+        type_str = _describe(spec, components)
         if desc := spec.get("description"):
-            line += f" — {desc}"
-        lines.append(line)
-    return lines
+            fields[name] = _Flow({"type": type_str, "desc": desc})
+        else:
+            fields[name] = type_str
+    return fields
 
 
 def _collect_refs(node: Any, out: set[str]) -> None:
@@ -76,7 +100,6 @@ def _collect_refs(node: Any, out: set[str]) -> None:
 
 
 def _transitive_refs(seed: set[str], components: dict[str, Any]) -> set[str]:
-    """Expand a set of ref names to include refs they themselves contain."""
     found = set(seed)
     queue = list(seed)
     while queue:
@@ -91,42 +114,42 @@ def _transitive_refs(seed: set[str], components: dict[str, Any]) -> set[str]:
     return found
 
 
-def _render_op(path: str, method: str, op: dict[str, Any], components: dict[str, Any]) -> str:
-    out: list[str] = [f"## {method.upper()} {path}", ""]
+def _op_to_dict(
+    path: str, method: str, op: dict[str, Any], components: dict[str, Any]
+) -> dict[str, Any]:
+    entry: dict[str, Any] = {"method": method.upper(), "path": path}
     if summary := op.get("summary"):
-        out.extend([f"_{summary}_", ""])
+        entry["summary"] = summary
     if desc := op.get("description"):
-        out.extend([desc, ""])
+        entry["description"] = desc
 
     body_schema = (
         op.get("requestBody", {}).get("content", {}).get("application/json", {}).get("schema")
     )
     if body_schema:
-        out.append("**Request body:**")
-        out.extend(_fields(body_schema, components))
-        out.append("")
+        name = _ref_name(body_schema.get("$ref", ""))
+        entry["body"] = name or _describe(body_schema, components)
 
-    if responses := op.get("responses"):
-        out.append("**Responses:**")
-        for code, resp in sorted(responses.items()):
-            rschema = resp.get("content", {}).get("application/json", {}).get("schema", {})
-            name = _ref_name(rschema.get("$ref", "")) or _describe(rschema, components)
-            rdesc = resp.get("description", "")
-            suffix = f" — {rdesc}" if rdesc and rdesc != name else ""
-            out.append(f"- `{code}` → {name}{suffix}")
-        out.append("")
-    return "\n".join(out)
+    responses: dict[str, str] = {}
+    for code, resp in sorted((op.get("responses") or {}).items()):
+        rschema = resp.get("content", {}).get("application/json", {}).get("schema", {})
+        responses[code] = _ref_name(rschema.get("$ref", "")) or _describe(rschema, components)
+    if responses:
+        entry["responses"] = _Flow(responses)
+    return entry
 
 
-def _render_type(name: str, schema: dict[str, Any], components: dict[str, Any]) -> str:
-    out = [f"### {name}", ""]
+def _type_to_dict(schema: dict[str, Any], components: dict[str, Any]) -> dict[str, Any]:
     if "enum" in schema:
-        out.append("**Values:** " + " | ".join(f"`{v}`" for v in schema["enum"]))
-        out.append("")
-        return "\n".join(out)
-    out.extend(_fields(schema, components))
-    out.append("")
-    return "\n".join(out)
+        return {"kind": "enum", "values": _FlowList(schema["enum"])}
+    entry: dict[str, Any] = {"kind": "object"}
+    required = schema.get("required") or []
+    if required:
+        entry["required"] = _FlowList(required)
+    fields = _fields_to_dict(schema, components)
+    if fields:
+        entry["fields"] = fields
+    return entry
 
 
 def _group_by_tag(
@@ -142,6 +165,11 @@ def _group_by_tag(
     return grouped
 
 
+def _dump(data: Any) -> str:
+    result: str = yaml.dump(data, sort_keys=False, allow_unicode=True, width=120)
+    return result
+
+
 def main() -> None:
     schema = app.openapi()
     repo_root = Path(__file__).resolve().parent.parent
@@ -152,51 +180,42 @@ def main() -> None:
 
     api_dir = repo_root / "docs" / "api"
     api_dir.mkdir(parents=True, exist_ok=True)
-    for stale in api_dir.glob("*.md"):
+    for stale in [*api_dir.glob("*.md"), *api_dir.glob("*.yaml")]:
         stale.unlink()
 
     grouped = _group_by_tag(schema)
     components = schema.get("components", {})
 
-    index = [
-        "# API Reference",
-        "",
-        "_Auto-generated from FastAPI. Do not edit by hand._",
-        "",
-        "Source of truth: [`openapi.json`](../../openapi.json)",
-        "",
-        "| Resource | Endpoints |",
-        "|---|---|",
-    ]
-    for tag in sorted(grouped):
-        index.append(f"| [{tag}](./{tag}.md) | {len(grouped[tag])} |")
-    (api_dir / "INDEX.md").write_text("\n".join(index) + "\n")
-    print(f"wrote {(api_dir / 'INDEX.md').relative_to(repo_root)}")
+    index = {
+        "title": "Ovejitas API",
+        "generated_from": "openapi.json",
+        "note": "Auto-generated. Do not edit by hand.",
+        "resources": [
+            {"tag": tag, "file": f"{tag}.yaml", "operations": len(grouped[tag])}
+            for tag in sorted(grouped)
+        ],
+    }
+    (api_dir / "INDEX.yaml").write_text(_dump(index))
+    print(f"wrote {(api_dir / 'INDEX.yaml').relative_to(repo_root)}")
 
     for tag, ops in grouped.items():
-        body = [f"# {tag}", "", "_Auto-generated. Do not edit by hand._", ""]
+        operations = [_op_to_dict(path, method, op, components) for path, method, op in ops]
         direct_refs: set[str] = set()
-        for path, method, op in ops:
-            body.append(_render_op(path, method, op, components))
+        for _, _, op in ops:
             _collect_refs(op, direct_refs)
-
         all_refs = _transitive_refs(direct_refs, components)
-        # Drop refs we resolved inline (enums) since they add noise.
-        object_refs = {
-            name for name in all_refs if "enum" not in components.get("schemas", {}).get(name, {})
+        # Enums are inlined into _describe wherever referenced, so skip them here.
+        types = {
+            name: _type_to_dict(components["schemas"][name], components)
+            for name in sorted(all_refs)
+            if name in components.get("schemas", {}) and "enum" not in components["schemas"][name]
         }
-        enum_refs = all_refs - object_refs
 
-        if object_refs or enum_refs:
-            body.append("## Types")
-            body.append("")
-            for name in sorted(object_refs):
-                body.append(_render_type(name, components["schemas"][name], components))
-            for name in sorted(enum_refs):
-                body.append(_render_type(name, components["schemas"][name], components))
-
-        (api_dir / f"{tag}.md").write_text("\n".join(body) + "\n")
-        print(f"wrote docs/api/{tag}.md")
+        doc: dict[str, Any] = {"tag": tag, "operations": operations}
+        if types:
+            doc["types"] = types
+        (api_dir / f"{tag}.yaml").write_text(_dump(doc))
+        print(f"wrote docs/api/{tag}.yaml")
 
 
 if __name__ == "__main__":

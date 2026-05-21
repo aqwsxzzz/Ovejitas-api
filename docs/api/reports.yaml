@@ -1,0 +1,244 @@
+tag: reports
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/profitability
+  summary: R1 — income minus expense per asset
+  description: One row per (asset, currency). Events with NULL amount/currency are excluded. Different currencies are never
+    silently summed.
+  responses: {'200': ProfitabilityReport, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/aggregate
+  summary: Generic time-bucketed aggregate over events of one type
+  description: 'Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.
+
+
+    - production / observation: SUM(quantity) grouped by unit
+
+    - mortality / acquisition: SUM(quantity) as headcount, no grouping
+
+    - inventory: net flow within window (increments minus decrements).   Pass `adjustment=reset|increment|decrement` to isolate
+    one kind.
+
+    - expense / income: SUM(amount) grouped by currency
+
+    - reproductive: COUNT(*) of events
+
+
+    Filters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.
+
+
+    **`group_by=asset`** breaks rows down per asset. Each row then carries a stable `group` key (the asset id as a string),
+    a `group_label` (the asset name), and an `asset_id`. When `group_by` is omitted, rows are unchanged: `group_label` and
+    `asset_id` stay `null`.
+
+
+    Compatibility matrix — `type` vs `group_by`:
+
+
+    | type | group_by=asset |
+
+    | --- | --- |
+
+    | mortality | supported |
+
+    | acquisition | supported |
+
+    | production | supported (quantity summed per asset across units) |
+
+    | observation / inventory / expense / income / reproductive | rejected with 422 |'
+  responses: {'200': AggregateReport, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/material-consumption-aggregate
+  summary: Day/week material-consumption totals, bucketed and grouped
+  description: 'Time-bucketed SUM(quantity) over recorded material consumptions.
+
+
+    - `bucket=day|week|month` — `date_trunc` window
+
+    - `group_by=material|consumer|both` — each row carries a `group` key, a `group_label`, and the `unit` (quantities never
+    sum across units)
+
+    - optional filters: `material_asset_id`, `consumer_asset_id`, `reason`, `date_from`, `date_to`
+
+
+    `totals` carries the per-(group, unit) `total_qty` across all buckets.'
+  responses: {'200': MaterialConsumptionAggregateReport, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/cost-per-unit
+  summary: R3 — cost per produced unit, per producer asset
+  description: Requires `unit` (what counts as one produced unit). One row per producer asset (any asset with `production`
+    events in that unit). `cost_per_unit = (direct expense events on the producer + the average-cost value of the feed it
+    was fed) / its production quantity`. Feed is attributed via `material_consumption` with `reason=feeding` and `consumer_asset_id`
+    = the producer; a material's average cost is its full purchase history (not bounded by `date_from`). `date_from`/`date_to`
+    bound production and direct expenses. A producer that made nothing in the window still appears with `cost_per_unit` null;
+    `has_unvalued_consumption` flags rows whose feed has no purchase history to value it.
+  responses: {'200': CostPerUnitReport, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/profitability/pdf
+  summary: R1 — PDF download
+  responses: {'200': any, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/cost-per-unit/pdf
+  summary: R3 — PDF download
+  responses: {'200': any, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/inventory-summary
+  summary: R5 — current on-hand inventory per asset
+  description: 'One row per (asset, unit) for any asset that carries INVENTORY events — material assets and aggregated animal
+    flocks. On-hand is derived from those events: sum of increments minus decrements since the most recent reset. `date_to`
+    gives the balance as of that moment (default: now); `date_from` does not apply to a running balance and is ignored.'
+  responses: {'200': InventorySummaryReport, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/individuals/{individual_id}/timeline
+  summary: R4 — paginated event timeline for one individual
+  responses: {'200': Page_EventRead_, '422': HTTPValidationError}
+types:
+  AggregateMeta:
+    kind: object
+    required: [type, measure, bucket, group_key]
+    fields:
+      type: production | expense | income | observation | reproductive | acquisition | mortality | inventory
+      measure: sum_quantity | sum_amount | count
+      bucket: day | week | month
+      group_key: string | null
+      group_by: asset | null
+  AggregateReport:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: AggregateRow[]
+      meta: AggregateMeta
+  AggregateRow:
+    kind: object
+    required: [bucket, group, measure, value]
+    fields:
+      bucket: string (date-time)
+      group: string | null
+      group_label: string | null
+      measure: sum_quantity | sum_amount | count
+      value: string
+      asset_id: integer | null
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
+  CostPerUnitReport:
+    kind: object
+    required: [data, unit]
+    fields:
+      data: CostPerUnitRow[]
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+  CostPerUnitRow:
+    kind: object
+    required: [asset_id, asset_name, currency, production_quantity, direct_expense_total, consumed_material_cost, total_cost,
+      cost_per_unit, has_unvalued_consumption]
+    fields:
+      asset_id: integer
+      asset_name: string
+      currency: string
+      production_quantity: string
+      direct_expense_total: string
+      consumed_material_cost: string
+      total_cost: string
+      cost_per_unit: string | null
+      has_unvalued_consumption: boolean
+  EventRead:
+    kind: object
+    required: [id, farm_id, asset_id, individual_id, type, category_id, occurred_at, quantity, unit, amount, currency, adjustment,
+      notes, payload, idempotency_key, created_by, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      asset_id: integer
+      individual_id: integer | null
+      type: production | expense | income | observation | reproductive | acquisition | mortality | inventory
+      category_id: integer | null
+      occurred_at: string (date-time)
+      quantity: string | null
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
+      amount: string | null
+      currency: string | null
+      adjustment: increment | decrement | reset | null
+      notes: string | null
+      payload: object
+      idempotency_key: string | null
+      created_by: integer
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  InventorySummaryReport:
+    kind: object
+    required: [data]
+    fields:
+      data: InventorySummaryRow[]
+  InventorySummaryRow:
+    kind: object
+    required: [asset_id, asset_name, unit, on_hand]
+    fields:
+      asset_id: integer
+      asset_name: string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      on_hand: string
+  MaterialConsumptionAggregateReport:
+    kind: object
+    required: [data, totals, bucket, group_by]
+    fields:
+      data: AggregateRow[]
+      totals: MaterialConsumptionAggregateTotal[]
+      bucket: day | week | month
+      group_by: material | consumer | both
+  MaterialConsumptionAggregateTotal:
+    kind: object
+    required: [group, group_label, unit, total_qty]
+    fields:
+      group: string | null
+      group_label: string | null
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      total_qty: string
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_EventRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: EventRead[]
+      meta: PageMeta
+  ProfitabilityReport:
+    kind: object
+    required: [data, totals]
+    fields:
+      data: ProfitabilityRow[]
+      totals: ProfitabilityTotal[]
+  ProfitabilityRow:
+    kind: object
+    required: [asset_id, asset_name, currency, income_total, expense_total, net]
+    fields:
+      asset_id: integer
+      asset_name: string
+      currency: string
+      income_total: string
+      expense_total: string
+      net: string
+  ProfitabilityTotal:
+    kind: object
+    required: [currency, income_total, expense_total, net]
+    fields:
+      currency: string
+      income_total: string
+      expense_total: string
+      net: string
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

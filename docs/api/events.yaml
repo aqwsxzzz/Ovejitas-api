@@ -1,0 +1,186 @@
+tag: events
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/events
+  summary: List events for an asset
+  responses: {'200': Page_EventRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/events
+  summary: Create an event
+  description: Body is a discriminated union on `type`. Reproductive events require `kind=animal` + `individual_id`. Individuals
+    require `mode=individual` and must belong to this asset. Categories must match the event type.
+  body: any
+  responses: {'201': EventRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/events/balance
+  summary: Current on-hand inventory for a material asset
+  description: 'Returns the derived on-hand balance per (asset, unit), computed from INVENTORY events: sum of increments minus
+    decrements since the most recent reset. Only meaningful for assets with kind=material.'
+  responses: {'200': InventoryBalance, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/events/{event_id}
+  summary: Get one event
+  responses: {'200': EventRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/events/{event_id}
+  summary: Update an event
+  description: '`type` is immutable. Events emitted by an action (those carrying a `payload.source`) cannot be edited here
+    — edit them via their action. Fields must match the event''s type, and inventory edits are re-checked against the stock
+    balance.'
+  body: EventUpdate
+  responses: {'200': EventRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/events/{event_id}
+  summary: Delete an event
+  description: Events emitted by an action (those carrying a `payload.source`) cannot be deleted here. Deleting an inventory
+    event is rejected if it would drive the stock balance negative.
+  responses: {'204': any, '422': HTTPValidationError}
+types:
+  EventExpenseCreate:
+    kind: object
+    required: [occurred_at, type, amount]
+    fields:
+      occurred_at: string (date-time)
+      individual_id: integer | null
+      category_id: integer | null
+      notes: string | null
+      payload: object
+      idempotency_key: string | null
+      type: string
+      amount: number | string
+  EventIncomeCreate:
+    kind: object
+    required: [occurred_at, type, amount]
+    fields:
+      occurred_at: string (date-time)
+      individual_id: integer | null
+      category_id: integer | null
+      notes: string | null
+      payload: object
+      idempotency_key: string | null
+      type: string
+      amount: number | string
+  EventInventoryCreate:
+    kind: object
+    required: [occurred_at, type, adjustment, quantity, unit]
+    fields:
+      occurred_at: string (date-time)
+      individual_id: integer | null
+      category_id: integer | null
+      notes: string | null
+      payload: object
+      idempotency_key: string | null
+      type: string
+      adjustment: increment | decrement | reset
+      quantity: number | string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+  EventObservationCreate:
+    kind: object
+    required: [occurred_at, type]
+    fields:
+      occurred_at: string (date-time)
+      individual_id: integer | null
+      category_id: integer | null
+      notes: string | null
+      payload: object
+      idempotency_key: string | null
+      type: string
+  EventProductionCreate:
+    kind: object
+    required: [occurred_at, type, quantity, unit]
+    fields:
+      occurred_at: string (date-time)
+      individual_id: integer | null
+      category_id: integer | null
+      notes: string | null
+      payload: object
+      idempotency_key: string | null
+      type: string
+      quantity: number | string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+  EventRead:
+    kind: object
+    required: [id, farm_id, asset_id, individual_id, type, category_id, occurred_at, quantity, unit, amount, currency, adjustment,
+      notes, payload, idempotency_key, created_by, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      asset_id: integer
+      individual_id: integer | null
+      type: production | expense | income | observation | reproductive | acquisition | mortality | inventory
+      category_id: integer | null
+      occurred_at: string (date-time)
+      quantity: string | null
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
+      amount: string | null
+      currency: string | null
+      adjustment: increment | decrement | reset | null
+      notes: string | null
+      payload: object
+      idempotency_key: string | null
+      created_by: integer
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  EventReproductiveCreate:
+    kind: object
+    required: [occurred_at, individual_id, type]
+    fields:
+      occurred_at: string (date-time)
+      individual_id: integer
+      category_id: integer | null
+      notes: string | null
+      payload: object
+      idempotency_key: string | null
+      type: string
+  EventUpdate:
+    kind: object
+    fields:
+      occurred_at: string (date-time) | null
+      individual_id: integer | null
+      category_id: integer | null
+      quantity: number | string | null
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
+      amount: number | string | null
+      adjustment: increment | decrement | reset | null
+      notes: string | null
+      payload: object | null
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  InventoryBalance:
+    kind: object
+    required: [asset_id, balances]
+    fields:
+      asset_id: integer
+      balances: InventoryBalanceRow[]
+  InventoryBalanceRow:
+    kind: object
+    required: [unit, on_hand, last_reset_at]
+    fields:
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      on_hand: string
+      last_reset_at: string (date-time) | null
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_EventRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: EventRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

@@ -1,0 +1,6 @@
+tag: health
+operations:
+- method: GET
+  path: /health
+  summary: Liveness check
+  responses: {'200': object}

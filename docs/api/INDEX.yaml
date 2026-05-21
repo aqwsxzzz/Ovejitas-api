@@ -1,0 +1,43 @@
+title: Ovejitas API
+generated_from: openapi.json
+note: Auto-generated. Do not edit by hand.
+resources:
+- tag: assets
+  file: assets.yaml
+  operations: 5
+- tag: auth
+  file: auth.yaml
+  operations: 4
+- tag: event-categories
+  file: event-categories.yaml
+  operations: 5
+- tag: events
+  file: events.yaml
+  operations: 6
+- tag: farms
+  file: farms.yaml
+  operations: 2
+- tag: flock
+  file: flock.yaml
+  operations: 3
+- tag: harvest
+  file: harvest.yaml
+  operations: 1
+- tag: health
+  file: health.yaml
+  operations: 1
+- tag: individuals
+  file: individuals.yaml
+  operations: 6
+- tag: material-consumptions
+  file: material-consumptions.yaml
+  operations: 5
+- tag: material-purchases
+  file: material-purchases.yaml
+  operations: 5
+- tag: material-sales
+  file: material-sales.yaml
+  operations: 1
+- tag: reports
+  file: reports.yaml
+  operations: 8

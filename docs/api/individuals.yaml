@@ -1,0 +1,143 @@
+tag: individuals
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/individuals
+  summary: List individuals under an asset
+  responses: {'200': Page_IndividualRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/individuals
+  summary: Create an individual under an asset
+  description: Asset must be in `individual` mode. Parents (if any) must belong to the same farm. Atomically emits an ACQUISITION
+    event; a `purchased` acquisition also books a paired EXPENSE event for `amount` in the farm's default currency.
+  body: IndividualCreate
+  responses: {'201': IndividualRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/individuals/{individual_id}
+  summary: Get one individual
+  responses: {'200': IndividualRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/individuals/{individual_id}
+  summary: Update an individual
+  description: Transitioning `status` to `deceased` emits a MORTALITY event; `died_at` (defaults to now) and `cause` are recorded
+    on it. Transitioning `status` to `sold` emits an INCOME event; `sale_amount` is required, `sold_at` (defaults to now)
+    and `buyer` are optional. Transitioning away from either state reverses its event. Death/sale fields are rejected unless
+    the individual is (or is becoming) deceased/sold respectively.
+  body: IndividualUpdate
+  responses: {'200': IndividualRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/individuals/{individual_id}
+  summary: Delete an individual
+  responses: {'204': any, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/individuals/{mother_id}/births
+  summary: Record a birth on a mother individual
+  description: Atomically emits a REPRODUCTIVE event on the mother and creates the offspring individuals, each with an ACQUISITION(`born`)
+    event and its `birth_event_id` linked to that reproductive event. The mother must be `active` and under an `animal` asset.
+  body: BirthCreate
+  responses: {'201': BirthRead, '422': HTTPValidationError}
+types:
+  BirthCreate:
+    kind: object
+    required: [offspring]
+    fields:
+      occurred_at: string (date-time)
+      father_id: integer | null
+      category_id: integer | null
+      notes: string | null
+      outcome: string | null
+      offspring: OffspringCreate[]
+  BirthRead:
+    kind: object
+    required: [reproductive_event_id, mother_id, offspring]
+    fields:
+      reproductive_event_id: integer
+      mother_id: integer
+      offspring: IndividualRead[]
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  IndividualCreate:
+    kind: object
+    required: [tag]
+    fields:
+      tag: string
+      name: string | null
+      birth_date: string (date) | null
+      mother_id: integer | null
+      father_id: integer | null
+      extra: object
+      acquired_at: string (date-time)
+      acquisition_method: purchased | born | other
+      amount: number | string | null
+  IndividualRead:
+    kind: object
+    required: [id, farm_id, asset_id, name, tag, birth_date, mother_id, father_id, status, extra, acquisition_event_id, acquisition_expense_event_id,
+      mortality_event_id, sale_event_id, birth_event_id, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      asset_id: integer
+      name: string | null
+      tag: string
+      birth_date: string (date) | null
+      mother_id: integer | null
+      father_id: integer | null
+      status: active | sold | deceased | archived
+      extra: object
+      acquisition_event_id: integer | null
+      acquisition_expense_event_id: integer | null
+      mortality_event_id: integer | null
+      sale_event_id: integer | null
+      birth_event_id: integer | null
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  IndividualUpdate:
+    kind: object
+    fields:
+      name: string | null
+      tag: string | null
+      birth_date: string (date) | null
+      mother_id: integer | null
+      father_id: integer | null
+      status: active | sold | deceased | archived | null
+      extra: object | null
+      acquired_at: string (date-time) | null
+      acquisition_method: purchased | born | other | null
+      amount: number | string | null
+      died_at: string (date-time) | null
+      cause: string | null
+      sale_amount: number | string | null
+      sold_at: string (date-time) | null
+      buyer: string | null
+  OffspringCreate:
+    kind: object
+    required: [tag]
+    fields:
+      tag: string
+      name: string | null
+      birth_date: string (date) | null
+      extra: object
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_IndividualRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: IndividualRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object
