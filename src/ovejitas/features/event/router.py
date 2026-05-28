@@ -11,6 +11,7 @@ from ovejitas.features.event.schemas import (
     EventFilters,
     EventRead,
     EventUpdate,
+    InventoryBalance,
 )
 from ovejitas.features.event.service import EventService
 
@@ -68,6 +69,23 @@ async def create_event(
 
 
 @router.get(
+    "/balance",
+    response_model=InventoryBalance,
+    summary="Current on-hand inventory for a material asset",
+    description=(
+        "Returns the derived on-hand balance per (asset, unit), computed from "
+        "INVENTORY events: sum of increments minus decrements since the most "
+        "recent reset. Only meaningful for assets with kind=material."
+    ),
+)
+async def asset_inventory_balance(
+    asset: AssetDep,
+    svc: EventSvc,
+) -> InventoryBalance:
+    return await svc.inventory_balance(asset)
+
+
+@router.get(
     "/{event_id}",
     response_model=EventRead,
     summary="Get one event",
@@ -84,7 +102,12 @@ async def get_event(
     "/{event_id}",
     response_model=EventRead,
     summary="Update an event",
-    description="`type` is immutable. Guards still apply to `individual_id` / `category_id`.",
+    description=(
+        "`type` is immutable. Events emitted by an action (those carrying a "
+        "`payload.source`) cannot be edited here — edit them via their action. "
+        "Fields must match the event's type, and inventory edits are re-checked "
+        "against the stock balance."
+    ),
 )
 async def update_event(
     asset: AssetDep,
@@ -99,6 +122,11 @@ async def update_event(
     "/{event_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an event",
+    description=(
+        "Events emitted by an action (those carrying a `payload.source`) cannot "
+        "be deleted here. Deleting an inventory event is rejected if it would "
+        "drive the stock balance negative."
+    ),
 )
 async def delete_event(
     asset: AssetDep,

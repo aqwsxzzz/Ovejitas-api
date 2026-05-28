@@ -1,0 +1,42 @@
+tag: material-sales
+operations:
+- method: POST
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}/sales
+  summary: Record a material sale
+  description: 'Sells stock from a `material` asset: decrements the asset''s inventory by `quantity` and books a paired INCOME
+    event for `amount` in the farm''s default currency. `unit` must match a unit the asset already holds stock in. Rejected
+    with 409 if it would drive stock below zero.'
+  body: MaterialSaleCreate
+  responses: {'201': MaterialSaleRead, '422': HTTPValidationError}
+types:
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  MaterialSaleCreate:
+    kind: object
+    required: [quantity, unit, amount]
+    fields:
+      occurred_at: string (date-time)
+      quantity: number | string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      amount: number | string
+      buyer: string | null
+      category_id: integer | null
+      notes: string | null
+  MaterialSaleRead:
+    kind: object
+    required: [inventory_event_id, income_event_id, on_hand]
+    fields:
+      inventory_event_id: integer
+      income_event_id: integer
+      on_hand: string
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

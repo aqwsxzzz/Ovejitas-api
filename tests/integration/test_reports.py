@@ -1,10 +1,11 @@
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Any
 
 from httpx import AsyncClient
 
-from ovejitas.features.asset.models import AssetMode
+from ovejitas.features.asset.models import AssetKind, AssetMode
 from ovejitas.features.event.types import EventType
 from tests.conftest import AuthedUser
 from tests.factories import AssetFactory, EventFactory, IndividualFactory
@@ -145,111 +146,230 @@ class TestProfitability:
         assert Decimal(rows["ARS"]["income_total"]) == Decimal("1000")
 
 
-class TestProduction:
-    async def test_bucketed_sum(self, client: AsyncClient, authed_user: AuthedUser) -> None:
-        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
-        day1 = datetime(2026, 4, 1, tzinfo=UTC)
-        day2 = datetime(2026, 4, 2, tzinfo=UTC)
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            quantity=Decimal("10"),
-            unit="unit",
-            when=day1,
-        )
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            quantity=Decimal("5"),
-            unit="unit",
-            when=day1,
-        )
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            quantity=Decimal("7"),
-            unit="unit",
-            when=day2,
-        )
+async def _buy_material(
+    client: AsyncClient,
+    authed: AuthedUser,
+    material_id: int,
+    quantity: str,
+    amount: str,
+    occurred_at: str = "2026-04-01T10:00:00Z",
+) -> None:
+    resp = await client.post(
+        f"/api/v1/farms/{authed.farm_id}/material-purchases",
+        headers=authed.headers,
+        json={
+            "material_asset_id": material_id,
+            "occurred_at": occurred_at,
+            "quantity": quantity,
+            "unit": "kg",
+            "amount": amount,
+        },
+    )
+    assert resp.status_code in (200, 201), resp.text
 
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production",
-            headers=authed_user.headers,
-            params={"bucket": "day"},
-        )
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["type"] == "production"
-        totals = {row["bucket_start"][:10]: Decimal(row["total"]) for row in body["data"]}
-        assert totals["2026-04-01"] == Decimal("15")
-        assert totals["2026-04-02"] == Decimal("7")
 
-    async def test_totals_grouped_by_unit(
-        self, client: AsyncClient, authed_user: AuthedUser
-    ) -> None:
-        a1 = await _asset(authed_user.farm_id, name="Gallinas")
-        a2 = await _asset(authed_user.farm_id, name="Vacas")
-        await _event(
-            authed_user.farm_id, a1, authed_user.user_id, quantity=Decimal("12"), unit="unit"
-        )
-        await _event(
-            authed_user.farm_id, a1, authed_user.user_id, quantity=Decimal("8"), unit="unit"
-        )
-        await _event(
-            authed_user.farm_id, a2, authed_user.user_id, quantity=Decimal("18.5"), unit="l"
-        )
-        await _event(
-            authed_user.farm_id, a2, authed_user.user_id, quantity=Decimal("17.5"), unit="l"
-        )
+async def _feed(
+    client: AsyncClient,
+    authed: AuthedUser,
+    material_id: int,
+    consumer_id: int,
+    quantity: str,
+    occurred_at: str = "2026-04-05T10:00:00Z",
+) -> None:
+    resp = await client.post(
+        f"/api/v1/farms/{authed.farm_id}/material-consumptions",
+        headers=authed.headers,
+        json={
+            "material_asset_id": material_id,
+            "consumer_asset_id": consumer_id,
+            "occurred_at": occurred_at,
+            "quantity": quantity,
+            "unit": "kg",
+            "reason": "feeding",
+        },
+    )
+    assert resp.status_code in (200, 201), resp.text
 
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production", headers=authed_user.headers
-        )
-        totals = {t["unit"]: Decimal(t["total"]) for t in resp.json()["totals"]}
-        assert totals == {"unit": Decimal("20"), "l": Decimal("36")}
 
-    async def test_observation_headcount(
-        self, client: AsyncClient, authed_user: AuthedUser
-    ) -> None:
-        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            type=EventType.OBSERVATION,
-            quantity=Decimal("200"),
-            unit="unit",
-        )
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            type=EventType.OBSERVATION,
-            quantity=Decimal("-5"),
-            unit="unit",
-        )
-
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production",
-            headers=authed_user.headers,
-            params={"type": "observation", "unit": "unit"},
-        )
-        assert resp.status_code == 200
-        total = sum(Decimal(r["total"]) for r in resp.json()["data"])
-        assert total == Decimal("195")
+async def _cost_rows(
+    client: AsyncClient, authed: AuthedUser, **params: str
+) -> list[dict[str, Any]]:
+    resp = await client.get(
+        f"{reports(authed.farm_id)}/cost-per-unit",
+        headers=authed.headers,
+        params={"unit": "unit", **params},
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()["data"]
 
 
 class TestCostPerUnit:
-    async def test_expense_over_production(
+    async def test_cost_combines_direct_expense_and_valued_feed(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
-        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
+        feed = await _asset(
+            authed_user.farm_id, name="Feed", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+        )
+        await _buy_material(client, authed_user, feed, "100", "200")  # avg cost 2/kg
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
         await _event(
             authed_user.farm_id,
-            asset_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.EXPENSE,
+            amount=Decimal("40"),
+            currency="USD",
+            quantity=None,
+            unit=None,
+        )
+        await _feed(client, authed_user, feed, flock, "30")  # 30 kg x 2 = 60
+
+        rows = await _cost_rows(client, authed_user)
+        assert len(rows) == 1
+        row = rows[0]
+        assert Decimal(row["production_quantity"]) == Decimal("50")
+        assert Decimal(row["direct_expense_total"]) == Decimal("40")
+        assert Decimal(row["consumed_material_cost"]) == Decimal("60")
+        assert Decimal(row["total_cost"]) == Decimal("100")
+        assert Decimal(row["cost_per_unit"]) == Decimal("2")
+        assert row["has_unvalued_consumption"] is False
+
+    async def test_average_cost_uses_purchases_before_date_from(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _asset(
+            authed_user.farm_id, name="Feed", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+        )
+        await _buy_material(client, authed_user, feed, "100", "200", "2026-01-01T10:00:00Z")
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _feed(client, authed_user, feed, flock, "30")
+
+        rows = await _cost_rows(client, authed_user, date_from="2026-03-01T00:00:00Z")
+        # the Jan purchase still values the feed even though it precedes date_from
+        assert Decimal(rows[0]["consumed_material_cost"]) == Decimal("60")
+
+    async def test_feed_with_no_purchase_history_flags_unvalued(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _asset(
+            authed_user.farm_id, name="Feed", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+        )
+        # stock arrives via a manual inventory event — no purchase, no cost
+        seed = await client.post(
+            f"/api/v1/farms/{authed_user.farm_id}/assets/{feed}/events",
+            headers=authed_user.headers,
+            json={
+                "type": "inventory",
+                "occurred_at": "2026-04-01T10:00:00Z",
+                "adjustment": "increment",
+                "quantity": "50",
+                "unit": "kg",
+            },
+        )
+        assert seed.status_code == 201, seed.text
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _feed(client, authed_user, feed, flock, "10")
+
+        rows = await _cost_rows(client, authed_user)
+        assert rows[0]["has_unvalued_consumption"] is True
+        assert Decimal(rows[0]["consumed_material_cost"]) == Decimal("0")
+
+    async def test_cost_without_production_in_window_yields_null(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+            when=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.EXPENSE,
+            amount=Decimal("40"),
+            currency="USD",
+            quantity=None,
+            unit=None,
+        )
+
+        rows = await _cost_rows(client, authed_user, date_from="2026-03-01T00:00:00Z")
+        assert Decimal(rows[0]["production_quantity"]) == Decimal("0")
+        assert Decimal(rows[0]["direct_expense_total"]) == Decimal("40")
+        assert rows[0]["cost_per_unit"] is None
+
+    async def test_crop_producer_reports_like_a_flock(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        crop = await _asset(
+            authed_user.farm_id, name="Tomateras", kind=AssetKind.CROP, mode=AssetMode.AGGREGATED
+        )
+        await _event(
+            authed_user.farm_id,
+            crop,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("100"),
+            unit="unit",
+        )
+        await _event(
+            authed_user.farm_id,
+            crop,
+            authed_user.user_id,
+            type=EventType.EXPENSE,
+            amount=Decimal("50"),
+            currency="USD",
+            quantity=None,
+            unit=None,
+        )
+
+        rows = await _cost_rows(client, authed_user)
+        assert Decimal(rows[0]["cost_per_unit"]) == Decimal("0.5")
+
+    async def test_cost_per_unit_rounded_to_cents(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("3"),
+            unit="unit",
+        )
+        await _event(
+            authed_user.farm_id,
+            flock,
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
@@ -257,61 +377,10 @@ class TestCostPerUnit:
             quantity=None,
             unit=None,
         )
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            type=EventType.PRODUCTION,
-            quantity=Decimal("50"),
-            unit="unit",
-        )
 
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/cost-per-unit",
-            headers=authed_user.headers,
-            params={"unit": "unit"},
-        )
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["unit"] == "unit"
-        assert len(body["data"]) == 1
-        assert Decimal(body["data"][0]["cost_per_unit"]) == Decimal("2")
-
-    async def test_totals_grouped_by_currency(
-        self, client: AsyncClient, authed_user: AuthedUser
-    ) -> None:
-        a1 = await _asset(authed_user.farm_id, name="A1")
-        a2 = await _asset(authed_user.farm_id, name="A2")
-        for asset_id in (a1, a2):
-            await _event(
-                authed_user.farm_id,
-                asset_id,
-                authed_user.user_id,
-                type=EventType.EXPENSE,
-                amount=Decimal("60"),
-                currency="USD",
-                quantity=None,
-                unit=None,
-            )
-            await _event(
-                authed_user.farm_id,
-                asset_id,
-                authed_user.user_id,
-                type=EventType.PRODUCTION,
-                quantity=Decimal("30"),
-                unit="unit",
-            )
-
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/cost-per-unit",
-            headers=authed_user.headers,
-            params={"unit": "unit"},
-        )
-        body = resp.json()
-        totals = {t["currency"]: t for t in body["totals"]}
-        assert Decimal(totals["USD"]["quantity"]) == Decimal("60")
-        assert Decimal(totals["USD"]["expense_total"]) == Decimal("120")
-        assert Decimal(totals["USD"]["cost_per_unit"]) == Decimal("2")
+        rows = await _cost_rows(client, authed_user)
+        # 100 / 3 = 33.333... — quantized to cents, not a 28-digit decimal
+        assert rows[0]["cost_per_unit"] == "33.33"
 
     async def test_missing_unit_rejected(
         self, client: AsyncClient, authed_user: AuthedUser
@@ -386,34 +455,25 @@ class TestPdfDownload:
         assert resp.content[:4] == b"%PDF"
         assert "rentabilidad.pdf" in resp.headers["content-disposition"]
 
-    async def test_production_pdf_empty_dataset(
-        self, client: AsyncClient, authed_user: AuthedUser
-    ) -> None:
-        resp = await client.get(
-            f"{reports(authed_user.farm_id)}/production/pdf", headers=authed_user.headers
-        )
-        assert resp.status_code == 200
-        assert resp.content[:4] == b"%PDF"
-
     async def test_cost_per_unit_pdf(self, client: AsyncClient, authed_user: AuthedUser) -> None:
-        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
         await _event(
             authed_user.farm_id,
-            asset_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _event(
+            authed_user.farm_id,
+            flock,
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
             currency="USD",
             quantity=None,
             unit=None,
-        )
-        await _event(
-            authed_user.farm_id,
-            asset_id,
-            authed_user.user_id,
-            type=EventType.PRODUCTION,
-            quantity=Decimal("50"),
-            unit="unit",
         )
         resp = await client.get(
             f"{reports(authed_user.farm_id)}/cost-per-unit/pdf",
@@ -422,6 +482,7 @@ class TestPdfDownload:
         )
         assert resp.status_code == 200
         assert resp.content[:4] == b"%PDF"
+        assert "costo-por-unidad.pdf" in resp.headers["content-disposition"]
 
     async def test_pdf_requires_membership(
         self,

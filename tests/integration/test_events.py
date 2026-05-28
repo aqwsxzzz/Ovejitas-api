@@ -1,5 +1,6 @@
 from collections.abc import Awaitable, Callable
 
+import pytest
 from httpx import AsyncClient
 
 from tests.conftest import AuthedUser
@@ -7,6 +8,7 @@ from tests.conftest import AuthedUser
 ANIMAL_INDIVIDUAL = {"name": "Cattle", "kind": "animal", "mode": "individual"}
 ANIMAL_AGGREGATED = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
 CROP_AGGREGATED = {"name": "Maize", "kind": "crop", "mode": "aggregated"}
+MATERIAL_AGGREGATED = {"name": "Maíz", "kind": "material", "mode": "aggregated"}
 OCCURRED = "2026-04-20T10:00:00Z"
 
 
@@ -360,3 +362,186 @@ class TestFarmScope:
             headers=bob.headers,
         )
         assert response.status_code == 403
+
+
+class TestActionOwnedTypesRejected:
+    """ACQUISITION and MORTALITY events are owned by individual lifecycle
+    actions and must not be hand-written via POST /events (Philosophy 1)."""
+
+    @pytest.mark.parametrize("event_type", ["acquisition", "mortality"])
+    async def test_action_owned_type_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser, event_type: str
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_INDIVIDUAL)
+
+        response = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={"type": event_type, "occurred_at": OCCURRED, "quantity": "1"},
+        )
+
+        assert response.status_code == 422
+
+
+def _flock_url(farm_id: int, asset_id: int, action: str) -> str:
+    return f"{assets_url(farm_id)}/{asset_id}/flock/{action}"
+
+
+def _inventory_event(adjustment: str, quantity: str) -> dict[str, str]:
+    return {
+        "type": "inventory",
+        "occurred_at": OCCURRED,
+        "adjustment": adjustment,
+        "quantity": quantity,
+        "unit": "kg",
+    }
+
+
+class TestEventWritePathGuards:
+    """POST/PATCH/DELETE /events must respect the action layer's invariants —
+    the stock guard and action-owned-event immutability (Philosophy 1)."""
+
+    async def test_manual_inventory_decrement_cannot_oversell(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, MATERIAL_AGGREGATED)
+        inc = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json=_inventory_event("increment", "10"),
+        )
+        assert inc.status_code == 201, inc.text
+
+        dec = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json=_inventory_event("decrement", "50"),
+        )
+        assert dec.status_code == 409
+
+    async def test_cannot_edit_action_owned_event(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        acq = await client.post(
+            _flock_url(authed_user.farm_id, asset_id, "acquisitions"),
+            headers=authed_user.headers,
+            json={"quantity": 10},
+        )
+        assert acq.status_code == 201, acq.text
+        listed = await client.get(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            params={"type": "inventory"},
+        )
+        event_id = listed.json()["data"][0]["id"]
+
+        resp = await client.patch(
+            event_url(authed_user.farm_id, asset_id, event_id),
+            headers=authed_user.headers,
+            json={"notes": "tampered"},
+        )
+        assert resp.status_code == 422
+
+    async def test_cannot_delete_action_owned_event(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        acq = await client.post(
+            _flock_url(authed_user.farm_id, asset_id, "acquisitions"),
+            headers=authed_user.headers,
+            json={"quantity": 10},
+        )
+        assert acq.status_code == 201, acq.text
+        listed = await client.get(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            params={"type": "inventory"},
+        )
+        event_id = listed.json()["data"][0]["id"]
+
+        resp = await client.delete(
+            event_url(authed_user.farm_id, asset_id, event_id),
+            headers=authed_user.headers,
+        )
+        assert resp.status_code == 422
+
+    async def test_update_rejects_field_not_valid_for_type(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        created = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={"type": "production", "occurred_at": OCCURRED, "quantity": "5", "unit": "kg"},
+        )
+        event_id = created.json()["id"]
+
+        resp = await client.patch(
+            event_url(authed_user.farm_id, asset_id, event_id),
+            headers=authed_user.headers,
+            json={"amount": "9"},
+        )
+        assert resp.status_code == 422
+
+    async def test_deleting_inventory_increment_guards_negative_stock(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, MATERIAL_AGGREGATED)
+        inc = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json=_inventory_event("increment", "10"),
+        )
+        increment_id = inc.json()["id"]
+        await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json=_inventory_event("decrement", "8"),
+        )
+
+        resp = await client.delete(
+            event_url(authed_user.farm_id, asset_id, increment_id),
+            headers=authed_user.headers,
+        )
+        assert resp.status_code == 409
+
+    async def test_editing_inventory_event_guards_negative_stock(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, MATERIAL_AGGREGATED)
+        inc = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json=_inventory_event("increment", "10"),
+        )
+        increment_id = inc.json()["id"]
+        await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json=_inventory_event("decrement", "8"),
+        )
+
+        # lowering the increment from 10 to 5 leaves 5 - 8 = -3 on hand
+        resp = await client.patch(
+            event_url(authed_user.farm_id, asset_id, increment_id),
+            headers=authed_user.headers,
+            json={"quantity": "5"},
+        )
+        assert resp.status_code == 409
+
+    async def test_manual_create_rejects_reserved_source(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+
+        resp = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={
+                "type": "observation",
+                "occurred_at": OCCURRED,
+                "payload": {"source": "harvest"},
+            },
+        )
+        assert resp.status_code == 422

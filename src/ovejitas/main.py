@@ -12,7 +12,12 @@ from ovejitas.features.auth.router import router as auth_router
 from ovejitas.features.event.router import router as event_router
 from ovejitas.features.event_category.router import router as event_category_router
 from ovejitas.features.farm.router import router as farm_router
+from ovejitas.features.flock.router import router as flock_router
+from ovejitas.features.harvest.router import router as harvest_router
 from ovejitas.features.individual.router import router as individual_router
+from ovejitas.features.material_consumption.router import router as material_consumption_router
+from ovejitas.features.material_purchase.router import router as material_purchase_router
+from ovejitas.features.material_sale.router import router as material_sale_router
 from ovejitas.features.report.router import router as report_router
 
 API_PREFIX = "/api/v1"
@@ -20,7 +25,7 @@ API_PREFIX = "/api/v1"
 
 def _operation_id(route: APIRoute) -> str:
     """Produce `{tag}_{name}` operation IDs so generated clients get clean method names."""
-    tag = (route.tags[0] if route.tags else "default").replace(" ", "_")
+    tag = str(route.tags[0] if route.tags else "default").replace(" ", "_")
     return f"{tag}_{route.name}"
 
 
@@ -57,6 +62,11 @@ def create_app() -> FastAPI:
     app.include_router(individual_router, prefix=API_PREFIX)
     app.include_router(event_category_router, prefix=API_PREFIX)
     app.include_router(event_router, prefix=API_PREFIX)
+    app.include_router(material_consumption_router, prefix=API_PREFIX)
+    app.include_router(material_purchase_router, prefix=API_PREFIX)
+    app.include_router(flock_router, prefix=API_PREFIX)
+    app.include_router(harvest_router, prefix=API_PREFIX)
+    app.include_router(material_sale_router, prefix=API_PREFIX)
     app.include_router(report_router, prefix=API_PREFIX)
 
     @app.get("/health", tags=["health"], summary="Liveness check")

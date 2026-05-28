@@ -1,0 +1,84 @@
+tag: auth
+operations:
+- method: POST
+  path: /api/v1/auth/register
+  summary: Register a new user
+  description: Creates a user, a default 'My Farm' (USD), and an owner membership in one transaction. Returns an access +
+    refresh token pair.
+  body: RegisterInput
+  responses: {'201': TokenPair, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/auth/login
+  summary: Exchange credentials for tokens
+  description: Returns 401 on unknown email or wrong password (no user enumeration).
+  body: LoginInput
+  responses: {'200': TokenPair, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/auth/refresh
+  summary: Exchange a refresh token for a new token pair
+  body: RefreshInput
+  responses: {'200': TokenPair, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/auth/me
+  summary: Current user and farm memberships
+  responses: {'200': MeResponse}
+types:
+  FarmMembershipRead:
+    kind: object
+    required: [farm_id, role, default_currency]
+    fields:
+      farm_id: integer
+      role: string
+      default_currency: string
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  LoginInput:
+    kind: object
+    required: [email, password]
+    fields:
+      email: string (email)
+      password: string
+  MeResponse:
+    kind: object
+    required: [user, memberships]
+    fields:
+      user: UserRead
+      memberships: FarmMembershipRead[]
+  RefreshInput:
+    kind: object
+    required: [refresh_token]
+    fields:
+      refresh_token: string
+  RegisterInput:
+    kind: object
+    required: [email, name, password]
+    fields:
+      email: string (email)
+      name: string
+      password: string
+  TokenPair:
+    kind: object
+    required: [access_token, refresh_token]
+    fields:
+      access_token: string
+      refresh_token: string
+      token_type: string
+  UserRead:
+    kind: object
+    required: [id, email, name, created_at]
+    fields:
+      id: integer
+      email: string (email)
+      name: string
+      created_at: string (date-time)
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

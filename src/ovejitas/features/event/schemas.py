@@ -1,12 +1,12 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ovejitas.core.filters import FilterParams
 from ovejitas.core.schemas import OptionalStr, StrictModel
-from ovejitas.features.event.types import EventType, Unit
+from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 
 
 class _EventCreateBase(StrictModel):
@@ -43,15 +43,22 @@ class EventReproductiveCreate(_EventCreateBase):
     individual_id: int
 
 
-class EventAcquisitionCreate(_EventCreateBase):
-    type: Literal[EventType.ACQUISITION]
-    quantity: Decimal = Field(gt=0)
-    amount: Decimal | None = Field(default=None, gt=0)
+# NOTE: ACQUISITION and MORTALITY events are deliberately absent from EventCreate.
+# They are owned by individual lifecycle actions (IndividualService.create /
+# .update) and must never be hand-written via POST /events — see Philosophy 1.
 
 
-class EventMortalityCreate(_EventCreateBase):
-    type: Literal[EventType.MORTALITY]
-    quantity: Decimal = Field(gt=0)
+class EventInventoryCreate(_EventCreateBase):
+    type: Literal[EventType.INVENTORY]
+    adjustment: InventoryAdjustment
+    quantity: Decimal = Field(ge=0)
+    unit: Unit
+
+    @model_validator(mode="after")
+    def _quantity_required_for_non_reset(self) -> Self:
+        if self.adjustment is not InventoryAdjustment.RESET and self.quantity <= 0:
+            raise ValueError("increment/decrement require quantity > 0")
+        return self
 
 
 EventCreate = Annotated[
@@ -60,8 +67,7 @@ EventCreate = Annotated[
     | EventIncomeCreate
     | EventObservationCreate
     | EventReproductiveCreate
-    | EventAcquisitionCreate
-    | EventMortalityCreate,
+    | EventInventoryCreate,
     Field(discriminator="type"),
 ]
 
@@ -70,9 +76,10 @@ class EventUpdate(StrictModel):
     occurred_at: datetime | None = None
     individual_id: int | None = None
     category_id: int | None = None
-    quantity: Decimal | None = Field(default=None, gt=0)
+    quantity: Decimal | None = Field(default=None, ge=0)
     unit: Unit | None = None
     amount: Decimal | None = Field(default=None, gt=0)
+    adjustment: InventoryAdjustment | None = None
     notes: OptionalStr = None
     payload: dict[str, Any] | None = None
 
@@ -91,6 +98,7 @@ class EventRead(BaseModel):
     unit: Unit | None
     amount: Decimal | None
     currency: str | None
+    adjustment: InventoryAdjustment | None
     notes: str | None
     payload: dict[str, Any]
     idempotency_key: str | None
@@ -103,3 +111,15 @@ class EventFilters(FilterParams):
     type: EventType | None = None
     category_id: int | None = None
     individual_id: int | None = None
+    adjustment: InventoryAdjustment | None = None
+
+
+class InventoryBalanceRow(BaseModel):
+    unit: Unit
+    on_hand: Decimal
+    last_reset_at: datetime | None
+
+
+class InventoryBalance(BaseModel):
+    asset_id: int
+    balances: list[InventoryBalanceRow]

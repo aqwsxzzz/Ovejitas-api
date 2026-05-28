@@ -1,6 +1,155 @@
 {
   "components": {
     "schemas": {
+      "AcquisitionMethod": {
+        "description": "How an individual entered the herd. Stored on the acquisition event's\npayload; ``purchased`` is the only method that books a paired expense.",
+        "enum": [
+          "purchased",
+          "born",
+          "other"
+        ],
+        "title": "AcquisitionMethod",
+        "type": "string"
+      },
+      "AggregateMeasure": {
+        "enum": [
+          "sum_quantity",
+          "sum_amount",
+          "count"
+        ],
+        "title": "AggregateMeasure",
+        "type": "string"
+      },
+      "AggregateMeta": {
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/Bucket"
+          },
+          "group_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GroupBy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Key"
+          },
+          "measure": {
+            "$ref": "#/components/schemas/AggregateMeasure"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          }
+        },
+        "required": [
+          "type",
+          "measure",
+          "bucket",
+          "group_key"
+        ],
+        "title": "AggregateMeta",
+        "type": "object"
+      },
+      "AggregateReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AggregateRow"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/AggregateMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AggregateReport",
+        "type": "object"
+      },
+      "AggregateRow": {
+        "properties": {
+          "asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Id"
+          },
+          "bucket": {
+            "format": "date-time",
+            "title": "Bucket",
+            "type": "string"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group"
+          },
+          "group_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Label"
+          },
+          "measure": {
+            "$ref": "#/components/schemas/AggregateMeasure"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucket",
+          "group",
+          "measure",
+          "value"
+        ],
+        "title": "AggregateRow",
+        "type": "object"
+      },
       "AssetCreate": {
         "additionalProperties": false,
         "properties": {
@@ -115,6 +264,17 @@
             "title": "Name",
             "type": "string"
           },
+          "produce_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Produce Asset Id"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -129,6 +289,7 @@
           "mode",
           "location",
           "description",
+          "produce_asset_id",
           "created_at",
           "updated_at"
         ],
@@ -194,9 +355,115 @@
               }
             ],
             "title": "Name"
+          },
+          "produce_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Produce Asset Id"
           }
         },
         "title": "AssetUpdate",
+        "type": "object"
+      },
+      "BirthCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "father_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Father Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "offspring": {
+            "items": {
+              "$ref": "#/components/schemas/OffspringCreate"
+            },
+            "minItems": 1,
+            "title": "Offspring",
+            "type": "array"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          }
+        },
+        "required": [
+          "offspring"
+        ],
+        "title": "BirthCreate",
+        "type": "object"
+      },
+      "BirthRead": {
+        "properties": {
+          "mother_id": {
+            "title": "Mother Id",
+            "type": "integer"
+          },
+          "offspring": {
+            "items": {
+              "$ref": "#/components/schemas/IndividualRead"
+            },
+            "title": "Offspring",
+            "type": "array"
+          },
+          "reproductive_event_id": {
+            "title": "Reproductive Event Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reproductive_event_id",
+          "mother_id",
+          "offspring"
+        ],
+        "title": "BirthRead",
         "type": "object"
       },
       "Bucket": {
@@ -208,6 +475,24 @@
         "title": "Bucket",
         "type": "string"
       },
+      "ConsumptionGroupBy": {
+        "enum": [
+          "material",
+          "consumer",
+          "both"
+        ],
+        "title": "ConsumptionGroupBy",
+        "type": "string"
+      },
+      "ConsumptionReason": {
+        "enum": [
+          "feeding",
+          "waste",
+          "spoilage"
+        ],
+        "title": "ConsumptionReason",
+        "type": "string"
+      },
       "CostPerUnitReport": {
         "properties": {
           "data": {
@@ -217,20 +502,12 @@
             "title": "Data",
             "type": "array"
           },
-          "totals": {
-            "items": {
-              "$ref": "#/components/schemas/CostPerUnitTotal"
-            },
-            "title": "Totals",
-            "type": "array"
-          },
           "unit": {
             "$ref": "#/components/schemas/Unit"
           }
         },
         "required": [
           "data",
-          "totals",
           "unit"
         ],
         "title": "CostPerUnitReport",
@@ -246,23 +523,44 @@
             "title": "Asset Name",
             "type": "string"
           },
-          "cost_per_unit": {
+          "consumed_material_cost": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Cost Per Unit",
+            "title": "Consumed Material Cost",
             "type": "string"
+          },
+          "cost_per_unit": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Unit"
           },
           "currency": {
             "title": "Currency",
             "type": "string"
           },
-          "expense_total": {
+          "direct_expense_total": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Expense Total",
+            "title": "Direct Expense Total",
             "type": "string"
           },
-          "quantity": {
+          "has_unvalued_consumption": {
+            "title": "Has Unvalued Consumption",
+            "type": "boolean"
+          },
+          "production_quantity": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Quantity",
+            "title": "Production Quantity",
+            "type": "string"
+          },
+          "total_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Cost",
             "type": "string"
           }
         },
@@ -270,143 +568,14 @@
           "asset_id",
           "asset_name",
           "currency",
-          "quantity",
-          "expense_total",
-          "cost_per_unit"
+          "production_quantity",
+          "direct_expense_total",
+          "consumed_material_cost",
+          "total_cost",
+          "cost_per_unit",
+          "has_unvalued_consumption"
         ],
         "title": "CostPerUnitRow",
-        "type": "object"
-      },
-      "CostPerUnitTotal": {
-        "properties": {
-          "cost_per_unit": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Cost Per Unit",
-            "type": "string"
-          },
-          "currency": {
-            "title": "Currency",
-            "type": "string"
-          },
-          "expense_total": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Expense Total",
-            "type": "string"
-          },
-          "quantity": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Quantity",
-            "type": "string"
-          }
-        },
-        "required": [
-          "currency",
-          "quantity",
-          "expense_total",
-          "cost_per_unit"
-        ],
-        "title": "CostPerUnitTotal",
-        "type": "object"
-      },
-      "EventAcquisitionCreate": {
-        "additionalProperties": false,
-        "properties": {
-          "amount": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Amount"
-          },
-          "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
-          },
-          "idempotency_key": {
-            "anyOf": [
-              {
-                "maxLength": 128,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Idempotency Key"
-          },
-          "individual_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Individual Id"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "occurred_at": {
-            "format": "date-time",
-            "title": "Occurred At",
-            "type": "string"
-          },
-          "payload": {
-            "additionalProperties": true,
-            "title": "Payload",
-            "type": "object"
-          },
-          "quantity": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              }
-            ],
-            "title": "Quantity"
-          },
-          "type": {
-            "const": "acquisition",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "occurred_at",
-          "type",
-          "quantity"
-        ],
-        "title": "EventAcquisitionCreate",
         "type": "object"
       },
       "EventCategoryCreate": {
@@ -719,9 +888,12 @@
         "title": "EventIncomeCreate",
         "type": "object"
       },
-      "EventMortalityCreate": {
+      "EventInventoryCreate": {
         "additionalProperties": false,
         "properties": {
+          "adjustment": {
+            "$ref": "#/components/schemas/InventoryAdjustment"
+          },
           "category_id": {
             "anyOf": [
               {
@@ -780,7 +952,7 @@
           "quantity": {
             "anyOf": [
               {
-                "exclusiveMinimum": 0.0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -791,17 +963,22 @@
             "title": "Quantity"
           },
           "type": {
-            "const": "mortality",
+            "const": "inventory",
             "title": "Type",
             "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
           }
         },
         "required": [
           "occurred_at",
           "type",
-          "quantity"
+          "adjustment",
+          "quantity",
+          "unit"
         ],
-        "title": "EventMortalityCreate",
+        "title": "EventInventoryCreate",
         "type": "object"
       },
       "EventObservationCreate": {
@@ -966,6 +1143,16 @@
       },
       "EventRead": {
         "properties": {
+          "adjustment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InventoryAdjustment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "amount": {
             "anyOf": [
               {
@@ -1107,6 +1294,7 @@
           "unit",
           "amount",
           "currency",
+          "adjustment",
           "notes",
           "payload",
           "idempotency_key",
@@ -1190,7 +1378,8 @@
           "observation",
           "reproductive",
           "acquisition",
-          "mortality"
+          "mortality",
+          "inventory"
         ],
         "title": "EventType",
         "type": "string"
@@ -1198,6 +1387,16 @@
       "EventUpdate": {
         "additionalProperties": false,
         "properties": {
+          "adjustment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InventoryAdjustment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "amount": {
             "anyOf": [
               {
@@ -1274,7 +1473,7 @@
           "quantity": {
             "anyOf": [
               {
-                "exclusiveMinimum": 0.0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -1392,6 +1591,159 @@
         "title": "FarmUpdate",
         "type": "object"
       },
+      "FlockAcquisitionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity"
+        ],
+        "title": "FlockAcquisitionCreate",
+        "type": "object"
+      },
+      "FlockActionRead": {
+        "description": "The events a flock action emitted, plus the resulting on-hand headcount.\n\n``paired_event_id`` is the expense (acquisition), income (sale), or\nmortality (mortality) event \u2014 null only for an acquisition with no amount.",
+        "properties": {
+          "headcount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Headcount",
+            "type": "string"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "paired_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paired Event Id"
+          }
+        },
+        "required": [
+          "inventory_event_id",
+          "paired_event_id",
+          "headcount"
+        ],
+        "title": "FlockActionRead",
+        "type": "object"
+      },
+      "FlockMortalityCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "cause": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cause"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity"
+        ],
+        "title": "FlockMortalityCreate",
+        "type": "object"
+      },
+      "FlockSaleCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "buyer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity",
+          "amount"
+        ],
+        "title": "FlockSaleCreate",
+        "type": "object"
+      },
+      "GroupBy": {
+        "enum": [
+          "asset"
+        ],
+        "title": "GroupBy",
+        "type": "string"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1405,9 +1757,114 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HarvestCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "quantity",
+          "unit"
+        ],
+        "title": "HarvestCreate",
+        "type": "object"
+      },
+      "HarvestRead": {
+        "description": "The two events a harvest emitted, plus the produce asset's resulting\non-hand balance in the harvested unit.",
+        "properties": {
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "produce_balance": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Produce Balance",
+            "type": "string"
+          },
+          "production_event_id": {
+            "title": "Production Event Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "production_event_id",
+          "inventory_event_id",
+          "produce_balance"
+        ],
+        "title": "HarvestRead",
+        "type": "object"
+      },
       "IndividualCreate": {
         "additionalProperties": false,
         "properties": {
+          "acquired_at": {
+            "format": "date-time",
+            "title": "Acquired At",
+            "type": "string"
+          },
+          "acquisition_method": {
+            "$ref": "#/components/schemas/AcquisitionMethod",
+            "default": "other"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
           "birth_date": {
             "anyOf": [
               {
@@ -1474,6 +1931,28 @@
       },
       "IndividualRead": {
         "properties": {
+          "acquisition_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquisition Event Id"
+          },
+          "acquisition_expense_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquisition Expense Event Id"
+          },
           "asset_id": {
             "title": "Asset Id",
             "type": "integer"
@@ -1489,6 +1968,17 @@
               }
             ],
             "title": "Birth Date"
+          },
+          "birth_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Event Id"
           },
           "created_at": {
             "format": "date-time",
@@ -1519,6 +2009,17 @@
             "title": "Id",
             "type": "integer"
           },
+          "mortality_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mortality Event Id"
+          },
           "mother_id": {
             "anyOf": [
               {
@@ -1540,6 +2041,17 @@
               }
             ],
             "title": "Name"
+          },
+          "sale_event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sale Event Id"
           },
           "status": {
             "$ref": "#/components/schemas/IndividualStatus"
@@ -1565,6 +2077,11 @@
           "father_id",
           "status",
           "extra",
+          "acquisition_event_id",
+          "acquisition_expense_event_id",
+          "mortality_event_id",
+          "sale_event_id",
+          "birth_event_id",
           "created_at",
           "updated_at"
         ],
@@ -1584,6 +2101,44 @@
       "IndividualUpdate": {
         "additionalProperties": false,
         "properties": {
+          "acquired_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquired At"
+          },
+          "acquisition_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AcquisitionMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
           "birth_date": {
             "anyOf": [
               {
@@ -1595,6 +2150,42 @@
               }
             ],
             "title": "Birth Date"
+          },
+          "buyer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer"
+          },
+          "cause": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cause"
+          },
+          "died_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Died At"
           },
           "extra": {
             "anyOf": [
@@ -1642,6 +2233,34 @@
             ],
             "title": "Name"
           },
+          "sale_amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sale Amount"
+          },
+          "sold_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sold At"
+          },
           "status": {
             "anyOf": [
               {
@@ -1669,6 +2288,111 @@
         "title": "IndividualUpdate",
         "type": "object"
       },
+      "InventoryAdjustment": {
+        "enum": [
+          "increment",
+          "decrement",
+          "reset"
+        ],
+        "title": "InventoryAdjustment",
+        "type": "string"
+      },
+      "InventoryBalance": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryBalanceRow"
+            },
+            "title": "Balances",
+            "type": "array"
+          }
+        },
+        "required": [
+          "asset_id",
+          "balances"
+        ],
+        "title": "InventoryBalance",
+        "type": "object"
+      },
+      "InventoryBalanceRow": {
+        "properties": {
+          "last_reset_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reset At"
+          },
+          "on_hand": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "On Hand",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "unit",
+          "on_hand",
+          "last_reset_at"
+        ],
+        "title": "InventoryBalanceRow",
+        "type": "object"
+      },
+      "InventorySummaryReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/InventorySummaryRow"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "InventorySummaryReport",
+        "type": "object"
+      },
+      "InventorySummaryRow": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "asset_name": {
+            "title": "Asset Name",
+            "type": "string"
+          },
+          "on_hand": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "On Hand",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "asset_id",
+          "asset_name",
+          "unit",
+          "on_hand"
+        ],
+        "title": "InventorySummaryRow",
+        "type": "object"
+      },
       "LoginInput": {
         "additionalProperties": false,
         "properties": {
@@ -1689,6 +2413,806 @@
         "title": "LoginInput",
         "type": "object"
       },
+      "MaterialConsumptionAggregateReport": {
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/Bucket"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AggregateRow"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "group_by": {
+            "$ref": "#/components/schemas/ConsumptionGroupBy"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialConsumptionAggregateTotal"
+            },
+            "title": "Totals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data",
+          "totals",
+          "bucket",
+          "group_by"
+        ],
+        "title": "MaterialConsumptionAggregateReport",
+        "type": "object"
+      },
+      "MaterialConsumptionAggregateTotal": {
+        "properties": {
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group"
+          },
+          "group_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Label"
+          },
+          "total_qty": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Qty",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "group",
+          "group_label",
+          "unit",
+          "total_qty"
+        ],
+        "title": "MaterialConsumptionAggregateTotal",
+        "type": "object"
+      },
+      "MaterialConsumptionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "consumer_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumer Asset Id"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Individual Id"
+          },
+          "material_asset_id": {
+            "title": "Material Asset Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ConsumptionReason"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "material_asset_id",
+          "occurred_at",
+          "quantity",
+          "unit",
+          "reason"
+        ],
+        "title": "MaterialConsumptionCreate",
+        "type": "object"
+      },
+      "MaterialConsumptionRead": {
+        "properties": {
+          "consumer_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumer Asset Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "farm_id": {
+            "title": "Farm Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Individual Id"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "material_asset_id": {
+            "title": "Material Asset Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ConsumptionReason"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "farm_id",
+          "material_asset_id",
+          "consumer_asset_id",
+          "individual_id",
+          "inventory_event_id",
+          "occurred_at",
+          "quantity",
+          "unit",
+          "reason",
+          "notes",
+          "meta",
+          "idempotency_key",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MaterialConsumptionRead",
+        "type": "object"
+      },
+      "MaterialConsumptionUpdate": {
+        "additionalProperties": false,
+        "description": "PATCH body. ``material_asset_id`` is immutable \u2014 a different material is a\ndifferent consumption record.",
+        "properties": {
+          "consumer_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumer Asset Id"
+          },
+          "individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Individual Id"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsumptionReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "MaterialConsumptionUpdate",
+        "type": "object"
+      },
+      "MaterialPurchaseCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "material_asset_id": {
+            "title": "Material Asset Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "supplier": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "material_asset_id",
+          "occurred_at",
+          "quantity",
+          "unit",
+          "amount"
+        ],
+        "title": "MaterialPurchaseCreate",
+        "type": "object"
+      },
+      "MaterialPurchaseRead": {
+        "properties": {
+          "amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "expense_event_id": {
+            "title": "Expense Event Id",
+            "type": "integer"
+          },
+          "farm_id": {
+            "title": "Farm Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "material_asset_id": {
+            "title": "Material Asset Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "supplier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "farm_id",
+          "material_asset_id",
+          "inventory_event_id",
+          "expense_event_id",
+          "occurred_at",
+          "quantity",
+          "unit",
+          "amount",
+          "currency",
+          "supplier",
+          "notes",
+          "meta",
+          "idempotency_key",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MaterialPurchaseRead",
+        "type": "object"
+      },
+      "MaterialPurchaseUpdate": {
+        "additionalProperties": false,
+        "description": "PATCH body. ``material_asset_id`` is immutable \u2014 a different material is a\ndifferent purchase.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "supplier": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "MaterialPurchaseUpdate",
+        "type": "object"
+      },
+      "MaterialSaleCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "buyer": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "quantity",
+          "unit",
+          "amount"
+        ],
+        "title": "MaterialSaleCreate",
+        "type": "object"
+      },
+      "MaterialSaleRead": {
+        "description": "The two events a sale emitted, plus the material's resulting on-hand\nbalance in the sold unit.",
+        "properties": {
+          "income_event_id": {
+            "title": "Income Event Id",
+            "type": "integer"
+          },
+          "inventory_event_id": {
+            "title": "Inventory Event Id",
+            "type": "integer"
+          },
+          "on_hand": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "On Hand",
+            "type": "string"
+          }
+        },
+        "required": [
+          "inventory_event_id",
+          "income_event_id",
+          "on_hand"
+        ],
+        "title": "MaterialSaleRead",
+        "type": "object"
+      },
       "MeResponse": {
         "properties": {
           "memberships": {
@@ -1707,6 +3231,51 @@
           "memberships"
         ],
         "title": "MeResponse",
+        "type": "object"
+      },
+      "OffspringCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "birth_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "extra": {
+            "additionalProperties": true,
+            "title": "Extra",
+            "type": "object"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "tag": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tag",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag"
+        ],
+        "title": "OffspringCreate",
         "type": "object"
       },
       "PageMeta": {
@@ -1817,95 +3386,44 @@
         "title": "Page[IndividualRead]",
         "type": "object"
       },
-      "ProductionReport": {
+      "Page_MaterialConsumptionRead_": {
         "properties": {
-          "bucket": {
-            "$ref": "#/components/schemas/Bucket"
-          },
           "data": {
             "items": {
-              "$ref": "#/components/schemas/ProductionRow"
+              "$ref": "#/components/schemas/MaterialConsumptionRead"
             },
             "title": "Data",
             "type": "array"
           },
-          "totals": {
-            "items": {
-              "$ref": "#/components/schemas/ProductionTotal"
-            },
-            "title": "Totals",
-            "type": "array"
-          },
-          "type": {
-            "$ref": "#/components/schemas/EventType"
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
           }
         },
         "required": [
           "data",
-          "totals",
-          "bucket",
-          "type"
+          "meta"
         ],
-        "title": "ProductionReport",
+        "title": "Page[MaterialConsumptionRead]",
         "type": "object"
       },
-      "ProductionRow": {
+      "Page_MaterialPurchaseRead_": {
         "properties": {
-          "asset_id": {
-            "title": "Asset Id",
-            "type": "integer"
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialPurchaseRead"
+            },
+            "title": "Data",
+            "type": "array"
           },
-          "bucket_start": {
-            "format": "date-time",
-            "title": "Bucket Start",
-            "type": "string"
-          },
-          "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
-          },
-          "total": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Total",
-            "type": "string"
-          },
-          "unit": {
-            "$ref": "#/components/schemas/Unit"
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
           }
         },
         "required": [
-          "bucket_start",
-          "asset_id",
-          "unit",
-          "category_id",
-          "total"
+          "data",
+          "meta"
         ],
-        "title": "ProductionRow",
-        "type": "object"
-      },
-      "ProductionTotal": {
-        "properties": {
-          "total": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Total",
-            "type": "string"
-          },
-          "unit": {
-            "$ref": "#/components/schemas/Unit"
-          }
-        },
-        "required": [
-          "unit",
-          "total"
-        ],
-        "title": "ProductionTotal",
+        "title": "Page[MaterialPurchaseRead]",
         "type": "object"
       },
       "ProfitabilityReport": {
@@ -2984,6 +4502,22 @@
               ],
               "title": "Individual Id"
             }
+          },
+          {
+            "in": "query",
+            "name": "adjustment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InventoryAdjustment"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Adjustment"
+            }
           }
         ],
         "responses": {
@@ -3047,10 +4581,9 @@
               "schema": {
                 "discriminator": {
                   "mapping": {
-                    "acquisition": "#/components/schemas/EventAcquisitionCreate",
                     "expense": "#/components/schemas/EventExpenseCreate",
                     "income": "#/components/schemas/EventIncomeCreate",
-                    "mortality": "#/components/schemas/EventMortalityCreate",
+                    "inventory": "#/components/schemas/EventInventoryCreate",
                     "observation": "#/components/schemas/EventObservationCreate",
                     "production": "#/components/schemas/EventProductionCreate",
                     "reproductive": "#/components/schemas/EventReproductiveCreate"
@@ -3074,10 +4607,7 @@
                     "$ref": "#/components/schemas/EventReproductiveCreate"
                   },
                   {
-                    "$ref": "#/components/schemas/EventAcquisitionCreate"
-                  },
-                  {
-                    "$ref": "#/components/schemas/EventMortalityCreate"
+                    "$ref": "#/components/schemas/EventInventoryCreate"
                   }
                 ],
                 "title": "Data"
@@ -3119,8 +4649,66 @@
         ]
       }
     },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/events/balance": {
+      "get": {
+        "description": "Returns the derived on-hand balance per (asset, unit), computed from INVENTORY events: sum of increments minus decrements since the most recent reset. Only meaningful for assets with kind=material.",
+        "operationId": "events_asset_inventory_balance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryBalance"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Current on-hand inventory for a material asset",
+        "tags": [
+          "events"
+        ]
+      }
+    },
     "/api/v1/farms/{farm_id}/assets/{asset_id}/events/{event_id}": {
       "delete": {
+        "description": "Events emitted by an action (those carrying a `payload.source`) cannot be deleted here. Deleting an inventory event is rejected if it would drive the stock balance negative.",
         "operationId": "events_delete_event",
         "parameters": [
           {
@@ -3240,7 +4828,7 @@
         ]
       },
       "patch": {
-        "description": "`type` is immutable. Guards still apply to `individual_id` / `category_id`.",
+        "description": "`type` is immutable. Events emitted by an action (those carrying a `payload.source`) cannot be edited here \u2014 edit them via their action. Fields must match the event's type, and inventory edits are re-checked against the stock balance.",
         "operationId": "events_update_event",
         "parameters": [
           {
@@ -3311,6 +4899,274 @@
         "summary": "Update an event",
         "tags": [
           "events"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/flock/acquisitions": {
+      "post": {
+        "description": "Increments the flock headcount by `quantity` head via an INVENTORY event; when `amount` is given, also books a paired EXPENSE in the farm's default currency. The asset must be `animal` + `aggregated`.",
+        "operationId": "flock_create_acquisition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlockAcquisitionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlockActionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a flock acquisition",
+        "tags": [
+          "flock"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/flock/mortalities": {
+      "post": {
+        "description": "Decrements the flock headcount by `quantity` head and emits a paired MORTALITY event. Rejected with 409 if it would drive the headcount below zero.",
+        "operationId": "flock_create_mortality",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlockMortalityCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlockActionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a flock mortality",
+        "tags": [
+          "flock"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/flock/sales": {
+      "post": {
+        "description": "Decrements the flock headcount by `quantity` head and books a paired INCOME event for `amount`. Rejected with 409 if it would drive the headcount below zero.",
+        "operationId": "flock_create_sale",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlockSaleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlockActionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a flock sale",
+        "tags": [
+          "flock"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/harvests": {
+      "post": {
+        "description": "Collects produce from an `animal` or `crop` asset: emits a PRODUCTION event on the source asset and an INVENTORY increment on the produce asset linked via the source's `produce_asset_id`. `quantity` and `unit` feed both events; `unit` must match the produce asset's existing stock unit. The source asset must have a produce asset linked.",
+        "operationId": "harvest_create_harvest_endpoint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarvestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarvestRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a harvest",
+        "tags": [
+          "harvest"
         ]
       }
     },
@@ -3479,7 +5335,7 @@
         ]
       },
       "post": {
-        "description": "Asset must be in `individual` mode. Parents (if any) must belong to the same farm.",
+        "description": "Asset must be in `individual` mode. Parents (if any) must belong to the same farm. Atomically emits an ACQUISITION event; a `purchased` acquisition also books a paired EXPENSE event for `amount` in the farm's default currency.",
         "operationId": "individuals_create_individual",
         "parameters": [
           {
@@ -3665,6 +5521,7 @@
         ]
       },
       "patch": {
+        "description": "Transitioning `status` to `deceased` emits a MORTALITY event; `died_at` (defaults to now) and `cause` are recorded on it. Transitioning `status` to `sold` emits an INCOME event; `sale_amount` is required, `sold_at` (defaults to now) and `buyer` are optional. Transitioning away from either state reverses its event. Death/sale fields are rejected unless the individual is (or is becoming) deceased/sold respectively.",
         "operationId": "individuals_update_individual",
         "parameters": [
           {
@@ -3735,6 +5592,149 @@
         "summary": "Update an individual",
         "tags": [
           "individuals"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/individuals/{mother_id}/births": {
+      "post": {
+        "description": "Atomically emits a REPRODUCTIVE event on the mother and creates the offspring individuals, each with an ACQUISITION(`born`) event and its `birth_event_id` linked to that reproductive event. The mother must be `active` and under an `animal` asset.",
+        "operationId": "individuals_create_birth_endpoint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mother_id",
+            "required": true,
+            "schema": {
+              "title": "Mother Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BirthCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BirthRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a birth on a mother individual",
+        "tags": [
+          "individuals"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/{asset_id}/sales": {
+      "post": {
+        "description": "Sells stock from a `material` asset: decrements the asset's inventory by `quantity` and books a paired INCOME event for `amount` in the farm's default currency. `unit` must match a unit the asset already holds stock in. Rejected with 409 if it would drive stock below zero.",
+        "operationId": "material-sales_create_sale",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialSaleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialSaleRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a material sale",
+        "tags": [
+          "material-sales"
         ]
       }
     },
@@ -4135,9 +6135,982 @@
         ]
       }
     },
+    "/api/v1/farms/{farm_id}/material-consumptions": {
+      "get": {
+        "operationId": "material-consumptions_list_material_consumptions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Search notes",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search notes",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "e.g. -occurred_at,quantity",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -occurred_at,quantity",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "consumer_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Consumer Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reason",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConsumptionReason"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_MaterialConsumptionRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List material consumptions in a farm",
+        "tags": [
+          "material-consumptions"
+        ]
+      },
+      "post": {
+        "description": "Atomically records the consumption and decrements the material's stock via a paired INVENTORY event. `reason=feeding` requires `consumer_asset_id`; `waste`/`spoilage` must omit it. The consumed `unit` must match a unit the material already holds stock in. Rejects with 409 `insufficient_stock` if stock would go negative. Replaying an `idempotency_key` returns the original record with status 200.",
+        "operationId": "material-consumptions_create_material_consumption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialConsumptionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a material consumption",
+        "tags": [
+          "material-consumptions"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/material-consumptions/{consumption_id}": {
+      "delete": {
+        "description": "Hard-deletes the record and reverses its stock effect.",
+        "operationId": "material-consumptions_delete_material_consumption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consumption_id",
+            "required": true,
+            "schema": {
+              "title": "Consumption Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete a material consumption",
+        "tags": [
+          "material-consumptions"
+        ]
+      },
+      "get": {
+        "operationId": "material-consumptions_get_material_consumption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consumption_id",
+            "required": true,
+            "schema": {
+              "title": "Consumption Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get one material consumption",
+        "tags": [
+          "material-consumptions"
+        ]
+      },
+      "patch": {
+        "description": "`material_asset_id` is immutable. Changing `quantity`/`unit`/`occurred_at` reconciles the paired inventory event and re-checks stock.",
+        "operationId": "material-consumptions_update_material_consumption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consumption_id",
+            "required": true,
+            "schema": {
+              "title": "Consumption Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialConsumptionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update a material consumption",
+        "tags": [
+          "material-consumptions"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/material-purchases": {
+      "get": {
+        "operationId": "material-purchases_list_material_purchases",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Search notes and supplier",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search notes and supplier",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "e.g. -occurred_at,amount",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -occurred_at,amount",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_MaterialPurchaseRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List material purchases in a farm",
+        "tags": [
+          "material-purchases"
+        ]
+      },
+      "post": {
+        "description": "Atomically records the purchase, increments the material's stock, and books an expense for the amount paid \u2014 via a paired INVENTORY and EXPENSE event. The purchased `unit` must match how the material is already tracked (any unit is allowed for a material with no inventory history). Replaying an `idempotency_key` returns the original record with status 200.",
+        "operationId": "material-purchases_create_material_purchase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialPurchaseCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialPurchaseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a material purchase",
+        "tags": [
+          "material-purchases"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/material-purchases/{purchase_id}": {
+      "delete": {
+        "description": "Hard-deletes the record and reverses both the stock increment and the expense. Rejected with 409 if reversing the stock would go negative.",
+        "operationId": "material-purchases_delete_material_purchase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "title": "Purchase Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete a material purchase",
+        "tags": [
+          "material-purchases"
+        ]
+      },
+      "get": {
+        "operationId": "material-purchases_get_material_purchase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "title": "Purchase Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialPurchaseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get one material purchase",
+        "tags": [
+          "material-purchases"
+        ]
+      },
+      "patch": {
+        "description": "`material_asset_id` is immutable. Changing `quantity`/`unit`/`occurred_at` reconciles the inventory event; `amount`/`occurred_at` reconciles the expense. An edit that would drive stock negative is rejected with 409.",
+        "operationId": "material-purchases_update_material_purchase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "title": "Purchase Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialPurchaseUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialPurchaseRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update a material purchase",
+        "tags": [
+          "material-purchases"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/aggregate": {
+      "get": {
+        "description": "Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.\n\n- production / observation: SUM(quantity) grouped by unit\n- mortality / acquisition: SUM(quantity) as headcount, no grouping\n- inventory: net flow within window (increments minus decrements).   Pass `adjustment=reset|increment|decrement` to isolate one kind.\n- expense / income: SUM(amount) grouped by currency\n- reproductive: COUNT(*) of events\n\nFilters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.\n\n**`group_by=asset`** breaks rows down per asset. Each row then carries a stable `group` key (the asset id as a string), a `group_label` (the asset name), and an `asset_id`. When `group_by` is omitted, rows are unchanged: `group_label` and `asset_id` stay `null`.\n\nCompatibility matrix \u2014 `type` vs `group_by`:\n\n| type | group_by=asset |\n| --- | --- |\n| mortality | supported |\n| acquisition | supported |\n| production | supported (quantity summed per asset across units) |\n| observation / inventory / expense / income / reproductive | rejected with 422 |",
+        "operationId": "reports_aggregate_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bucket",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Bucket",
+              "default": "day"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group_by",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/GroupBy"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Group By"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Unit"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "adjustment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InventoryAdjustment"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Adjustment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Currency"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AggregateReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Generic time-bucketed aggregate over events of one type",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/api/v1/farms/{farm_id}/reports/cost-per-unit": {
       "get": {
-        "description": "Requires `unit` (what counts as one produced unit). One row per (asset, currency). Assets without BOTH production (in the given unit) and expense events are omitted \u2014 a currency cannot be inferred without an expense row. The expense total is not unit-filtered: all of the asset's expenses are attributed to the queried production unit, so this number is only meaningful for single-output assets.",
+        "description": "Requires `unit` (what counts as one produced unit). One row per producer asset (any asset with `production` events in that unit). `cost_per_unit = (direct expense events on the producer + the average-cost value of the feed it was fed) / its production quantity`. Feed is attributed via `material_consumption` with `reason=feeding` and `consumer_asset_id` = the producer; a material's average cost is its full purchase history (not bounded by `date_from`). `date_from`/`date_to` bound production and direct expenses. A producer that made nothing in the window still appears with `cost_per_unit` null; `has_unvalued_consumption` flags rows whose feed has no purchase history to value it.",
         "operationId": "reports_cost_per_unit",
         "parameters": [
           {
@@ -4235,7 +7208,7 @@
             "OAuth2PasswordBearer": []
           }
         ],
-        "summary": "R3 \u2014 expense total \u00f7 produced quantity, per asset",
+        "summary": "R3 \u2014 cost per produced unit, per producer asset",
         "tags": [
           "reports"
         ]
@@ -4473,10 +7446,10 @@
         ]
       }
     },
-    "/api/v1/farms/{farm_id}/reports/production": {
+    "/api/v1/farms/{farm_id}/reports/inventory-summary": {
       "get": {
-        "description": "Default type=production. Pass type=observation + unit=unit to get headcount deltas. Grouped by (bucket, asset_id, unit, category_id).",
-        "operationId": "reports_production",
+        "description": "One row per (asset, unit) for any asset that carries INVENTORY events \u2014 material assets and aggregated animal flocks. On-hand is derived from those events: sum of increments minus decrements since the most recent reset. `date_to` gives the balance as of that moment (default: now); `date_from` does not apply to a running balance and is ignored.",
+        "operationId": "reports_inventory_summary",
         "parameters": [
           {
             "in": "path",
@@ -4536,40 +7509,6 @@
               ],
               "title": "Asset Id"
             }
-          },
-          {
-            "in": "query",
-            "name": "type",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/EventType",
-              "default": "production"
-            }
-          },
-          {
-            "in": "query",
-            "name": "unit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/Unit"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Unit"
-            }
-          },
-          {
-            "in": "query",
-            "name": "bucket",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/Bucket",
-              "default": "day"
-            }
           }
         ],
         "responses": {
@@ -4577,7 +7516,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProductionReport"
+                  "$ref": "#/components/schemas/InventorySummaryReport"
                 }
               }
             },
@@ -4599,15 +7538,16 @@
             "OAuth2PasswordBearer": []
           }
         ],
-        "summary": "R2 \u2014 SUM(quantity) bucketed over time",
+        "summary": "R5 \u2014 current on-hand inventory per asset",
         "tags": [
           "reports"
         ]
       }
     },
-    "/api/v1/farms/{farm_id}/reports/production/pdf": {
+    "/api/v1/farms/{farm_id}/reports/material-consumption-aggregate": {
       "get": {
-        "operationId": "reports_production_pdf",
+        "description": "Time-bucketed SUM(quantity) over recorded material consumptions.\n\n- `bucket=day|week|month` \u2014 `date_trunc` window\n- `group_by=material|consumer|both` \u2014 each row carries a `group` key, a `group_label`, and the `unit` (quantities never sum across units)\n- optional filters: `material_asset_id`, `consumer_asset_id`, `reason`, `date_from`, `date_to`\n\n`totals` carries the per-(group, unit) `total_qty` across all buckets.",
+        "operationId": "reports_material_consumption_aggregate",
         "parameters": [
           {
             "in": "path",
@@ -4654,7 +7594,25 @@
           },
           {
             "in": "query",
-            "name": "asset_id",
+            "name": "bucket",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Bucket",
+              "default": "day"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group_by",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ConsumptionGroupBy",
+              "default": "material"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_asset_id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -4665,41 +7623,39 @@
                   "type": "null"
                 }
               ],
-              "title": "Asset Id"
+              "title": "Material Asset Id"
             }
           },
           {
             "in": "query",
-            "name": "type",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/EventType",
-              "default": "production"
-            }
-          },
-          {
-            "in": "query",
-            "name": "unit",
+            "name": "consumer_asset_id",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/Unit"
+                  "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Unit"
+              "title": "Consumer Asset Id"
             }
           },
           {
             "in": "query",
-            "name": "bucket",
+            "name": "reason",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/Bucket",
-              "default": "day"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConsumptionReason"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
             }
           }
         ],
@@ -4707,7 +7663,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionAggregateReport"
+                }
               }
             },
             "description": "Successful Response"
@@ -4728,7 +7686,7 @@
             "OAuth2PasswordBearer": []
           }
         ],
-        "summary": "R2 \u2014 PDF download",
+        "summary": "Day/week material-consumption totals, bucketed and grouped",
         "tags": [
           "reports"
         ]

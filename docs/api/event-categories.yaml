@@ -1,0 +1,80 @@
+tag: event-categories
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/event-categories
+  summary: List event categories in a farm
+  responses: {'200': Page_EventCategoryRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/event-categories
+  summary: Create an event category
+  description: '`type` is immutable after creation. Uniqueness enforced on (farm, type, name).'
+  body: EventCategoryCreate
+  responses: {'201': EventCategoryRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/event-categories/{category_id}
+  summary: Get one event category
+  responses: {'200': EventCategoryRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/event-categories/{category_id}
+  summary: Update an event category
+  description: Set `archived_at` to archive; set to null to unarchive. `type` cannot change.
+  body: EventCategoryUpdate
+  responses: {'200': EventCategoryRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/event-categories/{category_id}
+  summary: Delete an event category
+  description: Events referencing this category have their `category_id` set to null.
+  responses: {'204': any, '422': HTTPValidationError}
+types:
+  EventCategoryCreate:
+    kind: object
+    required: [type, name]
+    fields:
+      type: production | expense | income | observation | reproductive | acquisition | mortality | inventory
+      name: string
+      color: string | null
+  EventCategoryRead:
+    kind: object
+    required: [id, farm_id, type, name, color, archived_at, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      type: production | expense | income | observation | reproductive | acquisition | mortality | inventory
+      name: string
+      color: string | null
+      archived_at: string (date-time) | null
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  EventCategoryUpdate:
+    kind: object
+    fields:
+      name: string | null
+      color: string | null
+      archived_at: string (date-time) | null
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_EventCategoryRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: EventCategoryRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

@@ -61,7 +61,7 @@ class AuthService:
         payload = self._decode_or_raise(refresh_token)
         if payload.get("type") != "refresh":
             raise UnauthorizedError("Invalid refresh token")
-        user = await self.db.get(User, int(payload["sub"]))
+        user = await self.db.get(User, int(str(payload["sub"])))
         if user is None:
             raise UnauthorizedError("User not found")
         return self._issue_tokens(user)

@@ -1,58 +1,40 @@
 {% extends "_base.html" %}
 {% block content %}
 
-<p>Unidad de producción: <strong>{{ unit }}</strong></p>
-
-<h2>Detalle por activo</h2>
+<h2>Costo por unidad producida</h2>
 {% if rows %}
 <table>
   <thead>
     <tr>
       <th>Activo</th>
       <th>Moneda</th>
-      <th class="num">Cantidad producida</th>
-      <th class="num">Gasto total</th>
-      <th class="num">Costo por unidad</th>
+      <th class="num">Producción</th>
+      <th class="num">Gasto directo</th>
+      <th class="num">Costo alimento</th>
+      <th class="num">Costo total</th>
+      <th class="num">Costo / unidad</th>
     </tr>
   </thead>
   <tbody>
     {% for r in rows %}
     <tr>
-      <td>{{ r.asset_name }}</td>
+      <td>{{ r.asset_name }}{% if r.has_unvalued_consumption %} *{% endif %}</td>
       <td>{{ r.currency }}</td>
-      <td class="num">{{ r.quantity | num }}</td>
-      <td class="num">{{ r.expense_total | money }}</td>
+      <td class="num">{{ r.production_quantity | num }}</td>
+      <td class="num">{{ r.direct_expense_total | money }}</td>
+      <td class="num">{{ r.consumed_material_cost | money }}</td>
+      <td class="num">{{ r.total_cost | money }}</td>
       <td class="num">{{ r.cost_per_unit | money }}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+<p>Unidad producida: {{ unit }}</p>
+{% if rows | selectattr("has_unvalued_consumption") | list %}
+<p>* Incluye alimento sin historial de compra — el costo está subestimado.</p>
+{% endif %}
 {% else %}
 <p>Sin datos para el período seleccionado.</p>
-{% endif %}
-
-{% if totals %}
-<h2>Totales por moneda</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Moneda</th>
-      <th class="num">Cantidad</th>
-      <th class="num">Gasto total</th>
-      <th class="num">Costo por unidad</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for t in totals %}
-    <tr class="totals">
-      <td>{{ t.currency }}</td>
-      <td class="num">{{ t.quantity | num }}</td>
-      <td class="num">{{ t.expense_total | money }}</td>
-      <td class="num">{{ t.cost_per_unit | money }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
 {% endif %}
 
 {% endblock %}

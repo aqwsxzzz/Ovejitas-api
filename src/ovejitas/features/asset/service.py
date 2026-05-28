@@ -1,13 +1,14 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ovejitas.core.errors import NotFoundError
+from ovejitas.core.errors import NotFoundError, ValidationError
 from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
-from ovejitas.features.asset.models import Asset
+from ovejitas.features.asset.models import Asset, AssetKind
 from ovejitas.features.asset.schemas import AssetCreate, AssetFilters, AssetUpdate
+from ovejitas.features.event.balance import asset_has_events
 
 SEARCH_COLUMNS = [Asset.name, Asset.description, Asset.location]
 SORT_ALLOWED = {
@@ -38,11 +39,31 @@ class AssetService:
 
     async def update(self, farm_id: int, asset_id: int, data: AssetUpdate) -> Asset:
         asset = await self.get(farm_id, asset_id)
-        for key, value in data.model_dump(exclude_unset=True).items():
+        updates = data.model_dump(exclude_unset=True)
+        if updates.get("produce_asset_id") is not None:
+            source_kind = updates.get("kind", asset.kind)
+            await self._validate_produce_link(farm_id, source_kind, updates["produce_asset_id"])
+        structural_changed = ("kind" in updates and updates["kind"] != asset.kind) or (
+            "mode" in updates and updates["mode"] != asset.mode
+        )
+        if structural_changed and await asset_has_events(self.db, asset_id):
+            raise ValidationError("Cannot change kind or mode of an asset that already has events")
+        for key, value in updates.items():
             setattr(asset, key, value)
         await self.db.commit()
         await self.db.refresh(asset)
         return asset
+
+    async def _validate_produce_link(
+        self, farm_id: int, source_kind: AssetKind, produce_asset_id: int
+    ) -> None:
+        """A produce link is only meaningful on an asset that produces, and must
+        point at a material asset in the same farm."""
+        if source_kind not in (AssetKind.ANIMAL, AssetKind.CROP):
+            raise ValidationError("Only animal or crop assets can link a produce asset")
+        target = await self.get(farm_id, produce_asset_id)
+        if target.kind is not AssetKind.MATERIAL:
+            raise ValidationError("produce_asset_id must reference a material asset")
 
     async def delete(self, farm_id: int, asset_id: int) -> None:
         asset = await self.get(farm_id, asset_id)

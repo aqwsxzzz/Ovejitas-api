@@ -1,0 +1,84 @@
+tag: assets
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/assets
+  summary: List assets in a farm
+  responses: {'200': Page_AssetRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/assets
+  summary: Create an asset in a farm
+  body: AssetCreate
+  responses: {'201': AssetRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}
+  summary: Get one asset
+  responses: {'200': AssetRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}
+  summary: Update an asset
+  body: AssetUpdate
+  responses: {'200': AssetRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/assets/{asset_id}
+  summary: Delete an asset
+  responses: {'204': any, '422': HTTPValidationError}
+types:
+  AssetCreate:
+    kind: object
+    required: [name, kind, mode]
+    fields:
+      name: string
+      kind: animal | crop | equipment | material | location
+      mode: aggregated | individual
+      location: string | null
+      description: string | null
+  AssetRead:
+    kind: object
+    required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      name: string
+      kind: animal | crop | equipment | material | location
+      mode: aggregated | individual
+      location: string | null
+      description: string | null
+      produce_asset_id: integer | null
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  AssetUpdate:
+    kind: object
+    fields:
+      name: string | null
+      kind: animal | crop | equipment | material | location | null
+      mode: aggregated | individual | null
+      location: string | null
+      description: string | null
+      produce_asset_id: integer | null
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_AssetRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: AssetRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

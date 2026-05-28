@@ -41,3 +41,11 @@ class Asset(Base, TimestampMixin):
     )
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     description: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    # The produce material asset this asset harvests into (e.g. a hen flock ->
+    # an "Eggs" asset). Set on animal/crop assets; null until linked. SET NULL
+    # on delete so a deleted produce asset just unlinks rather than dangling.
+    produce_asset_id: Mapped[int | None] = mapped_column(
+        ForeignKey("asset.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )

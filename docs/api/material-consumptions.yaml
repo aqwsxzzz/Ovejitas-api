@@ -1,0 +1,105 @@
+tag: material-consumptions
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/material-consumptions
+  summary: List material consumptions in a farm
+  responses: {'200': Page_MaterialConsumptionRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/material-consumptions
+  summary: Record a material consumption
+  description: Atomically records the consumption and decrements the material's stock via a paired INVENTORY event. `reason=feeding`
+    requires `consumer_asset_id`; `waste`/`spoilage` must omit it. The consumed `unit` must match a unit the material already
+    holds stock in. Rejects with 409 `insufficient_stock` if stock would go negative. Replaying an `idempotency_key` returns
+    the original record with status 200.
+  body: MaterialConsumptionCreate
+  responses: {'201': MaterialConsumptionRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/material-consumptions/{consumption_id}
+  summary: Get one material consumption
+  responses: {'200': MaterialConsumptionRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/material-consumptions/{consumption_id}
+  summary: Update a material consumption
+  description: '`material_asset_id` is immutable. Changing `quantity`/`unit`/`occurred_at` reconciles the paired inventory
+    event and re-checks stock.'
+  body: MaterialConsumptionUpdate
+  responses: {'200': MaterialConsumptionRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/material-consumptions/{consumption_id}
+  summary: Delete a material consumption
+  description: Hard-deletes the record and reverses its stock effect.
+  responses: {'204': any, '422': HTTPValidationError}
+types:
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  MaterialConsumptionCreate:
+    kind: object
+    required: [material_asset_id, occurred_at, quantity, unit, reason]
+    fields:
+      material_asset_id: integer
+      consumer_asset_id: integer | null
+      individual_id: integer | null
+      occurred_at: string (date-time)
+      quantity: number | string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      reason: feeding | waste | spoilage
+      notes: string | null
+      meta: object
+      idempotency_key: string | null
+  MaterialConsumptionRead:
+    kind: object
+    required: [id, farm_id, material_asset_id, consumer_asset_id, individual_id, inventory_event_id, occurred_at, quantity,
+      unit, reason, notes, meta, idempotency_key, created_by, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      material_asset_id: integer
+      consumer_asset_id: integer | null
+      individual_id: integer | null
+      inventory_event_id: integer
+      occurred_at: string (date-time)
+      quantity: string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      reason: feeding | waste | spoilage
+      notes: string | null
+      meta: object
+      idempotency_key: string | null
+      created_by: integer
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  MaterialConsumptionUpdate:
+    kind: object
+    fields:
+      consumer_asset_id: integer | null
+      individual_id: integer | null
+      occurred_at: string (date-time) | null
+      quantity: number | string | null
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
+      reason: feeding | waste | spoilage | null
+      notes: string | null
+      meta: object | null
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_MaterialConsumptionRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: MaterialConsumptionRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

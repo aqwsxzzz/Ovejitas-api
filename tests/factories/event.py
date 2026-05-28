@@ -18,6 +18,7 @@ class EventFactory(BaseFactory):
     type = EventType.PRODUCTION
     quantity = Decimal("1")
     unit = Unit.UNIT
+    adjustment = None
     payload: ClassVar[dict[str, object]] = {}
 
     @classmethod
