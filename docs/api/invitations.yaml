@@ -4,24 +4,24 @@ operations:
   path: /api/v1/farms/{farm_id}/invitations
   summary: Create an invitation link (owner/admin only)
   body: InvitationCreate
-  responses: {'201': InvitationCreateResponse, '422': HTTPValidationError}
+  responses: {'201': InvitationCreateResponse, '401': any, '403': any, '409': any, '422': HTTPValidationError}
 - method: GET
   path: /api/v1/farms/{farm_id}/invitations
   summary: List invitations for a farm (owner/admin only)
-  responses: {'200': Page_InvitationRead_, '422': HTTPValidationError}
+  responses: {'200': Page_InvitationRead_, '401': any, '403': any, '422': HTTPValidationError}
 - method: POST
   path: /api/v1/farms/{farm_id}/invitations/{invitation_id}/revoke
   summary: Revoke a pending invitation (owner/admin only)
-  responses: {'204': any, '422': HTTPValidationError}
+  responses: {'204': any, '401': any, '403': any, '404': any, '409': any, '422': HTTPValidationError}
 - method: GET
   path: /api/v1/invitations/{token}
   summary: Resolve an invitation token (public)
-  responses: {'200': InvitationResolve, '422': HTTPValidationError}
+  responses: {'200': InvitationResolve, '404': any, '409': any, '410': any, '422': HTTPValidationError}
 - method: POST
   path: /api/v1/invitations/{token}/accept
   summary: Accept an invitation; joins the farm and returns tokens (public)
   body: AcceptInvitation
-  responses: {'200': TokenPair, '422': HTTPValidationError}
+  responses: {'200': TokenPair, '401': any, '404': any, '409': any, '410': any, '422': HTTPValidationError}
 types:
   AcceptInvitation:
     kind: object

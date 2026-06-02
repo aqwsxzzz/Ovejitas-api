@@ -6431,6 +6431,12 @@
             },
             "description": "Successful Response"
           },
+          "401": {
+            "description": "Missing or invalid access token"
+          },
+          "403": {
+            "description": "Not an owner or admin of this farm"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6486,6 +6492,15 @@
             },
             "description": "Successful Response"
           },
+          "401": {
+            "description": "Missing or invalid access token"
+          },
+          "403": {
+            "description": "Not an owner or admin of this farm"
+          },
+          "409": {
+            "description": "Email is already a member, or a pending invite already exists"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6534,6 +6549,18 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing or invalid access token"
+          },
+          "403": {
+            "description": "Not an owner or admin of this farm"
+          },
+          "404": {
+            "description": "Invitation not found"
+          },
+          "409": {
+            "description": "Only pending invitations can be revoked"
           },
           "422": {
             "content": {
@@ -8332,6 +8359,15 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Invitation not found or revoked"
+          },
+          "409": {
+            "description": "Invitation already accepted"
+          },
+          "410": {
+            "description": "Invitation expired"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -8383,6 +8419,18 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "Incorrect password for the existing account"
+          },
+          "404": {
+            "description": "Invitation not found or revoked"
+          },
+          "409": {
+            "description": "Invitation already accepted, or user is already a member"
+          },
+          "410": {
+            "description": "Invitation expired"
           },
           "422": {
             "content": {
