@@ -6,6 +6,7 @@ from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
 from ovejitas.features.event_category.models import EventCategory
 from ovejitas.features.farm.models import Farm
+from ovejitas.features.farm_invitation.models import FarmInvitation, InvitationStatus
 from ovejitas.features.farm_member.models import FarmMember, FarmRole
 from ovejitas.features.individual.models import Individual, IndividualStatus
 from ovejitas.features.material_consumption.models import MaterialConsumption
@@ -23,10 +24,12 @@ __all__ = [
     "EventCategory",
     "EventType",
     "Farm",
+    "FarmInvitation",
     "FarmMember",
     "FarmRole",
     "Individual",
     "IndividualStatus",
+    "InvitationStatus",
     "MaterialConsumption",
     "MaterialPurchase",
     "User",

@@ -28,6 +28,12 @@ class ConflictError(AppError):
     message = "Resource conflict"
 
 
+class GoneError(AppError):
+    status_code = status.HTTP_410_GONE
+    code = "gone"
+    message = "Resource no longer available"
+
+
 class ValidationError(AppError):
     status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     code = "validation_error"
