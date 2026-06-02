@@ -1,4 +1,5 @@
-from typing import Annotated
+from collections.abc import Callable, Coroutine
+from typing import Annotated, Any
 
 from fastapi import Depends
 from sqlalchemy import select
@@ -6,7 +7,7 @@ from sqlalchemy import select
 from ovejitas.core.deps import DBSession
 from ovejitas.core.errors import ForbiddenError
 from ovejitas.features.auth.deps import CurrentUser
-from ovejitas.features.farm_member.models import FarmMember
+from ovejitas.features.farm_member.models import FarmMember, FarmRole
 
 
 async def require_farm_member(
@@ -25,3 +26,16 @@ async def require_farm_member(
 
 
 FarmMembership = Annotated[FarmMember, Depends(require_farm_member)]
+
+
+def require_farm_role(
+    *allowed: FarmRole,
+) -> Callable[[FarmMember], Coroutine[Any, Any, FarmMember]]:
+    """Dependency factory gating a farm-scoped route to specific membership roles."""
+
+    async def checker(membership: FarmMembership) -> FarmMember:
+        if membership.role not in allowed:
+            raise ForbiddenError("Insufficient farm role")
+        return membership
+
+    return checker
