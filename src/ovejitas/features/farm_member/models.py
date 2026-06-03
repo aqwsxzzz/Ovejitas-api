@@ -33,5 +33,12 @@ class FarmMember(Base, TimestampMixin):
         SQLEnum(FarmRole, name="farm_role", values_callable=lambda e: [m.value for m in e]),
         nullable=False,
     )
+    # Who invited this member (the "by"); NULL for owners self-created on farm creation.
+    # SET NULL, not CASCADE — losing the inviter must not evict a legitimate member.
+    invited_by: Mapped[int | None] = mapped_column(
+        ForeignKey("user.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     # Eager-loaded explicitly via selectinload; lazy="raise" guards against async lazy I/O.
-    user: Mapped[User] = relationship(lazy="raise")
+    # foreign_keys pinned: invited_by also references user, so the path is ambiguous otherwise.
+    user: Mapped[User] = relationship(lazy="raise", foreign_keys=[user_id])

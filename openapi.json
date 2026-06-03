@@ -3404,6 +3404,17 @@
             "title": "Id",
             "type": "integer"
           },
+          "invited_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited By"
+          },
           "role": {
             "$ref": "#/components/schemas/FarmRole"
           },
@@ -3419,6 +3430,7 @@
           "id",
           "user_id",
           "role",
+          "invited_by",
           "created_at",
           "user"
         ],

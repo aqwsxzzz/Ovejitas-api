@@ -117,7 +117,14 @@ class InvitationService:
 
         if await is_member(self.db, invite.farm_id, user.id):
             raise ConflictError("Already a member of this farm")
-        self.db.add(FarmMember(user_id=user.id, farm_id=invite.farm_id, role=invite.role))
+        self.db.add(
+            FarmMember(
+                user_id=user.id,
+                farm_id=invite.farm_id,
+                role=invite.role,
+                invited_by=invite.invited_by,
+            )
+        )
         invite.status = InvitationStatus.ACCEPTED
         await self.db.commit()
         return issue_token_pair(user)

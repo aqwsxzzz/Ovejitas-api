@@ -21,6 +21,7 @@ class MemberRead(BaseModel):
     id: int
     user_id: int
     role: FarmRole
+    invited_by: int | None
     created_at: datetime
     user: MemberUserRead
 

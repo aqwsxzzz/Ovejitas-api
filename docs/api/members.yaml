@@ -20,11 +20,12 @@ types:
       detail: ValidationError[]
   MemberRead:
     kind: object
-    required: [id, user_id, role, created_at, user]
+    required: [id, user_id, role, invited_by, created_at, user]
     fields:
       id: integer
       user_id: integer
       role: owner | admin | member
+      invited_by: integer | null
       created_at: string (date-time)
       user: MemberUserRead
   MemberRoleUpdate:
