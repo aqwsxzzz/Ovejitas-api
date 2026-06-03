@@ -13,6 +13,7 @@ from ovejitas.features.event.router import router as event_router
 from ovejitas.features.event_category.router import router as event_category_router
 from ovejitas.features.farm.router import router as farm_router
 from ovejitas.features.farm_invitation.router import router as farm_invitation_router
+from ovejitas.features.farm_member.router import router as farm_member_router
 from ovejitas.features.flock.router import router as flock_router
 from ovejitas.features.harvest.router import router as harvest_router
 from ovejitas.features.individual.router import router as individual_router
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(farm_router, prefix=API_PREFIX)
     app.include_router(farm_invitation_router, prefix=API_PREFIX)
+    app.include_router(farm_member_router, prefix=API_PREFIX)
     app.include_router(asset_router, prefix=API_PREFIX)
     app.include_router(individual_router, prefix=API_PREFIX)
     app.include_router(event_category_router, prefix=API_PREFIX)
