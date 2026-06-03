@@ -2,9 +2,10 @@ from enum import StrEnum
 
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import ForeignKey, Identity, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ovejitas.core.models import Base, TimestampMixin
+from ovejitas.features.user.models import User
 
 
 class FarmRole(StrEnum):
@@ -32,3 +33,5 @@ class FarmMember(Base, TimestampMixin):
         SQLEnum(FarmRole, name="farm_role", values_callable=lambda e: [m.value for m in e]),
         nullable=False,
     )
+    # Eager-loaded explicitly via selectinload; lazy="raise" guards against async lazy I/O.
+    user: Mapped[User] = relationship(lazy="raise")

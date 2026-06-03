@@ -41,6 +41,9 @@ resources:
 - tag: material-sales
   file: material-sales.yaml
   operations: 1
+- tag: members
+  file: members.yaml
+  operations: 3
 - tag: reports
   file: reports.yaml
   operations: 8
