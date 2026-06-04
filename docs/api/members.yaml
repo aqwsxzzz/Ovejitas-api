@@ -1,0 +1,65 @@
+tag: members
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/members
+  summary: List farm members
+  responses: {'200': Page_MemberRead_, '401': any, '403': any, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/members/{member_id}
+  summary: Change a member's role (owner/admin only)
+  body: MemberRoleUpdate
+  responses: {'200': MemberRead, '401': any, '403': any, '404': any, '409': any, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/members/{member_id}
+  summary: Remove a member from the farm (owner/admin only)
+  responses: {'204': any, '401': any, '403': any, '404': any, '409': any, '422': HTTPValidationError}
+types:
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  MemberRead:
+    kind: object
+    required: [id, user_id, role, invited_by, created_at, user]
+    fields:
+      id: integer
+      user_id: integer
+      role: owner | admin | member
+      invited_by: integer | null
+      created_at: string (date-time)
+      user: MemberUserRead
+  MemberRoleUpdate:
+    kind: object
+    required: [role]
+    fields:
+      role: owner | admin | member
+  MemberUserRead:
+    kind: object
+    required: [id, name, email]
+    fields:
+      id: integer
+      name: string
+      email: string (email)
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_MemberRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: MemberRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

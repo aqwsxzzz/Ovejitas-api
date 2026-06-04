@@ -1,0 +1,97 @@
+tag: invitations
+operations:
+- method: POST
+  path: /api/v1/farms/{farm_id}/invitations
+  summary: Create an invitation link (owner/admin only)
+  body: InvitationCreate
+  responses: {'201': InvitationCreateResponse, '401': any, '403': any, '409': any, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/invitations
+  summary: List invitations for a farm (owner/admin only)
+  responses: {'200': Page_InvitationRead_, '401': any, '403': any, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/invitations/{invitation_id}/revoke
+  summary: Revoke a pending invitation (owner/admin only)
+  responses: {'204': any, '401': any, '403': any, '404': any, '409': any, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/invitations/{token}
+  summary: Resolve an invitation token (public)
+  responses: {'200': InvitationResolve, '404': any, '409': any, '410': any, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/invitations/{token}/accept
+  summary: Accept an invitation; joins the farm and returns tokens (public)
+  body: AcceptInvitation
+  responses: {'200': TokenPair, '401': any, '404': any, '409': any, '410': any, '422': HTTPValidationError}
+types:
+  AcceptInvitation:
+    kind: object
+    required: [password]
+    fields:
+      password: string
+      name: string | null
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  InvitationCreate:
+    kind: object
+    required: [email, role]
+    fields:
+      email: string (email)
+      role: owner | admin | member
+  InvitationCreateResponse:
+    kind: object
+    required: [invitation, token]
+    fields:
+      invitation: InvitationRead
+      token: string
+  InvitationRead:
+    kind: object
+    required: [id, farm_id, email, role, status, expires_at, created_at]
+    fields:
+      id: integer
+      farm_id: integer
+      email: string (email)
+      role: owner | admin | member
+      status: pending | accepted | revoked
+      expires_at: string (date-time)
+      created_at: string (date-time)
+  InvitationResolve:
+    kind: object
+    required: [farm_id, farm_name, role, email, requires_registration]
+    fields:
+      farm_id: integer
+      farm_name: string
+      role: owner | admin | member
+      email: string (email)
+      requires_registration: boolean
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_InvitationRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: InvitationRead[]
+      meta: PageMeta
+  TokenPair:
+    kind: object
+    required: [access_token, refresh_token]
+    fields:
+      access_token: string
+      refresh_token: string
+      token_type: string
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

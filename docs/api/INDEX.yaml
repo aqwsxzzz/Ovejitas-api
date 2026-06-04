@@ -29,6 +29,9 @@ resources:
 - tag: individuals
   file: individuals.yaml
   operations: 6
+- tag: invitations
+  file: invitations.yaml
+  operations: 5
 - tag: material-consumptions
   file: material-consumptions.yaml
   operations: 5
@@ -38,6 +41,9 @@ resources:
 - tag: material-sales
   file: material-sales.yaml
   operations: 1
+- tag: members
+  file: members.yaml
+  operations: 3
 - tag: reports
   file: reports.yaml
   operations: 8

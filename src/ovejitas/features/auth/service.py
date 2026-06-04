@@ -26,22 +26,31 @@ DEFAULT_FARM_NAME = "My Farm"
 DEFAULT_CURRENCY = "USD"
 
 
+def issue_token_pair(user: User) -> TokenPair:
+    """Mint an access + refresh token pair for a user. Reused by the invite-accept flow."""
+    return TokenPair(
+        access_token=create_access_token(str(user.id)),
+        refresh_token=create_refresh_token(str(user.id)),
+    )
+
+
 class AuthService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def register(self, data: RegisterInput) -> TokenPair:
-        user = User(
-            email=data.email,
-            name=data.name,
-            password_hash=hash_password(data.password),
-        )
+    async def create_user(self, *, email: str, name: str, password: str) -> User:
+        """Add + flush a user (no commit), so callers control the surrounding transaction."""
+        user = User(email=email, name=name, password_hash=hash_password(password))
         self.db.add(user)
         try:
             await self.db.flush()
         except IntegrityError as exc:
             await self.db.rollback()
             raise ConflictError("Email already registered") from exc
+        return user
+
+    async def register(self, data: RegisterInput) -> TokenPair:
+        user = await self.create_user(email=data.email, name=data.name, password=data.password)
 
         farm = Farm(name=DEFAULT_FARM_NAME, default_currency=DEFAULT_CURRENCY)
         self.db.add(farm)
@@ -49,13 +58,13 @@ class AuthService:
 
         self.db.add(FarmMember(user_id=user.id, farm_id=farm.id, role=FarmRole.OWNER))
         await self.db.commit()
-        return self._issue_tokens(user)
+        return issue_token_pair(user)
 
     async def login(self, data: LoginInput) -> TokenPair:
-        user = await self._find_by_email(data.email)
+        user = await self.find_by_email(data.email)
         if user is None or not verify_password(data.password, user.password_hash):
             raise UnauthorizedError("Incorrect email or password")
-        return self._issue_tokens(user)
+        return issue_token_pair(user)
 
     async def refresh(self, refresh_token: str) -> TokenPair:
         payload = self._decode_or_raise(refresh_token)
@@ -64,7 +73,7 @@ class AuthService:
         user = await self.db.get(User, int(str(payload["sub"])))
         if user is None:
             raise UnauthorizedError("User not found")
-        return self._issue_tokens(user)
+        return issue_token_pair(user)
 
     async def me(self, user: User) -> MeResponse:
         stmt = (
@@ -85,7 +94,7 @@ class AuthService:
             ],
         )
 
-    async def _find_by_email(self, email: str) -> User | None:
+    async def find_by_email(self, email: str) -> User | None:
         stmt = select(User).where(User.email == email)
         return (await self.db.execute(stmt)).scalar_one_or_none()
 
@@ -94,9 +103,3 @@ class AuthService:
             return decode_token(token)
         except Exception as exc:
             raise UnauthorizedError("Invalid token") from exc
-
-    def _issue_tokens(self, user: User) -> TokenPair:
-        return TokenPair(
-            access_token=create_access_token(str(user.id)),
-            refresh_token=create_refresh_token(str(user.id)),
-        )
