@@ -19,6 +19,7 @@ from ovejitas.features.report.material_consumption import (
     material_consumption_aggregate as run_material_consumption_aggregate,
 )
 from ovejitas.features.report.production_cost import production_cost
+from ovejitas.features.report.sales_value import sales_value as run_sales_value
 from ovejitas.features.report.schemas import (
     AggregateMeta,
     AggregateQuery,
@@ -34,6 +35,8 @@ from ovejitas.features.report.schemas import (
     ProfitabilityQuery,
     ProfitabilityRow,
     ProfitabilityTotal,
+    SalesValueQuery,
+    SalesValueReport,
     TimelineQuery,
 )
 
@@ -119,6 +122,9 @@ class ReportService:
         self, farm_id: int, q: CoopProductivityQuery
     ) -> CoopProductivityReport:
         return await run_coop_productivity(self.db, farm_id, q)
+
+    async def sales_value(self, farm_id: int, q: SalesValueQuery) -> SalesValueReport:
+        return await run_sales_value(self.db, farm_id, q)
 
     async def inventory_summary(
         self, farm_id: int, q: InventorySummaryQuery

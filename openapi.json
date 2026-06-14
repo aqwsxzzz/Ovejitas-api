@@ -3962,6 +3962,93 @@
         "title": "RegisterInput",
         "type": "object"
       },
+      "SalesValueReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SalesValueRow"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "SalesValueReport",
+        "type": "object"
+      },
+      "SalesValueRow": {
+        "properties": {
+          "ambiguous": {
+            "title": "Ambiguous",
+            "type": "boolean"
+          },
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "asset_name": {
+            "title": "Asset Name",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "income_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Income Total",
+            "type": "string"
+          },
+          "quantity_sold": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity Sold"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value_per_unit": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Per Unit"
+          }
+        },
+        "required": [
+          "asset_id",
+          "asset_name",
+          "currency",
+          "income_total",
+          "unit",
+          "quantity_sold",
+          "value_per_unit",
+          "ambiguous"
+        ],
+        "title": "SalesValueRow",
+        "type": "object"
+      },
       "TokenPair": {
         "properties": {
           "access_token": {
@@ -8911,6 +8998,104 @@
           }
         ],
         "summary": "R1 \u2014 PDF download",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/sales-value": {
+      "get": {
+        "description": "One row per asset sold via the sale action in the window. `value_per_unit = total sale income / total quantity sold` \u2014 the weighted-average price actually received (e.g. value per egg), derived from sale events, with no stored unit price. Only `material_sale` income and its paired inventory decrements are counted; manually entered income is excluded. When an asset was sold in more than one unit in the window, income can't be split across units, so `unit`/`quantity_sold`/`value_per_unit` are null and `ambiguous` is true. Assets with no sales in the window do not appear.",
+        "operationId": "reports_sales_value",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesValueReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Realized average sale price per unit, per asset",
         "tags": [
           "reports"
         ]

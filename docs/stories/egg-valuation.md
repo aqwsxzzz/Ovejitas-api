@@ -2,53 +2,120 @@
 
 > Origin: farm-owner feedback — *"Registrar profit por venta de huevos
 > (producción), cómo se refleja el valor del huevo?"*
+> Model decided via web research — see [Decisions](#decisions-locked).
 
 ## User story
 
-As a farm owner, I want each egg sale to record **how much an egg is worth**, so
-the app can show the value of what I produced and the profit per coop — not just
-a lump sum of income.
+As a farm owner, I want each egg sale to record **how much an egg is worth** and
+**what I made per coop**, so the app can show egg value and margin — not just a
+lump sum of income.
 
 ## What already exists
 
 - A sale (`POST /farms/{farm_id}/material-sales`) writes one `INCOME` event with
   a **total `amount`** and decrements egg inventory — atomically
-  (`material_sale/actions.py`).
+  (`material_sale/actions.py`). The income lands on the **eggs material asset**.
 - `PRODUCTION`/harvest events carry **quantity only, no money**
   (`event/schemas.py`).
+- `cost-per-unit` already computes a per-coop **cost** (feed + direct expense ÷
+  production qty) on the coop.
 
 ## What's missing (the gap)
 
-There is **no per‑unit value** anywhere. The egg's worth is only *implicit* as
-`amount ÷ quantity` at sale time, and produced‑but‑unsold eggs carry no value at
-all. So "el valor del huevo" can't be surfaced today.
+There is **no per‑unit value** anywhere (only `cost_per_unit`, which is a cost).
+The egg's worth is implicit as `amount ÷ quantity` at sale time. And egg income
+sits on the **shared eggs asset**, not the coop — so per‑coop profit can't be
+attributed today.
 
-## Decisions needed before building
+## Shipped in v1 — `GET /reports/sales-value`
 
-1. **Derive vs. store the unit price.** Recommended MVP: **derive** it — no
-   schema change. Average sale price over a period =
-   `Σ income.amount ÷ Σ eggs sold`, per coop and currency. Cheap, honest, good
-   enough to answer the question. (Alternative: add an explicit `unit_price` to
-   the sale payload if owners want to set it directly — defer until asked.)
-2. **Profit vs. revenue.** "Profit por venta" = sale income − cost of those eggs.
-   The cost basis already exists as `cost-per-unit` (direct expense + valued
-   feed). Profit per coop = `avg_sale_price − cost_per_unit`, per produced unit.
-3. **Inventory valuation (COGS).** Valuing unsold egg stock on the balance sheet
-   is a bigger model change — **out of scope** for this story.
+Delivered now: a **realized sale value per unit, per asset** report — no schema
+change, no domain assumptions, derived entirely from existing `material_sale`
+events. Per asset sold in the window: `income_total`, `quantity_sold`,
+`value_per_unit = income ÷ quantity` (the weighted-average price actually
+received, e.g. value per egg). Counts only `material_sale` income + its paired
+decrement (manual income excluded); mixed sale units → `ambiguous=true` with a
+null `value_per_unit`; assets with no sales don't appear. Paired with the
+existing `cost-per-unit` report (the cost floor), this answers *"cómo se refleja
+el valor del huevo"* and "what did I make" at the farm/asset level.
+
+## Deferred — needs validation with the actual farmer
+
+The per-coop / tagging design below came from research-backed *defaults*, not a
+real user. It is **not built** and should be confirmed with the friend who runs
+the farm before implementing (see [questions for the farmer](#questions-for-the-farmer)).
+
+1. **Tag each egg sale to a coop (the producing asset).** Add an *optional*
+   producing‑coop reference to the egg sale; the booked `INCOME` is then
+   attributed directly to that coop. This is the industry norm (PoultryCare,
+   SmartBird, DataDaur all tag sales to a flock) and it **removes the attribution
+   ambiguity entirely** — far cleaner than splitting pooled revenue. When a sale
+   is left untagged it counts at the farm / eggs‑asset level only.
+   ([PoultryCare](https://www.poultry.care/features/batch-wise-pl-analysis),
+   [Iowa State enterprise accounting](https://www.extension.iastate.edu/agdm/wholefarm/html/c6-34.html))
+2. **Derive the unit price, don't store it.** `value_per_egg = Σ(sale income) ÷
+   Σ(eggs sold)`, weighted‑average over the period. This is the standard ag‑econ
+   "price received" recovery and the IAS 2‑sanctioned weighted‑average for
+   fungible goods (eggs are the textbook case). The user confirmed egg prices are
+   roughly uniform within a period, so the weighted‑average is accurate. No
+   per‑sale `unit_price` field in v1.
+   ([Penn State](https://extension.psu.edu/budgeting-for-agricultural-decision-making),
+   [CFI weighted-average](https://corporatefinanceinstitute.com/resources/accounting/weighted-average-cost-method/))
+3. **Normalize egg quantity to single eggs internally** (×12 for per‑dozen
+   display). Never average a per‑dozen figure against a per‑egg figure — keep
+   `amount` and `quantity` both in eggs before dividing.
+4. **Call it "margin over variable cost", not "profit".** `cost_per_unit` is
+   variable cost only (feed + direct expense, no overhead), so `value_per_egg −
+   cost_per_egg` is a **gross margin**, not net profit.
+   ([NSW DPIRD](https://www.dpird.nsw.gov.au/agriculture/budgets/about))
+
+## Metrics
+
+- **value_per_egg** = `Σ(material_sale INCOME amount, period) ÷ Σ(eggs sold, period)`
+- **cost_per_egg** = existing `cost_per_unit` on the coop
+- **margin_per_egg** = `value_per_egg − cost_per_egg`
+- **margin_per_coop** = `margin_per_egg × coop_eggs_sold` (income tagged to the coop)
 
 ## Acceptance criteria
 
-- `GET /farms/{farm_id}/reports/egg-value?date_from=&date_to=` (or an extension of
-  the profitability report) returns, per coop + currency: `eggs_sold`,
-  `income_total`, `avg_unit_value` (`income ÷ eggs_sold`), and — when a
-  `cost_per_unit` is available — `unit_profit`.
-- Selling 24 eggs for 240 ARS reports `avg_unit_value = 10.00 ARS`.
-- A coop that produced eggs but sold none reports `avg_unit_value: null` (no
-  divide‑by‑zero), not `0`.
+- An egg sale accepts an optional producing‑coop reference; the report attributes
+  that sale's income to the coop. Untagged sales appear in the farm/eggs‑asset
+  total only.
+- `GET /farms/{farm_id}/reports/egg-value?date_from=&date_to=` returns, per eggs
+  asset: `eggs_sold`, `income_total`, `value_per_egg`; and per tagged coop:
+  `cost_per_egg`, `margin_per_egg`, `margin_per_coop`.
+- Selling 24 eggs for 240 reports `value_per_egg = 10.00`.
+- **No sales in period** → `value_per_egg: null` ("no sales"), never `0`.
+- **Sold but no cost** (`cost_per_unit` null) → `margin: null` ("cost unknown"),
+  never margin = full revenue.
+- **$0 giveaways** are excluded from the price denominator.
 - Currencies are never mixed (same rule as the profitability report).
 
-## Out of scope
+## Out of scope (v1)
 
-Explicit per‑sale unit price entry, inventory/COGS valuation of unsold stock,
-FIFO/weighted‑average cost layers.
-```
+Inventory/COGS valuation of **unsold** egg stock; FIFO / cost layers (converge
+with weighted‑average for fast‑turning eggs); explicit per‑sale unit‑price entry
+(deferred hedge — `amount/quantity` can be exposed as a computed read field
+later); fixed/overhead allocation to reach true **net** profit; production‑share
+allocation of pooled revenue (obviated by sale‑tagging).
+
+## Implementation note (for the deferred per-coop work)
+
+Tagging needs a queryable link from the egg‑sale `INCOME` event back to the coop.
+Decide at build time: a nullable `producer_asset_id` on the sale persisted on the
+event vs. a `payload` entry — a real column is more SARGable for the per‑coop
+`GROUP BY`, but touches the core `Event` model, so weigh against the established
+`payload.source` tagging convention.
+
+## Questions for the farmer
+
+Answers turn the deferred per-coop design from guesses into real decisions:
+
+1. Do you want egg value/profit broken down **per coop**, or is a farm-level
+   "what's an egg worth / what did I make" enough?
+2. When you sell eggs, do you know **which coop** they came from (would you tag
+   the sale), or do eggs from several coops get mixed before selling?
+3. Do you ever sell eggs at **different prices in the same period** (retail vs
+   bulk, friends-and-family)? Roughly what spread?
+4. Do you sell by the **dozen, loose egg, or both**?
+5. Do you **give eggs away / eat them at home**, and do you want that recorded?

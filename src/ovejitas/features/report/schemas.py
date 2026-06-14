@@ -136,6 +136,28 @@ class CoopProductivityReport(BaseModel):
     data: list[CoopProductivityRow]
 
 
+class SalesValueQuery(FilterParams):
+    asset_id: int | None = None
+
+
+class SalesValueRow(BaseModel):
+    asset_id: int
+    asset_name: str
+    currency: str
+    income_total: Decimal
+    # unit/quantity/value are null when the asset was sold in more than one unit
+    # in the window — income can't be split across units, so per-unit value is
+    # undefined (ambiguous=True). The common single-unit case fills them in.
+    unit: Unit | None
+    quantity_sold: Decimal | None
+    value_per_unit: Decimal | None
+    ambiguous: bool
+
+
+class SalesValueReport(BaseModel):
+    data: list[SalesValueRow]
+
+
 class TimelineQuery(FilterParams):
     type: EventType | None = None
 

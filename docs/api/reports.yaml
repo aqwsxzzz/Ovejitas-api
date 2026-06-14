@@ -82,6 +82,15 @@ operations:
   summary: R3 — PDF download
   responses: {'200': any, '422': HTTPValidationError}
 - method: GET
+  path: /api/v1/farms/{farm_id}/reports/sales-value
+  summary: Realized average sale price per unit, per asset
+  description: One row per asset sold via the sale action in the window. `value_per_unit = total sale income / total quantity
+    sold` — the weighted-average price actually received (e.g. value per egg), derived from sale events, with no stored unit
+    price. Only `material_sale` income and its paired inventory decrements are counted; manually entered income is excluded.
+    When an asset was sold in more than one unit in the window, income can't be split across units, so `unit`/`quantity_sold`/`value_per_unit`
+    are null and `ambiguous` is true. Assets with no sales in the window do not appear.
+  responses: {'200': SalesValueReport, '422': HTTPValidationError}
+- method: GET
   path: /api/v1/farms/{farm_id}/reports/coop-productivity
   summary: Eggs laid vs expected laying, per coop
   description: 'One row per coop (animal asset) that either laid eggs in the window or has laying capacity configured. `produced`
@@ -257,6 +266,23 @@ types:
       income_total: string
       expense_total: string
       net: string
+  SalesValueReport:
+    kind: object
+    required: [data]
+    fields:
+      data: SalesValueRow[]
+  SalesValueRow:
+    kind: object
+    required: [asset_id, asset_name, currency, income_total, unit, quantity_sold, value_per_unit, ambiguous]
+    fields:
+      asset_id: integer
+      asset_name: string
+      currency: string
+      income_total: string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
+      quantity_sold: string | null
+      value_per_unit: string | null
+      ambiguous: boolean
   ValidationError:
     kind: object
     required: [loc, msg, type]
