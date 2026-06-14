@@ -68,6 +68,43 @@ class TestProfitability:
         assert Decimal(row["net"]) == Decimal("200")
         assert row["currency"] == "USD"
 
+    async def test_includes_income_on_the_upper_bound_day(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # RED: reproduces "el resumen de balance no anda en el mes actual".
+        # In an in-progress ("running") month the user filters up to *today*.
+        # An income logged earlier today must still be counted, but the report
+        # applies an inclusive `occurred_at <= date_to`, and "today" arrives as
+        # midnight (00:00) — so any event later that same day is silently
+        # dropped. Past months look fine only because nothing lands exactly on
+        # their final midnight.
+        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            asset_id,
+            authed_user.user_id,
+            type=EventType.INCOME,
+            amount=Decimal("300"),
+            currency="USD",
+            quantity=None,
+            unit=None,
+            when=datetime(2026, 6, 14, 9, 0, tzinfo=UTC),  # today, mid-morning
+        )
+
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/profitability",
+            headers=authed_user.headers,
+            params={
+                "date_from": "2026-06-01T00:00:00Z",
+                "date_to": "2026-06-14T00:00:00Z",  # "up to today" → midnight
+            },
+        )
+
+        assert resp.status_code == 200, resp.text
+        rows = resp.json()["data"]
+        assert len(rows) == 1, "income logged today dropped when date_to is today at 00:00"
+        assert Decimal(rows[0]["income_total"]) == Decimal("300")
+
     async def test_totals_grouped_by_currency(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
