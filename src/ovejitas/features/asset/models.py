@@ -1,7 +1,8 @@
+from decimal import Decimal
 from enum import StrEnum
 
+from sqlalchemy import CheckConstraint, ForeignKey, Identity, Index, Numeric, String
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import ForeignKey, Identity, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ovejitas.core.models import Base, TimestampMixin
@@ -22,7 +23,13 @@ class AssetMode(StrEnum):
 
 class Asset(Base, TimestampMixin):
     __tablename__ = "asset"
-    __table_args__ = (Index("ix_asset_farm_kind", "farm_id", "kind"),)
+    __table_args__ = (
+        Index("ix_asset_farm_kind", "farm_id", "kind"),
+        CheckConstraint(
+            "expected_eggs_per_head_per_day >= 0",
+            name="ck_asset_expected_eggs_non_negative",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     farm_id: Mapped[int] = mapped_column(
@@ -48,4 +55,11 @@ class Asset(Base, TimestampMixin):
         ForeignKey("asset.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+    )
+    # Expected laying rate (eggs per head per day, e.g. 0.8) for the
+    # coop-productivity report — NUMERIC, never float. Null until configured.
+    # Headcount is NOT stored here: it is the live HEAD on-hand derived from the
+    # flock acquisition/sale/mortality events (see features/flock).
+    expected_eggs_per_head_per_day: Mapped[Decimal | None] = mapped_column(
+        Numeric(6, 3), nullable=True
     )

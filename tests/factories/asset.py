@@ -8,6 +8,9 @@ class AssetFactory(BaseFactory):
     __model__ = Asset
     kind = AssetKind.ANIMAL
     mode = AssetMode.AGGREGATED
+    # Laying rate is opt-in — leave it unset unless a test configures it,
+    # otherwise polyfactory would invent out-of-range NUMERIC values.
+    expected_eggs_per_head_per_day = None
 
     @classmethod
     def name(cls) -> str:

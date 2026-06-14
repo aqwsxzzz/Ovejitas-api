@@ -32,9 +32,11 @@ types:
       mode: aggregated | individual
       location: string | null
       description: string | null
+      expected_eggs_per_head_per_day: number | string | null
   AssetRead:
     kind: object
-    required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, created_at, updated_at]
+    required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, expected_eggs_per_head_per_day, created_at,
+      updated_at]
     fields:
       id: integer
       farm_id: integer
@@ -44,6 +46,7 @@ types:
       location: string | null
       description: string | null
       produce_asset_id: integer | null
+      expected_eggs_per_head_per_day: string | null
       created_at: string (date-time)
       updated_at: string (date-time)
   AssetUpdate:
@@ -55,6 +58,7 @@ types:
       location: string | null
       description: string | null
       produce_asset_id: integer | null
+      expected_eggs_per_head_per_day: number | string | null
   HTTPValidationError:
     kind: object
     fields:
