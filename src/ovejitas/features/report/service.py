@@ -14,6 +14,7 @@ from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.individual.models import Individual
 from ovejitas.features.report.aggregate import aggregate as run_aggregate
+from ovejitas.features.report.coop_productivity import coop_productivity as run_coop_productivity
 from ovejitas.features.report.material_consumption import (
     material_consumption_aggregate as run_material_consumption_aggregate,
 )
@@ -22,6 +23,8 @@ from ovejitas.features.report.schemas import (
     AggregateMeta,
     AggregateQuery,
     AggregateRow,
+    CoopProductivityQuery,
+    CoopProductivityReport,
     CostPerUnitQuery,
     CostPerUnitReport,
     InventorySummaryQuery,
@@ -111,6 +114,11 @@ class ReportService:
 
     async def cost_per_unit(self, farm_id: int, q: CostPerUnitQuery) -> CostPerUnitReport:
         return await production_cost(self.db, farm_id, q)
+
+    async def coop_productivity(
+        self, farm_id: int, q: CoopProductivityQuery
+    ) -> CoopProductivityReport:
+        return await run_coop_productivity(self.db, farm_id, q)
 
     async def inventory_summary(
         self, farm_id: int, q: InventorySummaryQuery
