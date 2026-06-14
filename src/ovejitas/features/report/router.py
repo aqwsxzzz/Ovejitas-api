@@ -24,6 +24,8 @@ from ovejitas.features.report.schemas import (
     MaterialConsumptionAggregateReport,
     ProfitabilityQuery,
     ProfitabilityReport,
+    SalesValueQuery,
+    SalesValueReport,
     TimelineQuery,
 )
 from ovejitas.features.report.service import ReportService
@@ -200,6 +202,30 @@ async def cost_per_unit_pdf(
         context={"rows": report.data, "unit": report.unit},
     )
     return _pdf_response(pdf, "costo-por-unidad.pdf")
+
+
+@router.get(
+    "/sales-value",
+    response_model=SalesValueReport,
+    summary="Realized average sale price per unit, per asset",
+    description=(
+        "One row per asset sold via the sale action in the window. "
+        "`value_per_unit = total sale income / total quantity sold` — the "
+        "weighted-average price actually received (e.g. value per egg), derived "
+        "from sale events, with no stored unit price. Only `material_sale` income "
+        "and its paired inventory decrements are counted; manually entered income "
+        "is excluded. When an asset was sold in more than one unit in the window, "
+        "income can't be split across units, so `unit`/`quantity_sold`/"
+        "`value_per_unit` are null and `ambiguous` is true. Assets with no sales "
+        "in the window do not appear."
+    ),
+)
+async def sales_value(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[SalesValueQuery, Depends()],
+) -> SalesValueReport:
+    return await svc.sales_value(membership.farm_id, q)
 
 
 @router.get(
