@@ -3869,6 +3869,269 @@
         "title": "Page[MemberRead]",
         "type": "object"
       },
+      "Page_PregnancyRead_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PregnancyRead"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Page[PregnancyRead]",
+        "type": "object"
+      },
+      "PregnancyCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Due At"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "individual_id": {
+            "title": "Individual Id",
+            "type": "integer"
+          },
+          "is_pregnant": {
+            "title": "Is Pregnant",
+            "type": "boolean"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "offspring_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offspring Count"
+          }
+        },
+        "required": [
+          "individual_id",
+          "occurred_at",
+          "is_pregnant"
+        ],
+        "title": "PregnancyCreate",
+        "type": "object"
+      },
+      "PregnancyRead": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "expected_due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Due At"
+          },
+          "farm_id": {
+            "title": "Farm Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "individual_id": {
+            "title": "Individual Id",
+            "type": "integer"
+          },
+          "is_pregnant": {
+            "title": "Is Pregnant",
+            "type": "boolean"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "offspring_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offspring Count"
+          },
+          "reproductive_event_id": {
+            "title": "Reproductive Event Id",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "farm_id",
+          "individual_id",
+          "reproductive_event_id",
+          "occurred_at",
+          "is_pregnant",
+          "offspring_count",
+          "expected_due_at",
+          "notes",
+          "idempotency_key",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PregnancyRead",
+        "type": "object"
+      },
+      "PregnancyUpdate": {
+        "additionalProperties": false,
+        "description": "PATCH body. ``individual_id`` is immutable \u2014 a different individual is a\ndifferent pregnancy record. The non-pregnant projection rule is enforced on\nthe merged state in the service.",
+        "properties": {
+          "expected_due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Due At"
+          },
+          "is_pregnant": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Pregnant"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "offspring_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offspring Count"
+          }
+        },
+        "title": "PregnancyUpdate",
+        "type": "object"
+      },
       "ProfitabilityReport": {
         "properties": {
           "data": {
@@ -4133,6 +4396,68 @@
         ],
         "title": "Unit",
         "type": "string"
+      },
+      "UpcomingBirthRow": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "days_until_due": {
+            "title": "Days Until Due",
+            "type": "integer"
+          },
+          "expected_due_at": {
+            "format": "date-time",
+            "title": "Expected Due At",
+            "type": "string"
+          },
+          "individual_id": {
+            "title": "Individual Id",
+            "type": "integer"
+          },
+          "individual_tag": {
+            "title": "Individual Tag",
+            "type": "string"
+          },
+          "offspring_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offspring Count"
+          }
+        },
+        "required": [
+          "individual_id",
+          "individual_tag",
+          "asset_id",
+          "expected_due_at",
+          "offspring_count",
+          "days_until_due"
+        ],
+        "title": "UpcomingBirthRow",
+        "type": "object"
+      },
+      "UpcomingBirthsReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/UpcomingBirthRow"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "UpcomingBirthsReport",
+        "type": "object"
       },
       "UserRead": {
         "properties": {
@@ -8056,6 +8381,403 @@
         ]
       }
     },
+    "/api/v1/farms/{farm_id}/pregnancies": {
+      "get": {
+        "operationId": "pregnancies_list_pregnancies",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Search notes",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search notes",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "e.g. -occurred_at,expected_due_at",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -occurred_at,expected_due_at",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "individual_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Individual Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "is_pregnant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Pregnant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PregnancyRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List pregnancy records in a farm",
+        "tags": [
+          "pregnancies"
+        ]
+      },
+      "post": {
+        "description": "Records a pregnancy check on one individual and emits a paired REPRODUCTIVE event on its timeline. A non-pregnant check must omit `offspring_count` and `expected_due_at`. Replaying an `idempotency_key` returns the original record with status 200.",
+        "operationId": "pregnancies_create_pregnancy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PregnancyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PregnancyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record a pregnancy / ultrasound check",
+        "tags": [
+          "pregnancies"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/pregnancies/{pregnancy_id}": {
+      "delete": {
+        "description": "Hard-deletes the record and reverses its reproductive event.",
+        "operationId": "pregnancies_delete_pregnancy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pregnancy_id",
+            "required": true,
+            "schema": {
+              "title": "Pregnancy Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete a pregnancy record",
+        "tags": [
+          "pregnancies"
+        ]
+      },
+      "get": {
+        "operationId": "pregnancies_get_pregnancy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pregnancy_id",
+            "required": true,
+            "schema": {
+              "title": "Pregnancy Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PregnancyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get one pregnancy record",
+        "tags": [
+          "pregnancies"
+        ]
+      },
+      "patch": {
+        "description": "`individual_id` is immutable. Changes reconcile the paired reproductive event. Clearing `is_pregnant` requires also clearing `offspring_count` and `expected_due_at`.",
+        "operationId": "pregnancies_update_pregnancy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pregnancy_id",
+            "required": true,
+            "schema": {
+              "title": "Pregnancy Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PregnancyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PregnancyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update a pregnancy record",
+        "tags": [
+          "pregnancies"
+        ]
+      }
+    },
     "/api/v1/farms/{farm_id}/reports/aggregate": {
       "get": {
         "description": "Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.\n\n- production / observation: SUM(quantity) grouped by unit\n- mortality / acquisition: SUM(quantity) as headcount, no grouping\n- inventory: net flow within window (increments minus decrements).   Pass `adjustment=reset|increment|decrement` to isolate one kind.\n- expense / income: SUM(amount) grouped by currency\n- reproductive: COUNT(*) of events\n\nFilters `unit`, `adjustment`, `currency` are ignored for types where they do not apply.\n\n**`group_by=asset`** breaks rows down per asset. Each row then carries a stable `group` key (the asset id as a string), a `group_label` (the asset name), and an `asset_id`. When `group_by` is omitted, rows are unchanged: `group_label` and `asset_id` stay `null`.\n\nCompatibility matrix \u2014 `type` vs `group_by`:\n\n| type | group_by=asset |\n| --- | --- |\n| mortality | supported |\n| acquisition | supported |\n| production | supported (quantity summed per asset across units) |\n| observation / inventory / expense / income / reproductive | rejected with 422 |",
@@ -9189,6 +9911,74 @@
           }
         ],
         "summary": "Realized average sale price per unit, per asset",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/upcoming-births": {
+      "get": {
+        "description": "One row per individual whose **latest** pregnancy check says pregnant with an `expected_due_at` inside `[date_from, date_to]`. A later not-pregnant check (after birth or loss) suppresses the alert. `date_from` and `date_to` are **required** \u2014 they define the alert window. `days_until_due` counts whole days from `date_from`.",
+        "operationId": "reports_upcoming_births",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpcomingBirthsReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Individuals due to give birth within a window",
         "tags": [
           "reports"
         ]
