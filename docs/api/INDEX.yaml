@@ -4,7 +4,7 @@ note: Auto-generated. Do not edit by hand.
 resources:
 - tag: assets
   file: assets.yaml
-  operations: 5
+  operations: 6
 - tag: auth
   file: auth.yaml
   operations: 4
@@ -44,6 +44,9 @@ resources:
 - tag: members
   file: members.yaml
   operations: 3
+- tag: pregnancies
+  file: pregnancies.yaml
+  operations: 5
 - tag: reports
   file: reports.yaml
-  operations: 10
+  operations: 11

@@ -38,7 +38,10 @@ from ovejitas.features.report.schemas import (
     SalesValueQuery,
     SalesValueReport,
     TimelineQuery,
+    UpcomingBirthRow,
+    UpcomingBirthsQuery,
 )
+from ovejitas.features.report.upcoming_births import upcoming_births as run_upcoming_births
 
 
 def _profitability_totals(rows: list[ProfitabilityRow]) -> list[ProfitabilityTotal]:
@@ -125,6 +128,9 @@ class ReportService:
 
     async def sales_value(self, farm_id: int, q: SalesValueQuery) -> SalesValueReport:
         return await run_sales_value(self.db, farm_id, q)
+
+    async def upcoming_births(self, farm_id: int, q: UpcomingBirthsQuery) -> list[UpcomingBirthRow]:
+        return await run_upcoming_births(self.db, farm_id, q.date_from, q.date_to)
 
     async def inventory_summary(
         self, farm_id: int, q: InventorySummaryQuery

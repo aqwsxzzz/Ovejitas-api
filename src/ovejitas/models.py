@@ -12,6 +12,7 @@ from ovejitas.features.individual.models import Individual, IndividualStatus
 from ovejitas.features.material_consumption.models import MaterialConsumption
 from ovejitas.features.material_consumption.types import ConsumptionReason
 from ovejitas.features.material_purchase.models import MaterialPurchase
+from ovejitas.features.pregnancy.models import Pregnancy
 from ovejitas.features.user.models import User
 
 __all__ = [
@@ -32,5 +33,6 @@ __all__ = [
     "InvitationStatus",
     "MaterialConsumption",
     "MaterialPurchase",
+    "Pregnancy",
     "User",
 ]

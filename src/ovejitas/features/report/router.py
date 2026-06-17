@@ -27,6 +27,8 @@ from ovejitas.features.report.schemas import (
     SalesValueQuery,
     SalesValueReport,
     TimelineQuery,
+    UpcomingBirthsQuery,
+    UpcomingBirthsReport,
 )
 from ovejitas.features.report.service import ReportService
 
@@ -271,6 +273,27 @@ async def inventory_summary(
 ) -> InventorySummaryReport:
     rows = await svc.inventory_summary(membership.farm_id, q)
     return InventorySummaryReport(data=rows)
+
+
+@router.get(
+    "/upcoming-births",
+    response_model=UpcomingBirthsReport,
+    summary="Individuals due to give birth within a window",
+    description=(
+        "One row per individual whose **latest** pregnancy check says pregnant "
+        "with an `expected_due_at` inside `[date_from, date_to]`. A later "
+        "not-pregnant check (after birth or loss) suppresses the alert. "
+        "`date_from` and `date_to` are **required** — they define the alert "
+        "window. `days_until_due` counts whole days from `date_from`."
+    ),
+)
+async def upcoming_births(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[UpcomingBirthsQuery, Depends()],
+) -> UpcomingBirthsReport:
+    rows = await svc.upcoming_births(membership.farm_id, q)
+    return UpcomingBirthsReport(data=rows)
 
 
 @router.get(

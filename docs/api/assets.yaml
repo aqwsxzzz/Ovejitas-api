@@ -10,6 +10,10 @@ operations:
   body: AssetCreate
   responses: {'201': AssetRead, '422': HTTPValidationError}
 - method: GET
+  path: /api/v1/farms/{farm_id}/assets/summary
+  summary: Count assets per kind in a farm
+  responses: {'200': AssetSummary, '422': HTTPValidationError}
+- method: GET
   path: /api/v1/farms/{farm_id}/assets/{asset_id}
   summary: Get one asset
   responses: {'200': AssetRead, '422': HTTPValidationError}
@@ -25,14 +29,20 @@ operations:
 types:
   AssetCreate:
     kind: object
-    required: [name, kind, mode]
+    required: [name, kind]
     fields:
       name: string
       kind: animal | crop | equipment | material | location
-      mode: aggregated | individual
+      mode: aggregated | individual | null
       location: string | null
       description: string | null
       expected_eggs_per_head_per_day: number | string | null
+  AssetKindCount:
+    kind: object
+    required: [kind, count]
+    fields:
+      kind: animal | crop | equipment | material | location
+      count: integer
   AssetRead:
     kind: object
     required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, expected_eggs_per_head_per_day, created_at,
@@ -42,13 +52,18 @@ types:
       farm_id: integer
       name: string
       kind: animal | crop | equipment | material | location
-      mode: aggregated | individual
+      mode: aggregated | individual | null
       location: string | null
       description: string | null
       produce_asset_id: integer | null
       expected_eggs_per_head_per_day: string | null
       created_at: string (date-time)
       updated_at: string (date-time)
+  AssetSummary:
+    kind: object
+    required: [data]
+    fields:
+      data: AssetKindCount[]
   AssetUpdate:
     kind: object
     fields:
