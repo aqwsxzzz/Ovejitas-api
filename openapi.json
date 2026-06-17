@@ -226,7 +226,14 @@
             "title": "Location"
           },
           "mode": {
-            "$ref": "#/components/schemas/AssetMode"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssetMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "maxLength": 255,
@@ -237,8 +244,7 @@
         },
         "required": [
           "name",
-          "kind",
-          "mode"
+          "kind"
         ],
         "title": "AssetCreate",
         "type": "object"
@@ -253,6 +259,23 @@
         ],
         "title": "AssetKind",
         "type": "string"
+      },
+      "AssetKindCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AssetKind"
+          }
+        },
+        "required": [
+          "kind",
+          "count"
+        ],
+        "title": "AssetKindCount",
+        "type": "object"
       },
       "AssetMode": {
         "enum": [
@@ -315,7 +338,14 @@
             "title": "Location"
           },
           "mode": {
-            "$ref": "#/components/schemas/AssetMode"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssetMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "title": "Name",
@@ -352,6 +382,22 @@
           "updated_at"
         ],
         "title": "AssetRead",
+        "type": "object"
+      },
+      "AssetSummary": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AssetKindCount"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "AssetSummary",
         "type": "object"
       },
       "AssetUpdate": {
@@ -4652,6 +4698,53 @@
           }
         ],
         "summary": "Create an asset in a farm",
+        "tags": [
+          "assets"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/assets/summary": {
+      "get": {
+        "operationId": "assets_asset_summary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Count assets per kind in a farm",
         "tags": [
           "assets"
         ]

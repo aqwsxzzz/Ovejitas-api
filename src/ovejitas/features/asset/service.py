@@ -6,7 +6,7 @@ from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
-from ovejitas.features.asset.models import Asset, AssetKind
+from ovejitas.features.asset.models import Asset, AssetKind, AssetMode
 from ovejitas.features.asset.schemas import AssetCreate, AssetFilters, AssetUpdate
 from ovejitas.features.event.balance import asset_has_events
 
@@ -24,6 +24,7 @@ class AssetService:
         self.db = db
 
     async def create(self, farm_id: int, data: AssetCreate) -> Asset:
+        self._validate_kind_mode(data.kind, data.mode)
         asset = Asset(farm_id=farm_id, **data.model_dump())
         self.db.add(asset)
         await self.db.commit()
@@ -48,11 +49,22 @@ class AssetService:
         )
         if structural_changed and await asset_has_events(self.db, asset_id):
             raise ValidationError("Cannot change kind or mode of an asset that already has events")
+        if "kind" in updates or "mode" in updates:
+            self._validate_kind_mode(
+                updates.get("kind", asset.kind), updates.get("mode", asset.mode)
+            )
         for key, value in updates.items():
             setattr(asset, key, value)
         await self.db.commit()
         await self.db.refresh(asset)
         return asset
+
+    @staticmethod
+    def _validate_kind_mode(kind: AssetKind, mode: AssetMode | None) -> None:
+        """Only animals carry a tracking mode (they back the individual feature);
+        every other kind leaves it null."""
+        if kind is AssetKind.ANIMAL and mode is None:
+            raise ValidationError("Animal assets require a tracking mode")
 
     async def _validate_produce_link(
         self, farm_id: int, source_kind: AssetKind, produce_asset_id: int
@@ -69,6 +81,17 @@ class AssetService:
         asset = await self.get(farm_id, asset_id)
         await self.db.delete(asset)
         await self.db.commit()
+
+    async def count_by_kind(self, farm_id: int) -> list[tuple[AssetKind, int]]:
+        """One (kind, count) pair per kind present in the farm."""
+        stmt = (
+            select(Asset.kind, func.count())
+            .where(Asset.farm_id == farm_id)
+            .group_by(Asset.kind)
+            .order_by(Asset.kind)
+        )
+        rows = (await self.db.execute(stmt)).all()
+        return [(kind, count) for kind, count in rows]
 
     async def list_assets(
         self,

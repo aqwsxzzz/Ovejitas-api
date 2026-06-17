@@ -7,7 +7,9 @@ from ovejitas.core.pagination import Page, PageParams
 from ovejitas.features.asset.schemas import (
     AssetCreate,
     AssetFilters,
+    AssetKindCount,
     AssetRead,
+    AssetSummary,
     AssetUpdate,
 )
 from ovejitas.features.asset.service import AssetService
@@ -52,6 +54,20 @@ async def create_asset(
     _membership: FarmMembership,
 ) -> AssetRead:
     return AssetRead.model_validate(await svc.create(farm_id, data))
+
+
+@router.get(
+    "/summary",
+    response_model=AssetSummary,
+    summary="Count assets per kind in a farm",
+)
+async def asset_summary(
+    farm_id: int,
+    svc: AssetSvc,
+    _membership: FarmMembership,
+) -> AssetSummary:
+    counts = await svc.count_by_kind(farm_id)
+    return AssetSummary(data=[AssetKindCount(kind=kind, count=count) for kind, count in counts])
 
 
 @router.get("/{asset_id}", response_model=AssetRead, summary="Get one asset")

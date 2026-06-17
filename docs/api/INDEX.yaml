@@ -4,7 +4,7 @@ note: Auto-generated. Do not edit by hand.
 resources:
 - tag: assets
   file: assets.yaml
-  operations: 5
+  operations: 6
 - tag: auth
   file: auth.yaml
   operations: 4
