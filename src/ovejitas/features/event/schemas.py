@@ -20,6 +20,9 @@ class _EventCreateBase(StrictModel):
 
 class EventProductionCreate(_EventCreateBase):
     type: Literal[EventType.PRODUCTION]
+    # Required: production is attributed to a product (a production category) so
+    # the productivity report can compute produced-vs-expected. Going forward.
+    category_id: int
     quantity: Decimal = Field(gt=0)
     unit: Unit
 

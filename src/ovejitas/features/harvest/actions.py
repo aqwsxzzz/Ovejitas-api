@@ -35,7 +35,7 @@ async def create_harvest(
     if produce_asset.farm_id != asset.farm_id:
         raise ValidationError("Linked produce asset belongs to a different farm")
     await validate_produce_unit(db, produce_asset.id, data.unit)
-    await validate_category(db, asset.farm_id, EventType.PRODUCTION, data.category_id)
+    await validate_category(db, asset.farm_id, EventType.PRODUCTION, data.category_id, data.unit)
     try:
         production = Event(
             farm_id=asset.farm_id,

@@ -18,7 +18,7 @@ from ovejitas.features.event.guards import (
 from ovejitas.features.event.inventory import assert_non_negative, lock_material
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.schemas import EventCreate, EventFilters, EventUpdate, InventoryBalance
-from ovejitas.features.event.types import EventType, InventoryAdjustment
+from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 from ovejitas.features.farm.models import Farm
 
 SEARCH_COLUMNS = [Event.notes]
@@ -44,7 +44,8 @@ class EventService:
     async def create(self, asset: Asset, user_id: int, data: EventCreate) -> Event:
         await validate_type_against_asset(data.type, asset)
         await validate_individual(self.db, asset, data.individual_id)
-        await validate_category(self.db, asset.farm_id, data.type, data.category_id)
+        unit: Unit | None = getattr(data, "unit", None)
+        await validate_category(self.db, asset.farm_id, data.type, data.category_id, unit)
         fields = data.model_dump()
         if "source" in fields["payload"]:
             raise ValidationError("payload.source is reserved for action-emitted events")
@@ -93,7 +94,10 @@ class EventService:
         if "individual_id" in updates:
             await validate_individual(self.db, asset, updates["individual_id"])
         if "category_id" in updates:
-            await validate_category(self.db, asset.farm_id, event.type, updates["category_id"])
+            unit: Unit | None = updates.get("unit", event.unit)
+            await validate_category(
+                self.db, asset.farm_id, event.type, updates["category_id"], unit
+            )
         if updates.get("amount") is not None and event.currency is None:
             farm = await self.db.get(Farm, asset.farm_id)
             assert farm is not None
