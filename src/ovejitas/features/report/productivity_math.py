@@ -52,15 +52,17 @@ def _apply(balance: Decimal, adjustment: InventoryAdjustment, quantity: Decimal)
     return balance - Decimal(quantity)
 
 
-async def head_days(
-    db: AsyncSession, asset_id: int, date_from: datetime, date_to: datetime
+async def head_days_between(
+    db: AsyncSession, asset_id: int, start: datetime, end: datetime
 ) -> Decimal:
-    """Animal-days: the integral of HEAD headcount over [date_from, window_end).
+    """Animal-days: the integral of HEAD headcount over the half-open [start, end).
 
-    Unlike a snapshot, this weights each headcount level by how long it held,
-    so births/deaths/sales mid-window are counted correctly.
+    Weights each headcount level by how long it held, so births/deaths/sales
+    inside the interval are counted correctly. ``start``/``end`` are exact bounds
+    (no whole-day rolling — the caller decides them).
     """
-    upper = window_end(date_to)
+    if end <= start:
+        return Decimal(0)
     base = (
         select(Event.occurred_at, Event.adjustment, Event.quantity)
         .where(
@@ -74,15 +76,22 @@ async def head_days(
 
     balance = Decimal(0)
     total = Decimal(0)
-    cursor = date_from
+    cursor = start
     for occurred_at, adjustment, quantity in rows:
-        if occurred_at < date_from:
+        if occurred_at < start:
             balance = _apply(balance, adjustment, quantity)
             continue
-        if occurred_at >= upper:
+        if occurred_at >= end:
             break
         total += balance * Decimal((occurred_at - cursor).total_seconds()) / Decimal(86400)
         balance = _apply(balance, adjustment, quantity)
         cursor = occurred_at
-    total += balance * Decimal((upper - cursor).total_seconds()) / Decimal(86400)
+    total += balance * Decimal((end - cursor).total_seconds()) / Decimal(86400)
     return total
+
+
+async def head_days(
+    db: AsyncSession, asset_id: int, date_from: datetime, date_to: datetime
+) -> Decimal:
+    """Animal-days over a report window (date_to gets whole-day rolling)."""
+    return await head_days_between(db, asset_id, date_from, window_end(date_to))
