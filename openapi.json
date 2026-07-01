@@ -4386,6 +4386,109 @@
         "title": "ProductionBasis",
         "type": "string"
       },
+      "ProductionProductivityReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProductionProductivityRow"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ProductionProductivityReport",
+        "type": "object"
+      },
+      "ProductionProductivityRow": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "asset_name": {
+            "title": "Asset Name",
+            "type": "string"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductionBasis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "category_id": {
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "missing_capacity": {
+            "title": "Missing Capacity",
+            "type": "boolean"
+          },
+          "produced": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Produced",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "productivity_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productivity Pct"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "asset_id",
+          "asset_name",
+          "category_id",
+          "product_name",
+          "unit",
+          "produced",
+          "expected",
+          "productivity_pct",
+          "basis",
+          "missing_capacity"
+        ],
+        "title": "ProductionProductivityRow",
+        "type": "object"
+      },
       "ProfitabilityReport": {
         "properties": {
           "data": {
@@ -10293,6 +10396,106 @@
           }
         ],
         "summary": "Day/week material-consumption totals, bucketed and grouped",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/production-productivity": {
+      "get": {
+        "description": "One row per (asset, product) that either produced in the window or has an applicable production target. The product is a production category; `produced` is converted into the product's unit. `expected` comes from the target, scaled by its `basis` (per_head_continuous uses time-weighted animal-days). A pair with no applicable target reports `missing_capacity: true` with null `expected`/`productivity_pct`. `date_from` and `date_to` are **required**.",
+        "operationId": "reports_production_productivity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Date To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductionProductivityReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Produced vs expected output, per asset and product",
         "tags": [
           "reports"
         ]
