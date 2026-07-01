@@ -91,14 +91,13 @@ operations:
     are null and `ambiguous` is true. Assets with no sales in the window do not appear.
   responses: {'200': SalesValueReport, '422': HTTPValidationError}
 - method: GET
-  path: /api/v1/farms/{farm_id}/reports/coop-productivity
-  summary: Eggs laid vs expected laying, per coop
-  description: 'One row per coop (animal asset) that either laid eggs in the window or has laying capacity configured. `produced`
-    is eggs laid, normalized to single eggs (counts in `dozen` are x12). `expected = expected_eggs_per_head_per_day x headcount
-    x days`, using the coop''s current headcount for the whole window. `productivity_pct = produced / expected x 100`. A coop
-    without `headcount` or `expected_eggs_per_head_per_day` set reports `missing_capacity: true` with null `expected`/`productivity_pct`.
-    `date_from` and `date_to` are **required** (expected laying scales with the number of days).'
-  responses: {'200': CoopProductivityReport, '422': HTTPValidationError}
+  path: /api/v1/farms/{farm_id}/reports/production-productivity
+  summary: Produced vs expected output, per asset and product
+  description: 'One row per (asset, product) that either produced in the window or has an applicable production target. The
+    product is a production category; `produced` is converted into the product''s unit. `expected` comes from the target,
+    scaled by its `basis` (per_head_continuous uses time-weighted animal-days). A pair with no applicable target reports `missing_capacity:
+    true` with null `expected`/`productivity_pct`. `date_from` and `date_to` are **required**.'
+  responses: {'200': ProductionProductivityReport, '422': HTTPValidationError}
 - method: GET
   path: /api/v1/farms/{farm_id}/reports/inventory-summary
   summary: R5 — current on-hand inventory per asset
@@ -144,21 +143,6 @@ types:
       value: string
       asset_id: integer | null
       unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
-  CoopProductivityReport:
-    kind: object
-    required: [data]
-    fields:
-      data: CoopProductivityRow[]
-  CoopProductivityRow:
-    kind: object
-    required: [asset_id, asset_name, produced, expected, productivity_pct, missing_capacity]
-    fields:
-      asset_id: integer
-      asset_name: string
-      produced: string
-      expected: string | null
-      productivity_pct: string | null
-      missing_capacity: boolean
   CostPerUnitReport:
     kind: object
     required: [data, unit]
@@ -249,6 +233,25 @@ types:
     fields:
       data: EventRead[]
       meta: PageMeta
+  ProductionProductivityReport:
+    kind: object
+    required: [data]
+    fields:
+      data: ProductionProductivityRow[]
+  ProductionProductivityRow:
+    kind: object
+    required: [asset_id, asset_name, category_id, product_name, unit, produced, expected, productivity_pct, basis, missing_capacity]
+    fields:
+      asset_id: integer
+      asset_name: string
+      category_id: integer
+      product_name: string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
+      produced: string
+      expected: string | null
+      productivity_pct: string | null
+      basis: per_head_continuous | per_event | total | null
+      missing_capacity: boolean
   ProfitabilityReport:
     kind: object
     required: [data, totals]

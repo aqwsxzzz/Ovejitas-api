@@ -14,14 +14,14 @@ from ovejitas.features.report.pdf import render_pdf
 from ovejitas.features.report.schemas import (
     AggregateQuery,
     AggregateReport,
-    CoopProductivityQuery,
-    CoopProductivityReport,
     CostPerUnitQuery,
     CostPerUnitReport,
     InventorySummaryQuery,
     InventorySummaryReport,
     MaterialConsumptionAggregateQuery,
     MaterialConsumptionAggregateReport,
+    ProductionProductivityQuery,
+    ProductionProductivityReport,
     ProfitabilityQuery,
     ProfitabilityReport,
     SalesValueQuery,
@@ -231,27 +231,25 @@ async def sales_value(
 
 
 @router.get(
-    "/coop-productivity",
-    response_model=CoopProductivityReport,
-    summary="Eggs laid vs expected laying, per coop",
+    "/production-productivity",
+    response_model=ProductionProductivityReport,
+    summary="Produced vs expected output, per asset and product",
     description=(
-        "One row per coop (animal asset) that either laid eggs in the window or "
-        "has laying capacity configured. `produced` is eggs laid, normalized to "
-        "single eggs (counts in `dozen` are x12). `expected = "
-        "expected_eggs_per_head_per_day x headcount x days`, using the coop's "
-        "current headcount for the whole window. `productivity_pct = produced / "
-        "expected x 100`. A coop without `headcount` or "
-        "`expected_eggs_per_head_per_day` set reports `missing_capacity: true` "
-        "with null `expected`/`productivity_pct`. `date_from` and `date_to` are "
-        "**required** (expected laying scales with the number of days)."
+        "One row per (asset, product) that either produced in the window or has "
+        "an applicable production target. The product is a production category; "
+        "`produced` is converted into the product's unit. `expected` comes from "
+        "the target, scaled by its `basis` (per_head_continuous uses time-weighted "
+        "animal-days). A pair with no applicable target reports "
+        "`missing_capacity: true` with null `expected`/`productivity_pct`. "
+        "`date_from` and `date_to` are **required**."
     ),
 )
-async def coop_productivity(
+async def production_productivity(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[CoopProductivityQuery, Depends()],
-) -> CoopProductivityReport:
-    return await svc.coop_productivity(membership.farm_id, q)
+    q: Annotated[ProductionProductivityQuery, Depends()],
+) -> ProductionProductivityReport:
+    return await svc.production_productivity(membership.farm_id, q)
 
 
 @router.get(

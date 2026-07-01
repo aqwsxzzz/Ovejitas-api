@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 from ovejitas.core.filters import FilterParams
 from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 from ovejitas.features.material_consumption.types import ConsumptionReason
+from ovejitas.features.production_target.types import ProductionBasis
 
 
 class Bucket(StrEnum):
@@ -110,30 +111,33 @@ class CostPerUnitQuery(FilterParams):
     unit: Unit
 
 
-class CoopProductivityQuery(FilterParams):
-    # The window is required here (unlike other reports): expected laying scales
-    # with the number of days, so there is no denominator without both bounds.
-    # Overriding the optional base fields makes them required query params (422
-    # if missing), validated by FastAPI itself.
+class ProductionProductivityQuery(FilterParams):
+    # Window required: expected output scales with the window, so there is no
+    # denominator without both bounds (422 if missing).
     date_from: datetime
     date_to: datetime
     asset_id: int | None = None
+    category_id: int | None = None
 
 
-class CoopProductivityRow(BaseModel):
+class ProductionProductivityRow(BaseModel):
     asset_id: int
     asset_name: str
-    # eggs laid in the window, normalized to single eggs (dozen counts x12)
+    category_id: int
+    product_name: str
+    # the product's unit; produced/expected are expressed in it
+    unit: Unit | None
     produced: Decimal
-    # expected_eggs_per_head_per_day x headcount x days; null when unconfigured
+    # null when the (asset, product) pair has no applicable target for the window
     expected: Decimal | None
     productivity_pct: Decimal | None
-    # true when headcount or expected rate is unset — produced is still shown
+    basis: ProductionBasis | None
+    # true when there is no target to form a denominator — produced is still shown
     missing_capacity: bool
 
 
-class CoopProductivityReport(BaseModel):
-    data: list[CoopProductivityRow]
+class ProductionProductivityReport(BaseModel):
+    data: list[ProductionProductivityRow]
 
 
 class UpcomingBirthsQuery(FilterParams):

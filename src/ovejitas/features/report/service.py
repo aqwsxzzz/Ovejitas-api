@@ -14,24 +14,26 @@ from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.individual.models import Individual
 from ovejitas.features.report.aggregate import aggregate as run_aggregate
-from ovejitas.features.report.coop_productivity import coop_productivity as run_coop_productivity
 from ovejitas.features.report.material_consumption import (
     material_consumption_aggregate as run_material_consumption_aggregate,
 )
 from ovejitas.features.report.production_cost import production_cost
+from ovejitas.features.report.production_productivity import (
+    production_productivity as run_production_productivity,
+)
 from ovejitas.features.report.sales_value import sales_value as run_sales_value
 from ovejitas.features.report.schemas import (
     AggregateMeta,
     AggregateQuery,
     AggregateRow,
-    CoopProductivityQuery,
-    CoopProductivityReport,
     CostPerUnitQuery,
     CostPerUnitReport,
     InventorySummaryQuery,
     InventorySummaryRow,
     MaterialConsumptionAggregateQuery,
     MaterialConsumptionAggregateTotal,
+    ProductionProductivityQuery,
+    ProductionProductivityReport,
     ProfitabilityQuery,
     ProfitabilityRow,
     ProfitabilityTotal,
@@ -121,13 +123,13 @@ class ReportService:
     async def cost_per_unit(self, farm_id: int, q: CostPerUnitQuery) -> CostPerUnitReport:
         return await production_cost(self.db, farm_id, q)
 
-    async def coop_productivity(
-        self, farm_id: int, q: CoopProductivityQuery
-    ) -> CoopProductivityReport:
-        return await run_coop_productivity(self.db, farm_id, q)
-
     async def sales_value(self, farm_id: int, q: SalesValueQuery) -> SalesValueReport:
         return await run_sales_value(self.db, farm_id, q)
+
+    async def production_productivity(
+        self, farm_id: int, q: ProductionProductivityQuery
+    ) -> ProductionProductivityReport:
+        return await run_production_productivity(self.db, farm_id, q)
 
     async def upcoming_births(self, farm_id: int, q: UpcomingBirthsQuery) -> list[UpcomingBirthRow]:
         return await run_upcoming_births(self.db, farm_id, q.date_from, q.date_to)
