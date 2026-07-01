@@ -293,6 +293,31 @@ class TestGuards:
         assert response.status_code == 422
         assert "compatible" in response.json()["detail"].lower()
 
+    async def test_production_category_cannot_be_nulled(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        category_id = await _create_category(client, authed_user, "production", "Lana", "kg")
+        created = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={
+                "type": "production",
+                "occurred_at": OCCURRED,
+                "quantity": "5",
+                "unit": "kg",
+                "category_id": category_id,
+            },
+        )
+        event_id = created.json()["id"]
+
+        response = await client.patch(
+            event_url(authed_user.farm_id, asset_id, event_id),
+            headers=authed_user.headers,
+            json={"category_id": None},
+        )
+        assert response.status_code == 422
+
 
 class TestIdempotency:
     async def test_same_key_rejected_on_farm(

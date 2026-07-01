@@ -136,6 +136,29 @@ class TestProductionProductivity:
         assert Decimal(row["expected"]) == Decimal("60")  # 0.8 x 75 animal-days
         assert Decimal(row["productivity_pct"]) == Decimal("100.0")
 
+    async def test_rate_change_is_time_weighted_across_targets(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await _asset(farm, AssetKind.ANIMAL, "Gallinas")
+        cat = await _category(client, authed_user, "unit")
+        # 0.8/day through Jun 5, then 0.6/day from Jun 6 — an effective-dated change.
+        await _target(
+            client, authed_user, coop, cat, effective_from="2026-01-01", effective_to="2026-06-05"
+        )
+        await _target(
+            client, authed_user, coop, cat, expected_rate="0.6", effective_from="2026-06-06"
+        )
+        await _head(farm, coop, user, InventoryAdjustment.INCREMENT, "10", BEFORE)
+        await _produce(farm, coop, user, cat, "70", "unit")
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=JUNE)
+
+        row = resp.json()["data"][0]
+        # 0.8 x (10 head x 5 days) + 0.6 x (10 head x 5 days) = 40 + 30
+        assert Decimal(row["expected"]) == Decimal("70")
+        assert Decimal(row["productivity_pct"]) == Decimal("100.0")
+
     async def test_dozen_converted_to_product_unit(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:

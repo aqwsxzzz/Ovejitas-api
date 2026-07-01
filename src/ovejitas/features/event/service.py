@@ -94,6 +94,8 @@ class EventService:
         if "individual_id" in updates:
             await validate_individual(self.db, asset, updates["individual_id"])
         if "category_id" in updates:
+            if event.type is EventType.PRODUCTION and updates["category_id"] is None:
+                raise ValidationError("Production events require a category")
             unit: Unit | None = updates.get("unit", event.unit)
             await validate_category(
                 self.db, asset.farm_id, event.type, updates["category_id"], unit
