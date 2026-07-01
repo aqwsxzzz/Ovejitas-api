@@ -12,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ovejitas.features.asset.models import AssetKind, AssetMode
 from ovejitas.features.asset.schemas import AssetCreate, AssetUpdate
 from ovejitas.features.asset.service import AssetService
-from ovejitas.features.event.types import Unit
+from ovejitas.features.event.types import EventType, Unit
+from ovejitas.features.event_category.schemas import EventCategoryCreate
+from ovejitas.features.event_category.service import EventCategoryService
 from ovejitas.features.farm.models import Farm
 from ovejitas.features.flock.actions import (
     create_flock_acquisition,
@@ -102,6 +104,10 @@ async def seed_flock(db: AsyncSession, user: User, farm: Farm, today: datetime) 
             ),
         )
 
+    egg_category = await EventCategoryService(db).create(
+        farm.id,
+        EventCategoryCreate(type=EventType.PRODUCTION, name="Huevos", unit=Unit.UNIT),
+    )
     for offset in range(14, 0, -1):
         await create_harvest(
             db,
@@ -111,6 +117,7 @@ async def seed_flock(db: AsyncSession, user: User, farm: Farm, today: datetime) 
                 occurred_at=today - timedelta(days=offset),
                 quantity=Decimal(180 + offset % 5),
                 unit=Unit.UNIT,
+                category_id=egg_category.id,
             ),
         )
 

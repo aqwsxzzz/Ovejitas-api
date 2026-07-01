@@ -161,10 +161,17 @@ class TestProductionToIncomeLoop:
         )
         assert linked.status_code == 200, linked.text
 
+        category = await client.post(
+            f"/api/v1/farms/{authed_user.farm_id}/event-categories",
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+        assert category.status_code == 201, category.text
+
         harvested = await client.post(
             f"{assets_url(authed_user.farm_id)}/{flock_id}/harvests",
             headers=authed_user.headers,
-            json={"quantity": "20", "unit": "unit"},
+            json={"quantity": "20", "unit": "unit", "category_id": category.json()["id"]},
         )
         assert harvested.status_code == 201, harvested.text
 

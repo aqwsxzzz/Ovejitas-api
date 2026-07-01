@@ -32,15 +32,17 @@ types:
     fields:
       type: production | expense | income | observation | reproductive | acquisition | mortality | inventory
       name: string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
       color: string | null
   EventCategoryRead:
     kind: object
-    required: [id, farm_id, type, name, color, archived_at, created_at, updated_at]
+    required: [id, farm_id, type, name, unit, color, archived_at, created_at, updated_at]
     fields:
       id: integer
       farm_id: integer
       type: production | expense | income | observation | reproductive | acquisition | mortality | inventory
       name: string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
       color: string | null
       archived_at: string (date-time) | null
       created_at: string (date-time)
@@ -49,6 +51,7 @@ types:
     kind: object
     fields:
       name: string | null
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
       color: string | null
       archived_at: string (date-time) | null
   HTTPValidationError:

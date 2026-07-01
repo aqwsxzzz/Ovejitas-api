@@ -15,6 +15,8 @@ from ovejitas.features.asset.service import AssetService
 from ovejitas.features.event.schemas import EventExpenseCreate, EventObservationCreate
 from ovejitas.features.event.service import EventService
 from ovejitas.features.event.types import AcquisitionMethod, EventType, Unit
+from ovejitas.features.event_category.schemas import EventCategoryCreate
+from ovejitas.features.event_category.service import EventCategoryService
 from ovejitas.features.farm.models import Farm
 from ovejitas.features.harvest.actions import create_harvest
 from ovejitas.features.harvest.schemas import HarvestCreate
@@ -115,6 +117,10 @@ async def seed_cattle(db: AsyncSession, user: User, farm: Farm, today: datetime)
         ),
     )
 
+    milk_category = await EventCategoryService(db).create(
+        farm.id,
+        EventCategoryCreate(type=EventType.PRODUCTION, name="Leche", unit=Unit.L),
+    )
     for offset in range(7, 0, -1):
         await create_harvest(
             db,
@@ -124,6 +130,7 @@ async def seed_cattle(db: AsyncSession, user: User, farm: Farm, today: datetime)
                 occurred_at=today - timedelta(days=offset),
                 quantity=Decimal("18.5"),
                 unit=Unit.L,
+                category_id=milk_category.id,
             ),
         )
 

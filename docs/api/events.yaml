@@ -87,11 +87,11 @@ types:
       type: string
   EventProductionCreate:
     kind: object
-    required: [occurred_at, type, quantity, unit]
+    required: [occurred_at, category_id, type, quantity, unit]
     fields:
       occurred_at: string (date-time)
       individual_id: integer | null
-      category_id: integer | null
+      category_id: integer
       notes: string | null
       payload: object
       idempotency_key: string | null
