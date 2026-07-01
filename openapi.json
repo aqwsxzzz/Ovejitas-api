@@ -285,6 +285,211 @@
         "title": "AssetMode",
         "type": "string"
       },
+      "AssetProductionTargetCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "basis": {
+            "$ref": "#/components/schemas/ProductionBasis"
+          },
+          "category_id": {
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "effective_from": {
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "expected_rate": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Expected Rate"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetPeriod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "asset_id",
+          "category_id",
+          "basis",
+          "expected_rate",
+          "effective_from"
+        ],
+        "title": "AssetProductionTargetCreate",
+        "type": "object"
+      },
+      "AssetProductionTargetRead": {
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "basis": {
+            "$ref": "#/components/schemas/ProductionBasis"
+          },
+          "category_id": {
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "effective_from": {
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "expected_rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Expected Rate",
+            "type": "string"
+          },
+          "farm_id": {
+            "title": "Farm Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetPeriod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "farm_id",
+          "asset_id",
+          "category_id",
+          "basis",
+          "expected_rate",
+          "period",
+          "effective_from",
+          "effective_to",
+          "archived_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AssetProductionTargetRead",
+        "type": "object"
+      },
+      "AssetProductionTargetUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "expected_rate": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Rate"
+          }
+        },
+        "title": "AssetProductionTargetUpdate",
+        "type": "object"
+      },
       "AssetRead": {
         "properties": {
           "created_at": {
@@ -3728,6 +3933,26 @@
         "title": "PageMeta",
         "type": "object"
       },
+      "Page_AssetProductionTargetRead_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AssetProductionTargetRead"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Page[AssetProductionTargetRead]",
+        "type": "object"
+      },
       "Page_AssetRead_": {
         "properties": {
           "data": {
@@ -4151,6 +4376,16 @@
         "title": "PregnancyUpdate",
         "type": "object"
       },
+      "ProductionBasis": {
+        "description": "How a target's expected_rate scales into an expected quantity over a window.\n\n- ``per_head_continuous``: rate per head per ``period`` (eggs/day, milk/day) \u2014\n  scaled by animal-days in the window.\n- ``per_event``: expected yield per production event (shearing, harvest) \u2014\n  compared per event, not calendar-scaled.\n- ``total``: whole-asset expected yield (a crop field) \u2014 no headcount.",
+        "enum": [
+          "per_head_continuous",
+          "per_event",
+          "total"
+        ],
+        "title": "ProductionBasis",
+        "type": "string"
+      },
       "ProfitabilityReport": {
         "properties": {
           "data": {
@@ -4376,6 +4611,15 @@
         ],
         "title": "SalesValueRow",
         "type": "object"
+      },
+      "TargetPeriod": {
+        "description": "The cadence a per_head_continuous rate is expressed in.",
+        "enum": [
+          "day",
+          "year"
+        ],
+        "title": "TargetPeriod",
+        "type": "string"
       },
       "TokenPair": {
         "properties": {
@@ -8794,6 +9038,416 @@
         "summary": "Update a pregnancy record",
         "tags": [
           "pregnancies"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/production-targets": {
+      "get": {
+        "operationId": "production-targets_list_production_targets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "e.g. -effective_from,created_at",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -effective_from,created_at",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "basis",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ProductionBasis"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Basis"
+            }
+          },
+          {
+            "in": "query",
+            "name": "archived",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Archived"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AssetProductionTargetRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List production targets in a farm",
+        "tags": [
+          "production-targets"
+        ]
+      },
+      "post": {
+        "description": "`basis`, `period`, `asset_id`, `category_id` are set once; a changed rate is a new effective-dated target, not an edit.",
+        "operationId": "production-targets_create_production_target",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetProductionTargetCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetProductionTargetRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create a production target",
+        "tags": [
+          "production-targets"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/production-targets/{target_id}": {
+      "delete": {
+        "operationId": "production-targets_delete_production_target",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete a production target",
+        "tags": [
+          "production-targets"
+        ]
+      },
+      "get": {
+        "operationId": "production-targets_get_production_target",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetProductionTargetRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get one production target",
+        "tags": [
+          "production-targets"
+        ]
+      },
+      "patch": {
+        "description": "Adjust `expected_rate`, close `effective_to`, or set `archived_at`.",
+        "operationId": "production-targets_update_production_target",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetProductionTargetUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetProductionTargetRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update a production target",
+        "tags": [
+          "production-targets"
         ]
       }
     },
