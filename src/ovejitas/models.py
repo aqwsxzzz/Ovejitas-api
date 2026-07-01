@@ -13,12 +13,15 @@ from ovejitas.features.material_consumption.models import MaterialConsumption
 from ovejitas.features.material_consumption.types import ConsumptionReason
 from ovejitas.features.material_purchase.models import MaterialPurchase
 from ovejitas.features.pregnancy.models import Pregnancy
+from ovejitas.features.production_target.models import AssetProductionTarget
+from ovejitas.features.production_target.types import ProductionBasis, TargetPeriod
 from ovejitas.features.user.models import User
 
 __all__ = [
     "Asset",
     "AssetKind",
     "AssetMode",
+    "AssetProductionTarget",
     "Base",
     "ConsumptionReason",
     "Event",
@@ -34,5 +37,7 @@ __all__ = [
     "MaterialConsumption",
     "MaterialPurchase",
     "Pregnancy",
+    "ProductionBasis",
+    "TargetPeriod",
     "User",
 ]

@@ -1,0 +1,89 @@
+tag: production-targets
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/production-targets
+  summary: List production targets in a farm
+  responses: {'200': Page_AssetProductionTargetRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/production-targets
+  summary: Create a production target
+  description: '`basis`, `period`, `asset_id`, `category_id` are set once; a changed rate is a new effective-dated target,
+    not an edit.'
+  body: AssetProductionTargetCreate
+  responses: {'201': AssetProductionTargetRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/production-targets/{target_id}
+  summary: Get one production target
+  responses: {'200': AssetProductionTargetRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/production-targets/{target_id}
+  summary: Update a production target
+  description: Adjust `expected_rate`, close `effective_to`, or set `archived_at`.
+  body: AssetProductionTargetUpdate
+  responses: {'200': AssetProductionTargetRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/production-targets/{target_id}
+  summary: Delete a production target
+  responses: {'204': any, '422': HTTPValidationError}
+types:
+  AssetProductionTargetCreate:
+    kind: object
+    required: [asset_id, category_id, basis, expected_rate, effective_from]
+    fields:
+      asset_id: integer
+      category_id: integer
+      basis: per_head_continuous | per_event | total
+      expected_rate: number | string
+      period: day | year | null
+      effective_from: string (date)
+      effective_to: string (date) | null
+  AssetProductionTargetRead:
+    kind: object
+    required: [id, farm_id, asset_id, category_id, basis, expected_rate, period, effective_from, effective_to, archived_at,
+      created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      asset_id: integer
+      category_id: integer
+      basis: per_head_continuous | per_event | total
+      expected_rate: string
+      period: day | year | null
+      effective_from: string (date)
+      effective_to: string (date) | null
+      archived_at: string (date-time) | null
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  AssetProductionTargetUpdate:
+    kind: object
+    fields:
+      expected_rate: number | string | null
+      effective_to: string (date) | null
+      archived_at: string (date-time) | null
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_AssetProductionTargetRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: AssetProductionTargetRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

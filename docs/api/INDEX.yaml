@@ -47,6 +47,9 @@ resources:
 - tag: pregnancies
   file: pregnancies.yaml
   operations: 5
+- tag: production-targets
+  file: production-targets.yaml
+  operations: 5
 - tag: reports
   file: reports.yaml
   operations: 11
