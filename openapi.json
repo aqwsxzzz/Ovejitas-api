@@ -194,22 +194,6 @@
             ],
             "title": "Description"
           },
-          "expected_eggs_per_head_per_day": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected Eggs Per Head Per Day"
-          },
           "kind": {
             "$ref": "#/components/schemas/AssetKind"
           },
@@ -508,18 +492,6 @@
             ],
             "title": "Description"
           },
-          "expected_eggs_per_head_per_day": {
-            "anyOf": [
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected Eggs Per Head Per Day"
-          },
           "farm_id": {
             "title": "Farm Id",
             "type": "integer"
@@ -582,7 +554,6 @@
           "location",
           "description",
           "produce_asset_id",
-          "expected_eggs_per_head_per_day",
           "created_at",
           "updated_at"
         ],
@@ -619,22 +590,6 @@
               }
             ],
             "title": "Description"
-          },
-          "expected_eggs_per_head_per_day": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected Eggs Per Head Per Day"
           },
           "kind": {
             "anyOf": [
@@ -817,77 +772,6 @@
         ],
         "title": "ConsumptionReason",
         "type": "string"
-      },
-      "CoopProductivityReport": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/CoopProductivityRow"
-            },
-            "title": "Data",
-            "type": "array"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "CoopProductivityReport",
-        "type": "object"
-      },
-      "CoopProductivityRow": {
-        "properties": {
-          "asset_id": {
-            "title": "Asset Id",
-            "type": "integer"
-          },
-          "asset_name": {
-            "title": "Asset Name",
-            "type": "string"
-          },
-          "expected": {
-            "anyOf": [
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected"
-          },
-          "missing_capacity": {
-            "title": "Missing Capacity",
-            "type": "boolean"
-          },
-          "produced": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Produced",
-            "type": "string"
-          },
-          "productivity_pct": {
-            "anyOf": [
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Productivity Pct"
-          }
-        },
-        "required": [
-          "asset_id",
-          "asset_name",
-          "produced",
-          "expected",
-          "productivity_pct",
-          "missing_capacity"
-        ],
-        "title": "CoopProductivityRow",
-        "type": "object"
       },
       "CostPerUnitReport": {
         "properties": {
@@ -9728,90 +9612,6 @@
           }
         ],
         "summary": "Generic time-bucketed aggregate over events of one type",
-        "tags": [
-          "reports"
-        ]
-      }
-    },
-    "/api/v1/farms/{farm_id}/reports/coop-productivity": {
-      "get": {
-        "description": "One row per coop (animal asset) that either laid eggs in the window or has laying capacity configured. `produced` is eggs laid, normalized to single eggs (counts in `dozen` are x12). `expected = expected_eggs_per_head_per_day x headcount x days`, using the coop's current headcount for the whole window. `productivity_pct = produced / expected x 100`. A coop without `headcount` or `expected_eggs_per_head_per_day` set reports `missing_capacity: true` with null `expected`/`productivity_pct`. `date_from` and `date_to` are **required** (expected laying scales with the number of days).",
-        "operationId": "reports_coop_productivity",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "farm_id",
-            "required": true,
-            "schema": {
-              "title": "Farm Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "date_from",
-            "required": true,
-            "schema": {
-              "format": "date-time",
-              "title": "Date From",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "date_to",
-            "required": true,
-            "schema": {
-              "format": "date-time",
-              "title": "Date To",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "asset_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Asset Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoopProductivityReport"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "summary": "Eggs laid vs expected laying, per coop",
         "tags": [
           "reports"
         ]

@@ -14,8 +14,6 @@ from ovejitas.features.report.pdf import render_pdf
 from ovejitas.features.report.schemas import (
     AggregateQuery,
     AggregateReport,
-    CoopProductivityQuery,
-    CoopProductivityReport,
     CostPerUnitQuery,
     CostPerUnitReport,
     InventorySummaryQuery,
@@ -230,30 +228,6 @@ async def sales_value(
     q: Annotated[SalesValueQuery, Depends()],
 ) -> SalesValueReport:
     return await svc.sales_value(membership.farm_id, q)
-
-
-@router.get(
-    "/coop-productivity",
-    response_model=CoopProductivityReport,
-    summary="Eggs laid vs expected laying, per coop",
-    description=(
-        "One row per coop (animal asset) that either laid eggs in the window or "
-        "has laying capacity configured. `produced` is eggs laid, normalized to "
-        "single eggs (counts in `dozen` are x12). `expected = "
-        "expected_eggs_per_head_per_day x headcount x days`, using the coop's "
-        "current headcount for the whole window. `productivity_pct = produced / "
-        "expected x 100`. A coop without `headcount` or "
-        "`expected_eggs_per_head_per_day` set reports `missing_capacity: true` "
-        "with null `expected`/`productivity_pct`. `date_from` and `date_to` are "
-        "**required** (expected laying scales with the number of days)."
-    ),
-)
-async def coop_productivity(
-    membership: FarmMembership,
-    svc: ReportSvc,
-    q: Annotated[CoopProductivityQuery, Depends()],
-) -> CoopProductivityReport:
-    return await svc.coop_productivity(membership.farm_id, q)
 
 
 @router.get(

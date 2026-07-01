@@ -111,32 +111,6 @@ class CostPerUnitQuery(FilterParams):
     unit: Unit
 
 
-class CoopProductivityQuery(FilterParams):
-    # The window is required here (unlike other reports): expected laying scales
-    # with the number of days, so there is no denominator without both bounds.
-    # Overriding the optional base fields makes them required query params (422
-    # if missing), validated by FastAPI itself.
-    date_from: datetime
-    date_to: datetime
-    asset_id: int | None = None
-
-
-class CoopProductivityRow(BaseModel):
-    asset_id: int
-    asset_name: str
-    # eggs laid in the window, normalized to single eggs (dozen counts x12)
-    produced: Decimal
-    # expected_eggs_per_head_per_day x headcount x days; null when unconfigured
-    expected: Decimal | None
-    productivity_pct: Decimal | None
-    # true when headcount or expected rate is unset — produced is still shown
-    missing_capacity: bool
-
-
-class CoopProductivityReport(BaseModel):
-    data: list[CoopProductivityRow]
-
-
 class ProductionProductivityQuery(FilterParams):
     # Window required: expected output scales with the window, so there is no
     # denominator without both bounds (422 if missing).

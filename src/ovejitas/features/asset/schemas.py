@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,7 +13,6 @@ class AssetCreate(StrictModel):
     mode: AssetMode | None = None
     location: OptionalStr = Field(default=None, max_length=255)
     description: OptionalStr = Field(default=None, max_length=1024)
-    expected_eggs_per_head_per_day: Decimal | None = Field(default=None, ge=0)
 
 
 class AssetUpdate(StrictModel):
@@ -24,7 +22,6 @@ class AssetUpdate(StrictModel):
     location: OptionalStr = Field(default=None, max_length=255)
     description: OptionalStr = Field(default=None, max_length=1024)
     produce_asset_id: int | None = None
-    expected_eggs_per_head_per_day: Decimal | None = Field(default=None, ge=0)
 
 
 class AssetRead(BaseModel):
@@ -38,7 +35,6 @@ class AssetRead(BaseModel):
     location: str | None
     description: str | None
     produce_asset_id: int | None
-    expected_eggs_per_head_per_day: Decimal | None
     created_at: datetime
     updated_at: datetime
 
