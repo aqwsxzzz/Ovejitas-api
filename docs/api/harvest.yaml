@@ -15,12 +15,12 @@ types:
       detail: ValidationError[]
   HarvestCreate:
     kind: object
-    required: [quantity, unit]
+    required: [quantity, unit, category_id]
     fields:
       occurred_at: string (date-time)
       quantity: number | string
       unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
-      category_id: integer | null
+      category_id: integer
       notes: string | null
   HarvestRead:
     kind: object

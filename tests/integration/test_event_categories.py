@@ -28,6 +28,40 @@ class TestCreateEventCategory:
         assert body["color"] == "#ff0000"
         assert body["archived_at"] is None
 
+    async def test_create_category_with_unit_persists_and_returns_unit(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        response = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+
+        assert response.status_code == 201, response.text
+        assert response.json()["unit"] == "unit"
+
+    async def test_production_category_without_unit_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        response = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos"},
+        )
+
+        assert response.status_code == 422
+
+    async def test_non_production_category_with_unit_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        response = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "expense", "name": "Feed", "unit": "kg"},
+        )
+
+        assert response.status_code == 422
+
     async def test_duplicate_rejected(self, client: AsyncClient, authed_user: AuthedUser) -> None:
         payload = {"type": "expense", "name": "Feed"}
         first = await client.post(

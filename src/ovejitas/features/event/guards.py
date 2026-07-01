@@ -5,9 +5,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.errors import ValidationError
 from ovejitas.features.asset.models import Asset, AssetKind, AssetMode
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, Unit
 from ovejitas.features.event_category.models import EventCategory
 from ovejitas.features.individual.models import Individual
+
+# Units that measure the same physical quantity — a production event may be logged
+# in any unit within its category's family (e.g. eggs in unit or dozen). Numeric
+# conversion between them is the report's concern, not this guard's.
+_UNIT_FAMILIES: tuple[frozenset[Unit], ...] = (
+    frozenset({Unit.UNIT, Unit.DOZEN}),
+    frozenset({Unit.G, Unit.KG, Unit.LB, Unit.T}),
+    frozenset({Unit.ML, Unit.L, Unit.GAL}),
+    frozenset({Unit.HEAD}),
+)
+
+
+def _same_family(a: Unit, b: Unit) -> bool:
+    return any(a in family and b in family for family in _UNIT_FAMILIES)
 
 
 def _asset_tracks_inventory(asset: Asset) -> bool:
@@ -49,6 +63,7 @@ async def validate_category(
     farm_id: int,
     event_type: EventType,
     category_id: int | None,
+    unit: Unit | None = None,
 ) -> None:
     if category_id is None:
         return
@@ -61,6 +76,19 @@ async def validate_category(
         raise ValidationError("Category not found in this farm")
     if category.type is not event_type:
         raise ValidationError("Category type does not match event type")
+    # For production, the event's unit must be compatible with the product's unit
+    # (same measurement family). Legacy categories without a unit are skipped —
+    # "unit required" is enforced at category creation, going forward.
+    if (
+        event_type is EventType.PRODUCTION
+        and category.unit is not None
+        and unit is not None
+        and not _same_family(unit, category.unit)
+    ):
+        raise ValidationError(
+            f"Event unit '{unit.value}' is not compatible with "
+            f"category unit '{category.unit.value}'"
+        )
 
 
 _TYPE_SPECIFIC_FIELDS: dict[EventType, frozenset[str]] = {

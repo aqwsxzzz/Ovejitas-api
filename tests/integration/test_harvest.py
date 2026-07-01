@@ -10,7 +10,7 @@ from ovejitas.features.event.types import Unit
 from ovejitas.features.harvest.actions import create_harvest
 from ovejitas.features.harvest.schemas import HarvestCreate
 from tests.conftest import AuthedUser
-from tests.factories import AssetFactory, FarmFactory, UserFactory
+from tests.factories import AssetFactory, EventCategoryFactory, FarmFactory, UserFactory
 
 ANIMAL_FLOCK = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
 CROP_FIELD = {"name": "Tomateras", "kind": "crop", "mode": "aggregated"}
@@ -30,8 +30,24 @@ def events_url(farm_id: int, asset_id: int) -> str:
     return f"{assets_url(farm_id)}/{asset_id}/events"
 
 
+def categories_url(farm_id: int) -> str:
+    return f"/api/v1/farms/{farm_id}/event-categories"
+
+
 async def _create_asset(client: AsyncClient, authed: AuthedUser, body: dict[str, str]) -> int:
     resp = await client.post(assets_url(authed.farm_id), headers=authed.headers, json=body)
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+async def _prod_category(client: AsyncClient, authed: AuthedUser, unit: str) -> int:
+    """A production category (the harvest's product) whose unit family matches the
+    harvested unit."""
+    resp = await client.post(
+        categories_url(authed.farm_id),
+        headers=authed.headers,
+        json={"type": "production", "name": f"Producción {unit}", "unit": unit},
+    )
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]
 
@@ -74,11 +90,12 @@ class TestHarvest:
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         source_id, produce_id = await _linked_source(client, authed_user, ANIMAL_FLOCK)
+        category_id = await _prod_category(client, authed_user, "unit")
 
         resp = await client.post(
             harvest_url(authed_user.farm_id, source_id),
             headers=authed_user.headers,
-            json={"quantity": "15", "unit": "unit"},
+            json={"quantity": "15", "unit": "unit", "category_id": category_id},
         )
 
         assert resp.status_code == 201, resp.text
@@ -95,11 +112,12 @@ class TestHarvest:
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         source_id, produce_id = await _linked_source(client, authed_user, ANIMAL_FLOCK)
+        category_id = await _prod_category(client, authed_user, "unit")
 
         await client.post(
             harvest_url(authed_user.farm_id, source_id),
             headers=authed_user.headers,
-            json={"quantity": "15", "unit": "unit"},
+            json={"quantity": "15", "unit": "unit", "category_id": category_id},
         )
 
         production = await _events(client, authed_user, source_id, "production")
@@ -115,16 +133,17 @@ class TestHarvest:
         flock_b = await _create_asset(client, authed_user, ANIMAL_FLOCK)
         await _link_produce(client, authed_user, flock_a, produce_id)
         await _link_produce(client, authed_user, flock_b, produce_id)
+        category_id = await _prod_category(client, authed_user, "unit")
 
         await client.post(
             harvest_url(authed_user.farm_id, flock_a),
             headers=authed_user.headers,
-            json={"quantity": "10", "unit": "unit"},
+            json={"quantity": "10", "unit": "unit", "category_id": category_id},
         )
         resp = await client.post(
             harvest_url(authed_user.farm_id, flock_b),
             headers=authed_user.headers,
-            json={"quantity": "7", "unit": "unit"},
+            json={"quantity": "7", "unit": "unit", "category_id": category_id},
         )
 
         assert resp.status_code == 201, resp.text
@@ -134,11 +153,12 @@ class TestHarvest:
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         source_id, _ = await _linked_source(client, authed_user, CROP_FIELD)
+        category_id = await _prod_category(client, authed_user, "kg")
 
         resp = await client.post(
             harvest_url(authed_user.farm_id, source_id),
             headers=authed_user.headers,
-            json={"quantity": "40", "unit": "kg"},
+            json={"quantity": "40", "unit": "kg", "category_id": category_id},
         )
 
         assert resp.status_code == 201, resp.text
@@ -150,11 +170,12 @@ class TestHarvestRejections:
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         source_id = await _create_asset(client, authed_user, ANIMAL_FLOCK)
+        category_id = await _prod_category(client, authed_user, "unit")
 
         resp = await client.post(
             harvest_url(authed_user.farm_id, source_id),
             headers=authed_user.headers,
-            json={"quantity": "15", "unit": "unit"},
+            json={"quantity": "15", "unit": "unit", "category_id": category_id},
         )
 
         assert resp.status_code == 422
@@ -163,16 +184,17 @@ class TestHarvestRejections:
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         source_id, _ = await _linked_source(client, authed_user, ANIMAL_FLOCK)
+        category_id = await _prod_category(client, authed_user, "unit")
         await client.post(
             harvest_url(authed_user.farm_id, source_id),
             headers=authed_user.headers,
-            json={"quantity": "15", "unit": "unit"},
+            json={"quantity": "15", "unit": "unit", "category_id": category_id},
         )
 
         resp = await client.post(
             harvest_url(authed_user.farm_id, source_id),
             headers=authed_user.headers,
-            json={"quantity": "1", "unit": "dozen"},
+            json={"quantity": "1", "unit": "dozen", "category_id": category_id},
         )
 
         assert resp.status_code == 422
@@ -181,11 +203,12 @@ class TestHarvestRejections:
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         source_id, _ = await _linked_source(client, authed_user, ANIMAL_FLOCK)
+        category_id = await _prod_category(client, authed_user, "unit")
 
         resp = await client.post(
             harvest_url(authed_user.farm_id, source_id),
             headers=authed_user.headers,
-            json={"quantity": "0", "unit": "unit"},
+            json={"quantity": "0", "unit": "unit", "category_id": category_id},
         )
 
         assert resp.status_code == 422
@@ -232,11 +255,12 @@ class TestHarvestCrossFarmGuard:
             produce_asset_id=produce.id,
         )
         user = await UserFactory.create_async()
+        category = await EventCategoryFactory.create_async(farm_id=farm_a.id, unit=Unit.UNIT)
 
         with pytest.raises(ValidationError, match="different farm"):
             await create_harvest(
                 db_session,
                 asset=source,
                 user_id=user.id,
-                data=HarvestCreate(quantity=Decimal("5"), unit=Unit.UNIT),
+                data=HarvestCreate(quantity=Decimal("5"), unit=Unit.UNIT, category_id=category.id),
             )

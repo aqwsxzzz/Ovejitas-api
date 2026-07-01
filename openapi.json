@@ -792,6 +792,16 @@
           },
           "type": {
             "$ref": "#/components/schemas/EventType"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -846,6 +856,16 @@
           "type": {
             "$ref": "#/components/schemas/EventType"
           },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -857,6 +877,7 @@
           "farm_id",
           "type",
           "name",
+          "unit",
           "color",
           "archived_at",
           "created_at",
@@ -904,6 +925,16 @@
               }
             ],
             "title": "Name"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "title": "EventCategoryUpdate",
@@ -1247,15 +1278,8 @@
         "additionalProperties": false,
         "properties": {
           "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
+            "title": "Category Id",
+            "type": "integer"
           },
           "idempotency_key": {
             "anyOf": [
@@ -1325,6 +1349,7 @@
         },
         "required": [
           "occurred_at",
+          "category_id",
           "type",
           "quantity",
           "unit"
@@ -1961,15 +1986,8 @@
         "additionalProperties": false,
         "properties": {
           "category_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id"
+            "title": "Category Id",
+            "type": "integer"
           },
           "notes": {
             "anyOf": [
@@ -2007,7 +2025,8 @@
         },
         "required": [
           "quantity",
-          "unit"
+          "unit",
+          "category_id"
         ],
         "title": "HarvestCreate",
         "type": "object"
