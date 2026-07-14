@@ -116,6 +116,26 @@ class TestProductionProductivity:
         assert Decimal(row["productivity_pct"]) == Decimal("80.0")
         assert row["missing_capacity"] is False
 
+    async def test_in_progress_day_expects_a_whole_day_not_prorated_hours(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # date_to is "now" mid-afternoon (an in-progress day), not midnight. The
+        # day must still count as a whole day: 1.0 x (1000 head x 1 day) = 1000,
+        # not prorated to the ~13.75 elapsed hours.
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await _asset(farm, AssetKind.ANIMAL, "Gallinas")
+        cat = await _category(client, authed_user, "unit")
+        await _target(client, authed_user, coop, cat, expected_rate="1.0")
+        await _head(farm, coop, user, InventoryAdjustment.INCREMENT, "1000", BEFORE)
+        await _produce(farm, coop, user, cat, "500", "unit")
+
+        params = {"date_from": "2026-06-05T00:00:00Z", "date_to": "2026-06-05T13:45:00Z"}
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=params)
+
+        assert resp.status_code == 200, resp.text
+        row = resp.json()["data"][0]
+        assert Decimal(row["expected"]) == Decimal("1000")
+
     async def test_headcount_change_is_time_weighted(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:

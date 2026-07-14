@@ -22,13 +22,17 @@ from ovejitas.features.report.schemas import (
     MaterialConsumptionAggregateReport,
     ProductionProductivityQuery,
     ProductionProductivityReport,
-    ProfitabilityQuery,
-    ProfitabilityReport,
     SalesValueQuery,
     SalesValueReport,
     TimelineQuery,
     UpcomingBirthsQuery,
     UpcomingBirthsReport,
+)
+from ovejitas.features.report.schemas_profitability import (
+    ProfitabilityFullQuery,
+    ProfitabilityFullReport,
+    ProfitabilityQuery,
+    ProfitabilityReport,
 )
 from ovejitas.features.report.service import ReportService
 
@@ -73,6 +77,30 @@ async def profitability(
 ) -> ProfitabilityReport:
     rows, totals = await svc.profitability(membership.farm_id, q)
     return ProfitabilityReport(data=rows, totals=totals)
+
+
+@router.get(
+    "/profitability-full",
+    response_model=ProfitabilityFullReport,
+    summary="Income minus total cost (direct expense + feed) per asset",
+    description=(
+        "One row per asset, in the farm's default currency. Extends R1 with the "
+        "average-cost value of the feed the asset consumed: `net_incl_materials "
+        "= income - (direct expense + feed)`. Feed uses the same basis as "
+        "cost-per-unit (R3), so the two never disagree. Income/expense in another "
+        "currency is excluded and flagged `has_other_currency`; feed with no "
+        "purchase basis flags `has_unvalued_consumption`. The existing `net` "
+        "(income - direct expense) is retained unchanged. `date_from`/`date_to` "
+        "bound income and direct expense; feed is valued over full purchase "
+        "history."
+    ),
+)
+async def profitability_full(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[ProfitabilityFullQuery, Depends()],
+) -> ProfitabilityFullReport:
+    return await svc.profitability_full(membership.farm_id, q)
 
 
 @router.get(
@@ -183,6 +211,27 @@ async def profitability_pdf(
         context={"rows": rows, "totals": totals},
     )
     return _pdf_response(pdf, "rentabilidad.pdf")
+
+
+@router.get("/profitability-full/pdf", summary="Profitability-full — PDF download")
+async def profitability_full_pdf(
+    membership: FarmMembership,
+    current_user: CurrentUser,
+    svc: ReportSvc,
+    db: DBSession,
+    q: Annotated[ProfitabilityFullQuery, Depends()],
+) -> Response:
+    report = await svc.profitability_full(membership.farm_id, q)
+    pdf = render_pdf(
+        "profitability_full.html",
+        farm_name=await _farm_name(db, membership.farm_id),
+        title="Rentabilidad (con insumos)",
+        generated_by=current_user.name,
+        date_from=q.date_from,
+        date_to=q.date_to,
+        context={"rows": report.data, "totals": report.totals},
+    )
+    return _pdf_response(pdf, "rentabilidad-completa.pdf")
 
 
 @router.get("/cost-per-unit/pdf", summary="R3 — PDF download")
