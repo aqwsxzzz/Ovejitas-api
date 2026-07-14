@@ -4373,6 +4373,148 @@
         "title": "ProductionProductivityRow",
         "type": "object"
       },
+      "ProfitabilityFullReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProfitabilityFullRow"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/ProfitabilityFullTotal"
+            },
+            "title": "Totals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data",
+          "totals"
+        ],
+        "title": "ProfitabilityFullReport",
+        "type": "object"
+      },
+      "ProfitabilityFullRow": {
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "integer"
+          },
+          "asset_name": {
+            "title": "Asset Name",
+            "type": "string"
+          },
+          "consumed_material_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Consumed Material Cost",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "direct_expense_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Direct Expense Total",
+            "type": "string"
+          },
+          "has_other_currency": {
+            "title": "Has Other Currency",
+            "type": "boolean"
+          },
+          "has_unvalued_consumption": {
+            "title": "Has Unvalued Consumption",
+            "type": "boolean"
+          },
+          "income_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Income Total",
+            "type": "string"
+          },
+          "net": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net",
+            "type": "string"
+          },
+          "net_incl_materials": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Incl Materials",
+            "type": "string"
+          },
+          "total_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Cost",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_id",
+          "asset_name",
+          "currency",
+          "income_total",
+          "direct_expense_total",
+          "consumed_material_cost",
+          "total_cost",
+          "net",
+          "net_incl_materials",
+          "has_unvalued_consumption",
+          "has_other_currency"
+        ],
+        "title": "ProfitabilityFullRow",
+        "type": "object"
+      },
+      "ProfitabilityFullTotal": {
+        "properties": {
+          "consumed_material_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Consumed Material Cost",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "direct_expense_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Direct Expense Total",
+            "type": "string"
+          },
+          "income_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Income Total",
+            "type": "string"
+          },
+          "net": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net",
+            "type": "string"
+          },
+          "net_incl_materials": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Incl Materials",
+            "type": "string"
+          },
+          "total_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Cost",
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "income_total",
+          "direct_expense_total",
+          "consumed_material_cost",
+          "total_cost",
+          "net",
+          "net_incl_materials"
+        ],
+        "title": "ProfitabilityFullTotal",
+        "type": "object"
+      },
       "ProfitabilityReport": {
         "properties": {
           "data": {
@@ -10394,6 +10536,199 @@
           }
         ],
         "summary": "R1 \u2014 income minus expense per asset",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/profitability-full": {
+      "get": {
+        "description": "One row per asset, in the farm's default currency. Extends R1 with the average-cost value of the feed the asset consumed: `net_incl_materials = income - (direct expense + feed)`. Feed uses the same basis as cost-per-unit (R3), so the two never disagree. Income/expense in another currency is excluded and flagged `has_other_currency`; feed with no purchase basis flags `has_unvalued_consumption`. The existing `net` (income - direct expense) is retained unchanged. `date_from`/`date_to` bound income and direct expense; feed is valued over full purchase history.",
+        "operationId": "reports_profitability_full",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfitabilityFullReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Income minus total cost (direct expense + feed) per asset",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/profitability-full/pdf": {
+      "get": {
+        "operationId": "reports_profitability_full_pdf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Profitability-full \u2014 PDF download",
         "tags": [
           "reports"
         ]

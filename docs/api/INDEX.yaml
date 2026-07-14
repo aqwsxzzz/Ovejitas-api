@@ -52,4 +52,4 @@ resources:
   operations: 5
 - tag: reports
   file: reports.yaml
-  operations: 11
+  operations: 13

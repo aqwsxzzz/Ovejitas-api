@@ -21,6 +21,9 @@ from ovejitas.features.report.production_cost import production_cost
 from ovejitas.features.report.production_productivity import (
     production_productivity as run_production_productivity,
 )
+from ovejitas.features.report.profitability_full import (
+    profitability_full as run_profitability_full,
+)
 from ovejitas.features.report.sales_value import sales_value as run_sales_value
 from ovejitas.features.report.schemas import (
     AggregateMeta,
@@ -34,14 +37,18 @@ from ovejitas.features.report.schemas import (
     MaterialConsumptionAggregateTotal,
     ProductionProductivityQuery,
     ProductionProductivityReport,
-    ProfitabilityQuery,
-    ProfitabilityRow,
-    ProfitabilityTotal,
     SalesValueQuery,
     SalesValueReport,
     TimelineQuery,
     UpcomingBirthRow,
     UpcomingBirthsQuery,
+)
+from ovejitas.features.report.schemas_profitability import (
+    ProfitabilityFullQuery,
+    ProfitabilityFullReport,
+    ProfitabilityQuery,
+    ProfitabilityRow,
+    ProfitabilityTotal,
 )
 from ovejitas.features.report.upcoming_births import upcoming_births as run_upcoming_births
 
@@ -109,6 +116,11 @@ class ReportService:
         data = [ProfitabilityRow.model_validate(r) for r in rows]
         totals = _profitability_totals(data)
         return data, totals
+
+    async def profitability_full(
+        self, farm_id: int, q: ProfitabilityFullQuery
+    ) -> ProfitabilityFullReport:
+        return await run_profitability_full(self.db, farm_id, q)
 
     async def aggregate(
         self, farm_id: int, q: AggregateQuery

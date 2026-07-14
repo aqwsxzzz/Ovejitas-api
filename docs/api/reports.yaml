@@ -7,6 +7,15 @@ operations:
     silently summed.
   responses: {'200': ProfitabilityReport, '422': HTTPValidationError}
 - method: GET
+  path: /api/v1/farms/{farm_id}/reports/profitability-full
+  summary: Income minus total cost (direct expense + feed) per asset
+  description: 'One row per asset, in the farm''s default currency. Extends R1 with the average-cost value of the feed the
+    asset consumed: `net_incl_materials = income - (direct expense + feed)`. Feed uses the same basis as cost-per-unit (R3),
+    so the two never disagree. Income/expense in another currency is excluded and flagged `has_other_currency`; feed with
+    no purchase basis flags `has_unvalued_consumption`. The existing `net` (income - direct expense) is retained unchanged.
+    `date_from`/`date_to` bound income and direct expense; feed is valued over full purchase history.'
+  responses: {'200': ProfitabilityFullReport, '422': HTTPValidationError}
+- method: GET
   path: /api/v1/farms/{farm_id}/reports/aggregate
   summary: Generic time-bucketed aggregate over events of one type
   description: 'Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.
@@ -76,6 +85,10 @@ operations:
 - method: GET
   path: /api/v1/farms/{farm_id}/reports/profitability/pdf
   summary: R1 — PDF download
+  responses: {'200': any, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/profitability-full/pdf
+  summary: Profitability-full — PDF download
   responses: {'200': any, '422': HTTPValidationError}
 - method: GET
   path: /api/v1/farms/{farm_id}/reports/cost-per-unit/pdf
@@ -252,6 +265,39 @@ types:
       productivity_pct: string | null
       basis: per_head_continuous | per_event | total | null
       missing_capacity: boolean
+  ProfitabilityFullReport:
+    kind: object
+    required: [data, totals]
+    fields:
+      data: ProfitabilityFullRow[]
+      totals: ProfitabilityFullTotal[]
+  ProfitabilityFullRow:
+    kind: object
+    required: [asset_id, asset_name, currency, income_total, direct_expense_total, consumed_material_cost, total_cost, net,
+      net_incl_materials, has_unvalued_consumption, has_other_currency]
+    fields:
+      asset_id: integer
+      asset_name: string
+      currency: string
+      income_total: string
+      direct_expense_total: string
+      consumed_material_cost: string
+      total_cost: string
+      net: string
+      net_incl_materials: string
+      has_unvalued_consumption: boolean
+      has_other_currency: boolean
+  ProfitabilityFullTotal:
+    kind: object
+    required: [currency, income_total, direct_expense_total, consumed_material_cost, total_cost, net, net_incl_materials]
+    fields:
+      currency: string
+      income_total: string
+      direct_expense_total: string
+      consumed_material_cost: string
+      total_cost: string
+      net: string
+      net_incl_materials: string
   ProfitabilityReport:
     kind: object
     required: [data, totals]

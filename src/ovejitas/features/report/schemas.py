@@ -20,29 +20,6 @@ class GroupBy(StrEnum):
     ASSET = "asset"
 
 
-class ProfitabilityRow(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    asset_id: int
-    asset_name: str
-    currency: str
-    income_total: Decimal
-    expense_total: Decimal
-    net: Decimal
-
-
-class ProfitabilityTotal(BaseModel):
-    currency: str
-    income_total: Decimal
-    expense_total: Decimal
-    net: Decimal
-
-
-class ProfitabilityReport(BaseModel):
-    data: list[ProfitabilityRow]
-    totals: list[ProfitabilityTotal]
-
-
 class AggregateMeasure(StrEnum):
     SUM_QUANTITY = "sum_quantity"
     SUM_AMOUNT = "sum_amount"
@@ -100,10 +77,6 @@ class CostPerUnitRow(BaseModel):
 class CostPerUnitReport(BaseModel):
     data: list[CostPerUnitRow]
     unit: Unit
-
-
-class ProfitabilityQuery(FilterParams):
-    asset_id: int | None = None
 
 
 class CostPerUnitQuery(FilterParams):
