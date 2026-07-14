@@ -40,8 +40,17 @@ def convert(quantity: Decimal, from_unit: Unit, to_unit: Unit) -> Decimal:
 
 
 def window_end(date_to: datetime) -> datetime:
-    """Mirror apply_date_range: a midnight upper bound means 'through that day'."""
-    return date_to + timedelta(days=1) if date_to.time() == time() else date_to
+    """Exclusive end of ``date_to``'s calendar day.
+
+    The report is day-grained: a target is a per-day (or per-year) rate, so the
+    day containing ``date_to`` always counts as a whole day — even when the
+    caller passes an in-progress timestamp (``date_to`` = now, mid-afternoon).
+    Without this the current day is prorated to elapsed hours, so the expected
+    yield reads as a fraction of the day's goal that climbs by the hour. A
+    midnight bound is unchanged: it already meant 'through that whole day'.
+    """
+    day_start = datetime.combine(date_to.date(), time(), tzinfo=date_to.tzinfo)
+    return day_start + timedelta(days=1)
 
 
 def _apply(balance: Decimal, adjustment: InventoryAdjustment, quantity: Decimal) -> Decimal:
