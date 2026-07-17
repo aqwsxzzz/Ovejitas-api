@@ -7,7 +7,7 @@ from httpx import AsyncClient
 from ovejitas.features.asset.models import AssetKind, AssetMode
 from ovejitas.features.event.types import EventType
 from tests.conftest import AuthedUser
-from tests.factories import AssetFactory, EventFactory
+from tests.factories import AssetFactory, EventFactory, currency_id_for
 
 
 def reports(farm_id: int) -> str:
@@ -37,7 +37,7 @@ async def _income(farm_id: int, asset_id: int, user_id: int, amount: str, curren
         user_id,
         type=EventType.INCOME,
         amount=Decimal(amount),
-        currency=currency,
+        currency_id=await currency_id_for(farm_id, currency),
         quantity=None,
         unit=None,
     )
@@ -50,7 +50,7 @@ async def _expense(farm_id: int, asset_id: int, user_id: int, amount: str, curre
         user_id,
         type=EventType.EXPENSE,
         amount=Decimal(amount),
-        currency=currency,
+        currency_id=await currency_id_for(farm_id, currency),
         quantity=None,
         unit=None,
     )

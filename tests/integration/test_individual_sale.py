@@ -81,7 +81,7 @@ class TestSaleEmission:
         events = await _events(client, authed_user, asset_id, individual_id, "income")
         assert len(events) == 1
         assert events[0]["amount"] == "1200.00"
-        assert events[0]["currency"] == "USD"
+        assert events[0]["currency_id"] is not None
         assert events[0]["payload"] == {"source": "sale", "buyer": "Rancho Vecino"}
 
     async def test_transition_to_sold_without_amount_is_rejected(

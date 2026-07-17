@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.filters import apply_date_range
 from ovejitas.features.asset.models import Asset, AssetKind
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
 from ovejitas.features.report.feed_cost import farm_default_currency, feed_cost_by_consumer
@@ -41,16 +42,17 @@ async def _financials(
         func.sum(case((Event.type == EventType.EXPENSE, Event.amount), else_=0)), 0
     )
     stmt = (
-        select(Event.asset_id, Event.currency, income, expense)
+        select(Event.asset_id, Currency.code, income, expense)
         .join(Asset, Asset.id == Event.asset_id)
+        .join(Currency, Currency.id == Event.currency_id)
         .where(
             Asset.farm_id == farm_id,
             Asset.kind != AssetKind.MATERIAL,
             Event.type.in_([EventType.INCOME, EventType.EXPENSE]),
             Event.amount.is_not(None),
-            Event.currency.is_not(None),
+            Event.currency_id.is_not(None),
         )
-        .group_by(Event.asset_id, Event.currency)
+        .group_by(Event.asset_id, Currency.code)
     )
     stmt = apply_date_range(stmt, Event.occurred_at, q.date_from, q.date_to)
     if q.asset_id is not None:

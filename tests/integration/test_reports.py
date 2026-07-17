@@ -8,7 +8,7 @@ from httpx import AsyncClient
 from ovejitas.features.asset.models import AssetKind, AssetMode
 from ovejitas.features.event.types import EventType
 from tests.conftest import AuthedUser
-from tests.factories import AssetFactory, EventFactory, IndividualFactory
+from tests.factories import AssetFactory, EventFactory, IndividualFactory, currency_id_for
 
 
 def reports(farm_id: int) -> str:
@@ -40,7 +40,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("300"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -50,7 +50,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -85,7 +85,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("300"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
             when=datetime(2026, 6, 14, 9, 0, tzinfo=UTC),  # today, mid-morning
@@ -117,7 +117,7 @@ class TestProfitability:
                 authed_user.user_id,
                 type=EventType.INCOME,
                 amount=Decimal("100"),
-                currency="USD",
+                currency_id=await currency_id_for(authed_user.farm_id, "USD"),
                 quantity=None,
                 unit=None,
             )
@@ -127,7 +127,7 @@ class TestProfitability:
                 authed_user.user_id,
                 type=EventType.EXPENSE,
                 amount=Decimal("40"),
-                currency="USD",
+                currency_id=await currency_id_for(authed_user.farm_id, "USD"),
                 quantity=None,
                 unit=None,
             )
@@ -137,7 +137,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("500"),
-            currency="ARS",
+            currency_id=await currency_id_for(authed_user.farm_id, "ARS"),
             quantity=None,
             unit=None,
         )
@@ -160,7 +160,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("500"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -170,7 +170,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("1000"),
-            currency="ARS",
+            currency_id=await currency_id_for(authed_user.farm_id, "ARS"),
             quantity=None,
             unit=None,
         )
@@ -263,7 +263,7 @@ class TestCostPerUnit:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("40"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -354,7 +354,7 @@ class TestCostPerUnit:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("40"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -384,7 +384,7 @@ class TestCostPerUnit:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("50"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -410,7 +410,7 @@ class TestCostPerUnit:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -480,7 +480,7 @@ class TestPdfDownload:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("300"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -508,7 +508,7 @@ class TestPdfDownload:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )

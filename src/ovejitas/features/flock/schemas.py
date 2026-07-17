@@ -20,10 +20,13 @@ class FlockAcquisitionCreate(_FlockActionBase):
     # Optional — a flock can be received free or hatched; when present, the
     # action books a paired expense for the amount paid.
     amount: Decimal | None = Field(default=None, gt=0)
+    # Optional per-entry currency; falls back to the farm's preferred currency.
+    currency_id: int | None = None
 
 
 class FlockSaleCreate(_FlockActionBase):
     amount: Decimal = Field(gt=0)
+    currency_id: int | None = None
     buyer: OptionalStr = Field(default=None, max_length=255)
 
 

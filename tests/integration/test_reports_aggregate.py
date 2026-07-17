@@ -8,7 +8,7 @@ from httpx import AsyncClient
 from ovejitas.features.asset.models import AssetKind, AssetMode
 from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 from tests.conftest import AuthedUser
-from tests.factories import AssetFactory, EventFactory
+from tests.factories import AssetFactory, EventFactory, currency_id_for
 
 
 def aggregate_url(farm_id: int) -> str:
@@ -176,7 +176,7 @@ class TestExpenseAndIncome:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -186,7 +186,7 @@ class TestExpenseAndIncome:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("250"),
-            currency="ARS",
+            currency_id=await currency_id_for(authed_user.farm_id, "ARS"),
             quantity=None,
             unit=None,
         )

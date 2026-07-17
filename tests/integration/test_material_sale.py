@@ -72,7 +72,7 @@ class TestMaterialSale:
         income = await _events(client, authed_user, asset_id, "income")
         assert len(income) == 1
         assert income[0]["amount"] == "45.00"
-        assert income[0]["currency"] == "USD"
+        assert income[0]["currency_id"] is not None
 
     async def test_income_event_carries_buyer(
         self, client: AsyncClient, authed_user: AuthedUser

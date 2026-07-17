@@ -2,6 +2,7 @@
 
 from ovejitas.core.models import Base
 from ovejitas.features.asset.models import Asset, AssetKind, AssetMode
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
 from ovejitas.features.event_category.models import EventCategory
@@ -24,6 +25,7 @@ __all__ = [
     "AssetProductionTarget",
     "Base",
     "ConsumptionReason",
+    "Currency",
     "Event",
     "EventCategory",
     "EventType",

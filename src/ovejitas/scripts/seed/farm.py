@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.security import hash_password
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.farm.models import Farm
 from ovejitas.features.farm_member.models import FarmMember, FarmRole
 from ovejitas.features.user.models import User
@@ -23,6 +24,7 @@ async def seed_user_and_farm(db: AsyncSession) -> tuple[User, Farm]:
     farm = Farm(name="Granja Demo", default_currency="USD")
     db.add_all([user, farm])
     await db.flush()
+    db.add(Currency(farm_id=farm.id, code="USD", name="US Dollar"))
     db.add(FarmMember(user_id=user.id, farm_id=farm.id, role=FarmRole.OWNER))
     await db.commit()
     return user, farm

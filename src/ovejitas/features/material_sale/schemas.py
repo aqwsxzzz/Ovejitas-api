@@ -16,6 +16,8 @@ class MaterialSaleCreate(StrictModel):
     quantity: Decimal = Field(gt=0)
     unit: Unit
     amount: Decimal = Field(gt=0)
+    # Optional per-entry currency; falls back to the farm's preferred currency.
+    currency_id: int | None = None
     buyer: OptionalStr = Field(default=None, max_length=255)
     category_id: int | None = None
     notes: OptionalStr = Field(default=None, max_length=500)

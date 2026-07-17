@@ -12,6 +12,7 @@ from sqlalchemy import Select, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.filters import apply_date_range
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.report.schemas import (
@@ -132,18 +133,19 @@ async def _amount_by_currency(
 ) -> list[AggregateRow]:
     b = _bucket_col(q.bucket)
     stmt = (
-        select(b, Event.currency.label("currency"), func.sum(Event.amount).label("value"))
+        select(b, Currency.code.label("currency"), func.sum(Event.amount).label("value"))
+        .join(Currency, Currency.id == Event.currency_id)
         .where(
             Event.type == q.type,
             Event.amount.is_not(None),
-            Event.currency.is_not(None),
+            Event.currency_id.is_not(None),
         )
-        .group_by(b, Event.currency)
-        .order_by(b, Event.currency)
+        .group_by(b, Currency.code)
+        .order_by(b, Currency.code)
     )
     stmt = _scope(stmt, farm_id, q.date_from, q.date_to, q.asset_id)
     if q.currency is not None:
-        stmt = stmt.where(Event.currency == q.currency)
+        stmt = stmt.where(Currency.code == q.currency)
     rows = (await db.execute(stmt)).all()
     return [
         AggregateRow(

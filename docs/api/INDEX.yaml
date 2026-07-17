@@ -8,6 +8,9 @@ resources:
 - tag: auth
   file: auth.yaml
   operations: 4
+- tag: currencies
+  file: currencies.yaml
+  operations: 5
 - tag: event-categories
   file: event-categories.yaml
   operations: 5

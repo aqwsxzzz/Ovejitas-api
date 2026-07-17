@@ -9,7 +9,7 @@ from httpx import AsyncClient
 from ovejitas.features.asset.models import AssetMode
 from ovejitas.features.event.types import EventType
 from tests.conftest import AuthedUser
-from tests.factories import AssetFactory, EventFactory, IndividualFactory
+from tests.factories import AssetFactory, EventFactory, IndividualFactory, currency_id_for
 
 
 def reports(fid: int) -> str:
@@ -45,7 +45,7 @@ class TestProfitabilityFilters:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
             when=in_range,
@@ -56,7 +56,7 @@ class TestProfitabilityFilters:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("999"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
             when=out_range,
@@ -79,7 +79,7 @@ class TestProfitabilityFilters:
                 authed_user.user_id,
                 type=EventType.INCOME,
                 amount=Decimal(amt),
-                currency="USD",
+                currency_id=await currency_id_for(authed_user.farm_id, "USD"),
                 quantity=None,
                 unit=None,
             )
@@ -105,7 +105,7 @@ class TestCostPerUnitEdges:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )

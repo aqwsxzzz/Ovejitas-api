@@ -8,6 +8,7 @@ from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
 from ovejitas.features.asset.models import Asset
+from ovejitas.features.currency.service import CurrencyService
 from ovejitas.features.event.balance import compute_inventory_balance
 from ovejitas.features.event.guards import (
     assert_fields_valid_for_type,
@@ -19,7 +20,6 @@ from ovejitas.features.event.inventory import assert_non_negative, lock_material
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.schemas import EventCreate, EventFilters, EventUpdate, InventoryBalance
 from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
-from ovejitas.features.farm.models import Farm
 
 SEARCH_COLUMNS = [Event.notes]
 SORT_ALLOWED = {
@@ -50,9 +50,9 @@ class EventService:
         if "source" in fields["payload"]:
             raise ValidationError("payload.source is reserved for action-emitted events")
         if fields.get("amount") is not None:
-            farm = await self.db.get(Farm, asset.farm_id)
-            assert farm is not None
-            fields["currency"] = farm.default_currency
+            fields["currency_id"] = await CurrencyService(self.db).resolve_or_default(
+                asset.farm_id, fields.get("currency_id")
+            )
         event = Event(farm_id=asset.farm_id, asset_id=asset.id, created_by=user_id, **fields)
         # A hand-written inventory decrement must respect the same lock + non-negative
         # guard the action layer uses — POST /events is not a backdoor around it.
@@ -100,10 +100,10 @@ class EventService:
             await validate_category(
                 self.db, asset.farm_id, event.type, updates["category_id"], unit
             )
-        if updates.get("amount") is not None and event.currency is None:
-            farm = await self.db.get(Farm, asset.farm_id)
-            assert farm is not None
-            event.currency = farm.default_currency
+        if updates.get("amount") is not None and event.currency_id is None:
+            event.currency_id = await CurrencyService(self.db).resolve_or_default(
+                asset.farm_id, None
+            )
         stock_fields = {"quantity", "unit", "adjustment", "occurred_at"}
         stock_affecting = event.type is EventType.INVENTORY and bool(stock_fields & updates.keys())
         old_unit = event.unit

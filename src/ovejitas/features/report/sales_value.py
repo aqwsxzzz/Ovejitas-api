@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.filters import apply_date_range
 from ovejitas.features.asset.models import Asset
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 from ovejitas.features.report.schemas import (
@@ -33,16 +34,17 @@ async def _income_by_asset(
 ) -> list[tuple[int, str, str, Decimal]]:
     """(asset_id, asset_name, currency, income_total) for material-sale income."""
     stmt = (
-        select(Asset.id, Asset.name, Event.currency, func.sum(Event.amount))
+        select(Asset.id, Asset.name, Currency.code, func.sum(Event.amount))
         .join(Asset, Asset.id == Event.asset_id)
+        .join(Currency, Currency.id == Event.currency_id)
         .where(
             Asset.farm_id == farm_id,
             Event.type == EventType.INCOME,
             Event.payload["source"].astext == _SALE_SOURCE,
             Event.amount.is_not(None),
-            Event.currency.is_not(None),
+            Event.currency_id.is_not(None),
         )
-        .group_by(Asset.id, Asset.name, Event.currency)
+        .group_by(Asset.id, Asset.name, Currency.code)
     )
     stmt = apply_date_range(stmt, Event.occurred_at, q.date_from, q.date_to)
     if q.asset_id is not None:

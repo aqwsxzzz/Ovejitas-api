@@ -24,6 +24,9 @@ class IndividualCreate(StrictModel):
     acquired_at: datetime = Field(default_factory=_utc_now)
     acquisition_method: AcquisitionMethod = AcquisitionMethod.OTHER
     amount: Decimal | None = Field(default=None, gt=0)
+    # Optional per-entry currency for a purchased acquisition; falls back to the
+    # farm's preferred currency.
+    currency_id: int | None = None
 
     @model_validator(mode="after")
     def _amount_matches_method(self) -> Self:
@@ -46,6 +49,9 @@ class IndividualUpdate(StrictModel):
     acquired_at: datetime | None = None
     acquisition_method: AcquisitionMethod | None = None
     amount: Decimal | None = Field(default=None, gt=0)
+    # Optional per-entry currency for the acquisition/sale amount; falls back to
+    # the farm's preferred currency.
+    currency_id: int | None = None
     died_at: datetime | None = None
     cause: OptionalStr = Field(default=None, max_length=500)
     sale_amount: Decimal | None = Field(default=None, gt=0)

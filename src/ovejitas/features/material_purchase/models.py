@@ -75,7 +75,11 @@ class MaterialPurchase(Base, TimestampMixin):
         nullable=False,
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
-    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    currency_id: Mapped[int] = mapped_column(
+        ForeignKey("currency.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     supplier: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     meta: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
