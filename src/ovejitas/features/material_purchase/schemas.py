@@ -15,6 +15,8 @@ class MaterialPurchaseCreate(StrictModel):
     quantity: Decimal = Field(gt=0)
     unit: Unit
     amount: Decimal = Field(gt=0)
+    # Optional per-entry currency; falls back to the farm's preferred currency.
+    currency_id: int | None = None
     supplier: OptionalStr = Field(default=None, max_length=255)
     notes: OptionalStr = None
     meta: dict[str, Any] = Field(default_factory=dict)
@@ -46,7 +48,7 @@ class MaterialPurchaseRead(BaseModel):
     quantity: Decimal
     unit: Unit
     amount: Decimal
-    currency: str
+    currency_id: int
     supplier: str | None
     notes: str | None
     meta: dict[str, Any]

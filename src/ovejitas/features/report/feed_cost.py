@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.errors import NotFoundError
 from ovejitas.core.filters import apply_date_range
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.farm.models import Farm
 from ovejitas.features.material_consumption.models import MaterialConsumption
 from ovejitas.features.material_consumption.types import ConsumptionReason
@@ -46,10 +47,11 @@ async def _material_unit_cost(
             func.sum(MaterialPurchase.amount),
             func.sum(MaterialPurchase.quantity),
         )
+        .join(Currency, Currency.id == MaterialPurchase.currency_id)
         .where(
             MaterialPurchase.farm_id == farm_id,
             MaterialPurchase.material_asset_id.in_(material_ids),
-            MaterialPurchase.currency == currency,
+            Currency.code == currency,
         )
         .group_by(MaterialPurchase.material_asset_id)
     )

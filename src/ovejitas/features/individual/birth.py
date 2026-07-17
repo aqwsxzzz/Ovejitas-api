@@ -117,7 +117,7 @@ async def _create_offspring(
             method=AcquisitionMethod.BORN,
             occurred_at=data.occurred_at,
             amount=None,
-            currency=None,
+            currency_id=None,
             user_id=user_id,
         )
         child.acquisition_event_id = acquisition.id

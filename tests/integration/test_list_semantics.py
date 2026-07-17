@@ -7,7 +7,7 @@ from httpx import AsyncClient
 from ovejitas.features.asset.models import AssetMode
 from ovejitas.features.event.types import EventType
 from tests.conftest import AuthedUser
-from tests.factories import AssetFactory, EventCategoryFactory, EventFactory
+from tests.factories import AssetFactory, EventCategoryFactory, EventFactory, currency_id_for
 
 
 def assets_url(fid: int) -> str:
@@ -71,7 +71,7 @@ class TestEventSort:
             quantity=None,
             unit=None,
             amount="1",
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             occurred_at=base,
         )
 

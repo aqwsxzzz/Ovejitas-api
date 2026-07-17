@@ -29,7 +29,7 @@ def _acquisition_expense_event(
     individual: Individual,
     asset: Asset,
     amount: Decimal,
-    currency: str,
+    currency_id: int,
     occurred_at: datetime,
     user_id: int,
 ) -> Event:
@@ -40,7 +40,7 @@ def _acquisition_expense_event(
         type=EventType.EXPENSE,
         occurred_at=occurred_at,
         amount=amount,
-        currency=currency,
+        currency_id=currency_id,
         payload={"source": _ACQUISITION_SOURCE},
         created_by=user_id,
     )
@@ -54,7 +54,7 @@ async def emit_acquisition(
     method: AcquisitionMethod,
     occurred_at: datetime,
     amount: Decimal | None,
-    currency: str | None,
+    currency_id: int | None,
     user_id: int,
 ) -> tuple[Event, Event | None]:
     """Emit the ACQUISITION event and, when purchased, the paired EXPENSE event.
@@ -74,12 +74,12 @@ async def emit_acquisition(
     db.add(acquisition)
     expense: Event | None = None
     if method is AcquisitionMethod.PURCHASED:
-        assert amount is not None and currency is not None
+        assert amount is not None and currency_id is not None
         expense = _acquisition_expense_event(
             individual=individual,
             asset=asset,
             amount=amount,
-            currency=currency,
+            currency_id=currency_id,
             occurred_at=occurred_at,
             user_id=user_id,
         )
@@ -94,7 +94,7 @@ async def reconcile_acquisition(
     individual: Individual,
     asset: Asset,
     updates: dict[str, Any],
-    currency: str,
+    currency_id: int,
     user_id: int,
 ) -> None:
     """Sync the acquisition event (and paired expense) to the updated fields.
@@ -115,7 +115,7 @@ async def reconcile_acquisition(
         updates=updates,
         method=method,
         occurred_at=occurred_at,
-        currency=currency,
+        currency_id=currency_id,
         user_id=user_id,
     )
     await db.flush()
@@ -129,7 +129,7 @@ async def _reconcile_expense_side(
     updates: dict[str, Any],
     method: AcquisitionMethod,
     occurred_at: datetime,
-    currency: str,
+    currency_id: int,
     user_id: int,
 ) -> None:
     expense = (
@@ -153,7 +153,7 @@ async def _reconcile_expense_side(
             individual=individual,
             asset=asset,
             amount=amount,
-            currency=currency,
+            currency_id=currency_id,
             occurred_at=occurred_at,
             user_id=user_id,
         )

@@ -10,6 +10,7 @@ from ovejitas.core.errors import NotFoundError
 from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.features.asset.models import Asset
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.individual.models import Individual
@@ -96,20 +97,21 @@ class ReportService:
             select(
                 Asset.id.label("asset_id"),
                 Asset.name.label("asset_name"),
-                Event.currency.label("currency"),
+                Currency.code.label("currency"),
                 income.label("income_total"),
                 expense.label("expense_total"),
                 (income - expense).label("net"),
             )
             .join(Asset, Asset.id == Event.asset_id)
+            .join(Currency, Currency.id == Event.currency_id)
             .where(
                 Asset.farm_id == farm_id,
                 Event.type.in_([EventType.INCOME, EventType.EXPENSE]),
                 Event.amount.is_not(None),
-                Event.currency.is_not(None),
+                Event.currency_id.is_not(None),
             )
-            .group_by(Asset.id, Asset.name, Event.currency)
-            .order_by(Asset.name, Event.currency)
+            .group_by(Asset.id, Asset.name, Currency.code)
+            .order_by(Asset.name, Currency.code)
         )
         stmt = _scope(stmt, farm_id, q.date_from, q.date_to, q.asset_id)
         rows = (await self.db.execute(stmt)).mappings().all()

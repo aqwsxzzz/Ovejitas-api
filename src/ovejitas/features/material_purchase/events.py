@@ -26,7 +26,7 @@ async def emit_pair(
     *,
     material: Asset,
     data: MaterialPurchaseCreate,
-    currency: str,
+    currency_id: int,
     user_id: int,
 ) -> tuple[int, int]:
     """Emit the increment + expense events; return their ids for linking."""
@@ -43,7 +43,7 @@ async def emit_pair(
         db,
         material=material,
         amount=data.amount,
-        currency=currency,
+        currency_id=currency_id,
         occurred_at=data.occurred_at,
         created_by=user_id,
     )

@@ -9,6 +9,7 @@ from ovejitas.core.middleware import register_request_logging
 from ovejitas.core.startup import lifespan
 from ovejitas.features.asset.router import router as asset_router
 from ovejitas.features.auth.router import router as auth_router
+from ovejitas.features.currency.router import router as currency_router
 from ovejitas.features.event.router import router as event_router
 from ovejitas.features.event_category.router import router as event_category_router
 from ovejitas.features.farm.router import router as farm_router
@@ -66,6 +67,7 @@ def create_app() -> FastAPI:
     app.include_router(farm_member_router, prefix=API_PREFIX)
     app.include_router(asset_router, prefix=API_PREFIX)
     app.include_router(individual_router, prefix=API_PREFIX)
+    app.include_router(currency_router, prefix=API_PREFIX)
     app.include_router(event_category_router, prefix=API_PREFIX)
     app.include_router(event_router, prefix=API_PREFIX)
     app.include_router(material_consumption_router, prefix=API_PREFIX)

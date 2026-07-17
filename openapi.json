@@ -858,6 +858,150 @@
         "title": "CostPerUnitRow",
         "type": "object"
       },
+      "CurrencyCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "CurrencyCreate",
+        "type": "object"
+      },
+      "CurrencyRead": {
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "farm_id": {
+            "title": "Farm Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "farm_id",
+          "code",
+          "name",
+          "symbol",
+          "archived_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CurrencyRead",
+        "type": "object"
+      },
+      "CurrencyUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "title": "CurrencyUpdate",
+        "type": "object"
+      },
       "EventCategoryCreate": {
         "additionalProperties": false,
         "properties": {
@@ -1056,6 +1200,17 @@
             ],
             "title": "Category Id"
           },
+          "currency_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Id"
+          },
           "idempotency_key": {
             "anyOf": [
               {
@@ -1140,6 +1295,17 @@
               }
             ],
             "title": "Category Id"
+          },
+          "currency_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Id"
           },
           "idempotency_key": {
             "anyOf": [
@@ -1494,16 +1660,16 @@
             "title": "Created By",
             "type": "integer"
           },
-          "currency": {
+          "currency_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Currency"
+            "title": "Currency Id"
           },
           "farm_id": {
             "title": "Farm Id",
@@ -1598,7 +1764,7 @@
           "quantity",
           "unit",
           "amount",
-          "currency",
+          "currency_id",
           "adjustment",
           "notes",
           "payload",
@@ -1924,6 +2090,17 @@
             ],
             "title": "Amount"
           },
+          "currency_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Id"
+          },
           "occurred_at": {
             "format": "date-time",
             "title": "Occurred At",
@@ -2032,6 +2209,17 @@
               }
             ],
             "title": "Buyer"
+          },
+          "currency_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Id"
           },
           "occurred_at": {
             "format": "date-time",
@@ -2184,6 +2372,17 @@
               }
             ],
             "title": "Birth Date"
+          },
+          "currency_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Id"
           },
           "extra": {
             "additionalProperties": true,
@@ -2482,6 +2681,17 @@
               }
             ],
             "title": "Cause"
+          },
+          "currency_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Id"
           },
           "died_at": {
             "anyOf": [
@@ -3245,6 +3455,17 @@
             ],
             "title": "Amount"
           },
+          "currency_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Id"
+          },
           "idempotency_key": {
             "anyOf": [
               {
@@ -3337,9 +3558,9 @@
             "title": "Created By",
             "type": "integer"
           },
-          "currency": {
-            "title": "Currency",
-            "type": "string"
+          "currency_id": {
+            "title": "Currency Id",
+            "type": "integer"
           },
           "expense_event_id": {
             "title": "Expense Event Id",
@@ -3428,7 +3649,7 @@
           "quantity",
           "unit",
           "amount",
-          "currency",
+          "currency_id",
           "supplier",
           "notes",
           "meta",
@@ -3575,6 +3796,17 @@
               }
             ],
             "title": "Category Id"
+          },
+          "currency_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Id"
           },
           "notes": {
             "anyOf": [
@@ -3855,6 +4087,26 @@
           "meta"
         ],
         "title": "Page[AssetRead]",
+        "type": "object"
+      },
+      "Page_CurrencyRead_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CurrencyRead"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Page[CurrencyRead]",
         "type": "object"
       },
       "Page_EventCategoryRead_": {
@@ -7029,6 +7281,387 @@
         "summary": "Record a material sale",
         "tags": [
           "material-sales"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/currencies": {
+      "get": {
+        "operationId": "currencies_list_currencies",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Search across code and name",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search across code and name",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "e.g. -created_at,code",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -created_at,code",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "archived",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Archived"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CurrencyRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List currencies in a farm",
+        "tags": [
+          "currencies"
+        ]
+      },
+      "post": {
+        "description": "`code` is a supported ISO 4217 code and is immutable after creation. Uniqueness enforced on (farm, code).",
+        "operationId": "currencies_create_currency",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurrencyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrencyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Enable a currency for a farm",
+        "tags": [
+          "currencies"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/currencies/{currency_id}": {
+      "delete": {
+        "description": "Currencies are never hard-deleted while ledger events reference them; this archives the currency (hidden from pickers, history intact).",
+        "operationId": "currencies_archive_currency",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "currency_id",
+            "required": true,
+            "schema": {
+              "title": "Currency Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Archive a currency",
+        "tags": [
+          "currencies"
+        ]
+      },
+      "get": {
+        "operationId": "currencies_get_currency",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "currency_id",
+            "required": true,
+            "schema": {
+              "title": "Currency Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrencyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get one currency",
+        "tags": [
+          "currencies"
+        ]
+      },
+      "patch": {
+        "description": "Only `name`/`symbol` are editable; `code` is frozen. Set `archived_at` to archive, or null to unarchive.",
+        "operationId": "currencies_update_currency",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "currency_id",
+            "required": true,
+            "schema": {
+              "title": "Currency Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurrencyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrencyRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update a currency",
+        "tags": [
+          "currencies"
         ]
       }
     },

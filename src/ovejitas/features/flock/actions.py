@@ -12,12 +12,11 @@ from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ovejitas.core.errors import NotFoundError
 from ovejitas.features.asset.models import Asset
+from ovejitas.features.currency.service import CurrencyService
 from ovejitas.features.event.inventory import emit_decrement, emit_increment, on_hand
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, Unit
-from ovejitas.features.farm.models import Farm
 from ovejitas.features.flock.guards import validate_flock_asset
 from ovejitas.features.flock.schemas import (
     FlockAcquisitionCreate,
@@ -31,19 +30,12 @@ _SALE_SOURCE = "flock_sale"
 _MORTALITY_SOURCE = "flock_mortality"
 
 
-async def _farm_currency(db: AsyncSession, farm_id: int) -> str:
-    farm = await db.get(Farm, farm_id)
-    if farm is None:
-        raise NotFoundError("Farm not found")
-    return farm.default_currency
-
-
 def _finance_event(
     *,
     asset: Asset,
     event_type: EventType,
     amount: Decimal,
-    currency: str,
+    currency_id: int,
     occurred_at: datetime,
     user_id: int,
     payload: dict[str, str],
@@ -54,7 +46,7 @@ def _finance_event(
         type=event_type,
         occurred_at=occurred_at,
         amount=amount,
-        currency=currency,
+        currency_id=currency_id,
         payload=payload,
         created_by=user_id,
     )
@@ -92,12 +84,14 @@ async def create_flock_acquisition(
         )
         expense_id: int | None = None
         if data.amount is not None:
-            currency = await _farm_currency(db, asset.farm_id)
+            currency_id = await CurrencyService(db).resolve_or_default(
+                asset.farm_id, data.currency_id
+            )
             expense = _finance_event(
                 asset=asset,
                 event_type=EventType.EXPENSE,
                 amount=data.amount,
-                currency=currency,
+                currency_id=currency_id,
                 occurred_at=data.occurred_at,
                 user_id=user_id,
                 payload={"source": _ACQUISITION_SOURCE},
@@ -131,7 +125,7 @@ async def create_flock_sale(
             created_by=user_id,
             source=_SALE_SOURCE,
         )
-        currency = await _farm_currency(db, asset.farm_id)
+        currency_id = await CurrencyService(db).resolve_or_default(asset.farm_id, data.currency_id)
         payload = {"source": _SALE_SOURCE}
         if data.buyer is not None:
             payload["buyer"] = data.buyer
@@ -139,7 +133,7 @@ async def create_flock_sale(
             asset=asset,
             event_type=EventType.INCOME,
             amount=data.amount,
-            currency=currency,
+            currency_id=currency_id,
             occurred_at=data.occurred_at,
             user_id=user_id,
             payload=payload,

@@ -8,7 +8,7 @@ from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
 from ovejitas.features.asset.models import Asset
-from ovejitas.features.farm.models import Farm
+from ovejitas.features.currency.service import CurrencyService
 from ovejitas.features.material_purchase.events import emit_pair, reconcile_pair, reverse_pair
 from ovejitas.features.material_purchase.guards import (
     validate_material_asset,
@@ -43,18 +43,18 @@ class MaterialPurchaseService:
         if existing is not None:
             return existing, False
         material = await self._validate_create(farm_id, data)
-        currency = await self._farm_currency(farm_id)
+        currency_id = await CurrencyService(self.db).resolve_or_default(farm_id, data.currency_id)
         try:
             inventory_event_id, expense_event_id = await emit_pair(
-                self.db, material=material, data=data, currency=currency, user_id=user_id
+                self.db, material=material, data=data, currency_id=currency_id, user_id=user_id
             )
             purchase = MaterialPurchase(
                 farm_id=farm_id,
                 inventory_event_id=inventory_event_id,
                 expense_event_id=expense_event_id,
-                currency=currency,
+                currency_id=currency_id,
                 created_by=user_id,
-                **data.model_dump(),
+                **data.model_dump(exclude={"currency_id"}),
             )
             self.db.add(purchase)
             await self.db.commit()
@@ -146,12 +146,6 @@ class MaterialPurchaseService:
         material = await validate_material_asset(self.db, farm_id, data.material_asset_id)
         await validate_purchase_unit(self.db, material.id, data.unit)
         return material
-
-    async def _farm_currency(self, farm_id: int) -> str:
-        farm = await self.db.get(Farm, farm_id)
-        if farm is None:
-            raise NotFoundError("Farm not found")
-        return farm.default_currency
 
     async def _by_idempotency_key(self, farm_id: int, key: str | None) -> MaterialPurchase | None:
         if key is None:

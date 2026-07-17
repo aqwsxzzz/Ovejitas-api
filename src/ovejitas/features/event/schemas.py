@@ -30,11 +30,14 @@ class EventProductionCreate(_EventCreateBase):
 class EventExpenseCreate(_EventCreateBase):
     type: Literal[EventType.EXPENSE]
     amount: Decimal = Field(gt=0)
+    # Optional per-entry currency; falls back to the farm's preferred currency.
+    currency_id: int | None = None
 
 
 class EventIncomeCreate(_EventCreateBase):
     type: Literal[EventType.INCOME]
     amount: Decimal = Field(gt=0)
+    currency_id: int | None = None
 
 
 class EventObservationCreate(_EventCreateBase):
@@ -100,7 +103,7 @@ class EventRead(BaseModel):
     quantity: Decimal | None
     unit: Unit | None
     amount: Decimal | None
-    currency: str | None
+    currency_id: int | None
     adjustment: InventoryAdjustment | None
     notes: str | None
     payload: dict[str, Any]

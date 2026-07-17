@@ -18,6 +18,7 @@ from ovejitas.features.auth.schemas import (
     TokenPair,
     UserRead,
 )
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.farm.models import Farm
 from ovejitas.features.farm_member.models import FarmMember, FarmRole
 from ovejitas.features.user.models import User
@@ -56,6 +57,9 @@ class AuthService:
         self.db.add(farm)
         await self.db.flush()
 
+        # Seed the currency matching the farm's preferred code so per-entry
+        # currency defaulting resolves to a real row from day one.
+        self.db.add(Currency(farm_id=farm.id, code=DEFAULT_CURRENCY, name=DEFAULT_CURRENCY))
         self.db.add(FarmMember(user_id=user.id, farm_id=farm.id, role=FarmRole.OWNER))
         await self.db.commit()
         return issue_token_pair(user)

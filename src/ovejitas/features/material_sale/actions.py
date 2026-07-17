@@ -10,25 +10,17 @@ directly.
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ovejitas.core.errors import NotFoundError
 from ovejitas.features.asset.models import Asset
+from ovejitas.features.currency.service import CurrencyService
 from ovejitas.features.event.guards import validate_category
 from ovejitas.features.event.inventory import emit_decrement, on_hand
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
-from ovejitas.features.farm.models import Farm
 from ovejitas.features.material_consumption.guards import validate_unit_in_stock
 from ovejitas.features.material_sale.guards import validate_sale_asset
 from ovejitas.features.material_sale.schemas import MaterialSaleCreate, MaterialSaleRead
 
 _SALE_SOURCE = "material_sale"
-
-
-async def _farm_currency(db: AsyncSession, farm_id: int) -> str:
-    farm = await db.get(Farm, farm_id)
-    if farm is None:
-        raise NotFoundError("Farm not found")
-    return farm.default_currency
 
 
 async def create_material_sale(
@@ -48,7 +40,7 @@ async def create_material_sale(
             created_by=user_id,
             source=_SALE_SOURCE,
         )
-        currency = await _farm_currency(db, asset.farm_id)
+        currency_id = await CurrencyService(db).resolve_or_default(asset.farm_id, data.currency_id)
         payload = {"source": _SALE_SOURCE}
         if data.buyer is not None:
             payload["buyer"] = data.buyer
@@ -58,7 +50,7 @@ async def create_material_sale(
             type=EventType.INCOME,
             occurred_at=data.occurred_at,
             amount=data.amount,
-            currency=currency,
+            currency_id=currency_id,
             category_id=data.category_id,
             notes=data.notes,
             payload=payload,
