@@ -57,18 +57,26 @@ async def _expense(farm_id: int, asset_id: int, user_id: int, amount: str, curre
 
 
 async def _buy_material(
-    client: AsyncClient, authed: AuthedUser, material_id: int, quantity: str, amount: str
+    client: AsyncClient,
+    authed: AuthedUser,
+    material_id: int,
+    quantity: str,
+    amount: str,
+    currency: str | None = None,
 ) -> None:
+    body: dict[str, Any] = {
+        "material_asset_id": material_id,
+        "occurred_at": "2026-04-01T10:00:00Z",
+        "quantity": quantity,
+        "unit": "kg",
+        "amount": amount,
+    }
+    if currency is not None:
+        body["currency_id"] = await currency_id_for(authed.farm_id, currency)
     resp = await client.post(
         f"/api/v1/farms/{authed.farm_id}/material-purchases",
         headers=authed.headers,
-        json={
-            "material_asset_id": material_id,
-            "occurred_at": "2026-04-01T10:00:00Z",
-            "quantity": quantity,
-            "unit": "kg",
-            "amount": amount,
-        },
+        json=body,
     )
     assert resp.status_code in (200, 201), resp.text
 
@@ -158,19 +166,77 @@ class TestProfitabilityFull:
         r3_row = r3.json()["data"][0]
         assert full_row["consumed_material_cost"] == r3_row["consumed_material_cost"]
 
-    async def test_other_currency_income_excluded_and_flagged(
+    async def test_income_in_two_currencies_yields_a_row_each(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         flock = await _asset(authed_user.farm_id, name="Vacas")
         await _income(authed_user.farm_id, flock, authed_user.user_id, "500", "USD")
         await _income(authed_user.farm_id, flock, authed_user.user_id, "1000", "ARS")
 
-        rows = (await _full(client, authed_user))["data"]
+        rows = {r["currency"]: r for r in (await _full(client, authed_user))["data"]}
+        assert set(rows) == {"USD", "ARS"}
+        assert Decimal(rows["USD"]["income_total"]) == Decimal("500")
+        assert Decimal(rows["ARS"]["income_total"]) == Decimal("1000")
+
+    async def test_feed_bought_in_non_default_currency_costs_in_that_currency(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _material(authed_user.farm_id)
+        await _buy_material(client, authed_user, feed, "100", "300", currency="UYU")  # 3/kg
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _feed(client, authed_user, feed, flock, "20")  # 20 x 3 = 60 UYU
+
+        rows = [r for r in (await _full(client, authed_user))["data"] if r["asset_id"] == flock]
         assert len(rows) == 1
-        row = rows[0]
-        assert row["currency"] == "USD"
-        assert Decimal(row["income_total"]) == Decimal("500")
-        assert row["has_other_currency"] is True
+        assert rows[0]["currency"] == "UYU"
+        assert Decimal(rows[0]["consumed_material_cost"]) == Decimal("60")
+        assert Decimal(rows[0]["net_incl_materials"]) == Decimal("-60")
+        assert rows[0]["has_unvalued_consumption"] is False
+
+    async def test_mixed_currency_feed_splits_cost_proportionally_per_currency(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _material(authed_user.farm_id)
+        # pool: 60 kg @ 2 USD/kg + 40 kg @ 5 UYU/kg -> 100 kg total
+        await _buy_material(client, authed_user, feed, "60", "120", currency="USD")
+        await _buy_material(client, authed_user, feed, "40", "200", currency="UYU")
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _feed(client, authed_user, feed, flock, "50")  # 50/100 of the pool
+
+        rows = {
+            r["currency"]: r
+            for r in (await _full(client, authed_user))["data"]
+            if r["asset_id"] == flock
+        }
+        assert set(rows) == {"USD", "UYU"}
+        # USD share: 50 * 120/100 = 60 ; UYU share: 50 * 200/100 = 100
+        assert Decimal(rows["USD"]["consumed_material_cost"]) == Decimal("60")
+        assert Decimal(rows["UYU"]["consumed_material_cost"]) == Decimal("100")
+
+    async def test_pure_unvalued_feed_asset_appears_once_with_null_currency(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _material(authed_user.farm_id)
+        seed = await client.post(
+            f"/api/v1/farms/{authed_user.farm_id}/assets/{feed}/events",
+            headers=authed_user.headers,
+            json={
+                "type": "inventory",
+                "occurred_at": "2026-04-01T10:00:00Z",
+                "adjustment": "increment",
+                "quantity": "50",
+                "unit": "kg",
+            },
+        )
+        assert seed.status_code == 201, seed.text
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _feed(client, authed_user, feed, flock, "10")
+
+        rows = [r for r in (await _full(client, authed_user))["data"] if r["asset_id"] == flock]
+        assert len(rows) == 1
+        assert rows[0]["currency"] is None
+        assert rows[0]["has_unvalued_consumption"] is True
+        assert Decimal(rows[0]["consumed_material_cost"]) == Decimal("0")
 
     async def test_unvalued_feed_flagged_and_costed_zero(
         self, client: AsyncClient, authed_user: AuthedUser

@@ -190,17 +190,21 @@ async def _buy_material(
     quantity: str,
     amount: str,
     occurred_at: str = "2026-04-01T10:00:00Z",
+    currency: str | None = None,
 ) -> None:
+    body: dict[str, Any] = {
+        "material_asset_id": material_id,
+        "occurred_at": occurred_at,
+        "quantity": quantity,
+        "unit": "kg",
+        "amount": amount,
+    }
+    if currency is not None:
+        body["currency_id"] = await currency_id_for(authed.farm_id, currency)
     resp = await client.post(
         f"/api/v1/farms/{authed.farm_id}/material-purchases",
         headers=authed.headers,
-        json={
-            "material_asset_id": material_id,
-            "occurred_at": occurred_at,
-            "quantity": quantity,
-            "unit": "kg",
-            "amount": amount,
-        },
+        json=body,
     )
     assert resp.status_code in (200, 201), resp.text
 
@@ -278,6 +282,55 @@ class TestCostPerUnit:
         assert Decimal(row["total_cost"]) == Decimal("100")
         assert Decimal(row["cost_per_unit"]) == Decimal("2")
         assert row["has_unvalued_consumption"] is False
+
+    async def test_feed_in_non_default_currency_costs_in_that_currency(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _asset(
+            authed_user.farm_id, name="Feed", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+        )
+        await _buy_material(client, authed_user, feed, "100", "300", currency="UYU")  # 3/kg
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _feed(client, authed_user, feed, flock, "20")  # 20 x 3 = 60 UYU
+
+        rows = await _cost_rows(client, authed_user)
+        assert len(rows) == 1
+        assert rows[0]["currency"] == "UYU"
+        assert Decimal(rows[0]["consumed_material_cost"]) == Decimal("60")
+        assert Decimal(rows[0]["cost_per_unit"]) == Decimal("1.20")
+
+    async def test_mixed_currency_feed_yields_a_cost_per_unit_row_each(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _asset(
+            authed_user.farm_id, name="Feed", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+        )
+        await _buy_material(client, authed_user, feed, "60", "120", currency="USD")  # 2/kg
+        await _buy_material(client, authed_user, feed, "40", "200", currency="UYU")  # 5/kg
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _feed(client, authed_user, feed, flock, "50")  # 50/100 of a 100 kg pool
+
+        rows = {r["currency"]: r for r in await _cost_rows(client, authed_user)}
+        assert set(rows) == {"USD", "UYU"}
+        # USD: 50 * 120/100 = 60 over 50 units = 1.20 ; UYU: 50 * 200/100 = 100 = 2.00
+        assert Decimal(rows["USD"]["cost_per_unit"]) == Decimal("1.20")
+        assert Decimal(rows["UYU"]["cost_per_unit"]) == Decimal("2.00")
 
     async def test_average_cost_uses_purchases_before_date_from(
         self, client: AsyncClient, authed_user: AuthedUser
