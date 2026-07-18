@@ -19,7 +19,7 @@
   <tbody>
     {% for r in rows %}
     <tr>
-      <td>{{ r.asset_name }}{% if r.has_other_currency %} *{% endif %}{% if r.has_unvalued_consumption %} †{% endif %}</td>
+      <td>{{ r.asset_name }}{% if r.has_unvalued_consumption %} †{% endif %}</td>
       <td>{{ r.currency }}</td>
       <td class="num">{{ r.income_total | money }}</td>
       <td class="num">{{ r.direct_expense_total | money }}</td>
@@ -31,7 +31,7 @@
     {% endfor %}
   </tbody>
 </table>
-<p class="footnote">* incluye actividad en otra moneda, excluida de este informe. † insumo sin costo de compra registrado.</p>
+<p class="footnote">† insumo sin costo de compra registrado.</p>
 {% else %}
 <p>Sin datos para el período seleccionado.</p>
 {% endif %}

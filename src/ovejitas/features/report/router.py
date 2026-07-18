@@ -82,17 +82,20 @@ async def profitability(
 @router.get(
     "/profitability-full",
     response_model=ProfitabilityFullReport,
-    summary="Income minus total cost (direct expense + feed) per asset",
+    summary="Income minus total cost (direct expense + feed) per (asset, currency)",
     description=(
-        "One row per asset, in the farm's default currency. Extends R1 with the "
-        "average-cost value of the feed the asset consumed: `net_incl_materials "
-        "= income - (direct expense + feed)`. Feed uses the same basis as "
-        "cost-per-unit (R3), so the two never disagree. Income/expense in another "
-        "currency is excluded and flagged `has_other_currency`; feed with no "
-        "purchase basis flags `has_unvalued_consumption`. The existing `net` "
-        "(income - direct expense) is retained unchanged. `date_from`/`date_to` "
-        "bound income and direct expense; feed is valued over full purchase "
-        "history."
+        "One row per (asset, currency), like R1 — currencies are never summed or "
+        "converted. Extends R1 with the average-cost value of the feed the asset "
+        "consumed: `net_incl_materials = income - (direct expense + feed)`. Feed "
+        "is valued in the currency of the purchases backing it (a mixed-currency "
+        "material splits its cost across currency rows in proportion to the "
+        "quantity purchased in each) and uses the same basis as cost-per-unit "
+        "(R3), so the two never disagree. `has_unvalued_consumption` is true only "
+        "when feed has no purchase basis in ANY currency; such feed contributes no "
+        "cost. An asset whose sole activity is unvalued feed appears once with a "
+        "null `currency`. The existing `net` (income - direct expense) is retained "
+        "unchanged. `date_from`/`date_to` bound income and direct expense; feed is "
+        "valued over full purchase history."
     ),
 )
 async def profitability_full(
@@ -169,19 +172,23 @@ async def material_consumption_aggregate(
 @router.get(
     "/cost-per-unit",
     response_model=CostPerUnitReport,
-    summary="R3 — cost per produced unit, per producer asset",
+    summary="R3 — cost per produced unit, per (producer asset, currency)",
     description=(
         "Requires `unit` (what counts as one produced unit). One row per "
-        "producer asset (any asset with `production` events in that unit). "
+        "(producer, currency) — any asset with `production` events in that unit; "
+        "direct expense and feed are never summed across currencies, so a producer "
+        "with costs in two currencies yields two rows. "
         "`cost_per_unit = (direct expense events on the producer + the "
-        "average-cost value of the feed it was fed) / its production quantity`. "
-        "Feed is attributed via `material_consumption` with `reason=feeding` and "
-        "`consumer_asset_id` = the producer; a material's average cost is its "
-        "full purchase history (not bounded by `date_from`). `date_from`/"
-        "`date_to` bound production and direct expenses. A producer that made "
-        "nothing in the window still appears with `cost_per_unit` null; "
-        "`has_unvalued_consumption` flags rows whose feed has no purchase "
-        "history to value it."
+        "average-cost value of the feed it was fed) / its production quantity`, in "
+        "that row's currency. Feed is attributed via `material_consumption` with "
+        "`reason=feeding` and `consumer_asset_id` = the producer, valued in the "
+        "currency of the backing purchases (a mixed-currency material splits across "
+        "currency rows); a material's average cost is its full purchase history "
+        "(not bounded by `date_from`). `date_from`/`date_to` bound production and "
+        "direct expenses. A producer that made nothing in the window still appears "
+        "with `cost_per_unit` null; a producer with no cost in any currency appears "
+        "once with a null `currency`. `has_unvalued_consumption` flags rows whose "
+        "feed has no purchase history in ANY currency to value it."
     ),
 )
 async def cost_per_unit(

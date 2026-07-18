@@ -62,14 +62,19 @@ class AggregateQuery(FilterParams):
 class CostPerUnitRow(BaseModel):
     asset_id: int
     asset_name: str
-    currency: str
+    # the currency this row's cost is expressed in. Null only for a producer with
+    # no cost in any currency (no direct expense, no valued feed).
+    currency: str | None
     production_quantity: Decimal
     direct_expense_total: Decimal
+    # feed valued at average purchase cost in this row's currency; a producer fed
+    # from a mixed-currency material gets one row per currency
     consumed_material_cost: Decimal
     total_cost: Decimal
-    # null when the producer made nothing in the window (no divide-by-zero)
+    # cost_per_unit in this row's currency; null when the producer made nothing in
+    # the window (no divide-by-zero)
     cost_per_unit: Decimal | None
-    # true when feed it consumed has no purchase history to value it — the
+    # true when feed it consumed has no purchase history in ANY currency — the
     # cost is then understated and the row says so rather than hide it
     has_unvalued_consumption: bool
 
