@@ -48,6 +48,7 @@ types:
       idempotency_key: string | null
       type: string
       amount: number | string
+      currency_id: integer | null
   EventIncomeCreate:
     kind: object
     required: [occurred_at, type, amount]
@@ -60,6 +61,7 @@ types:
       idempotency_key: string | null
       type: string
       amount: number | string
+      currency_id: integer | null
   EventInventoryCreate:
     kind: object
     required: [occurred_at, type, adjustment, quantity, unit]
@@ -87,11 +89,11 @@ types:
       type: string
   EventProductionCreate:
     kind: object
-    required: [occurred_at, type, quantity, unit]
+    required: [occurred_at, category_id, type, quantity, unit]
     fields:
       occurred_at: string (date-time)
       individual_id: integer | null
-      category_id: integer | null
+      category_id: integer
       notes: string | null
       payload: object
       idempotency_key: string | null
@@ -100,8 +102,8 @@ types:
       unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
   EventRead:
     kind: object
-    required: [id, farm_id, asset_id, individual_id, type, category_id, occurred_at, quantity, unit, amount, currency, adjustment,
-      notes, payload, idempotency_key, created_by, created_at, updated_at]
+    required: [id, farm_id, asset_id, individual_id, type, category_id, occurred_at, quantity, unit, amount, currency_id,
+      adjustment, notes, payload, idempotency_key, created_by, created_at, updated_at]
     fields:
       id: integer
       farm_id: integer
@@ -113,7 +115,7 @@ types:
       quantity: string | null
       unit: g | kg | lb | t | ml | l | gal | unit | dozen | head | null
       amount: string | null
-      currency: string | null
+      currency_id: integer | null
       adjustment: increment | decrement | reset | null
       notes: string | null
       payload: object

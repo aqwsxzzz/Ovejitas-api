@@ -116,7 +116,15 @@ class TestEventInheritsFarmCurrency:
         )
 
         assert resp.status_code == 201, resp.text
-        assert resp.json()["currency"] == "EUR"
+        # The expense inherits the farm's preferred currency by id — changing the
+        # default to EUR ensured an EUR currency row, and the event points at it.
+        currency_id = resp.json()["currency_id"]
+        assert currency_id is not None
+        listing = await client.get(
+            f"/api/v1/farms/{authed_user.farm_id}/currencies", headers=authed_user.headers
+        )
+        eur = next(c for c in listing.json()["data"] if c["code"] == "EUR")
+        assert currency_id == eur["id"]
 
     async def test_currency_field_in_body_is_rejected(
         self, client: AsyncClient, authed_user: AuthedUser

@@ -74,7 +74,7 @@ class TestCreateAcquisition:
         expenses = await _events(client, authed_user, asset_id, individual_id, "expense")
         assert len(expenses) == 1
         assert expenses[0]["amount"] == "1500.00"
-        assert expenses[0]["currency"] == "USD"
+        assert expenses[0]["currency_id"] is not None
 
     async def test_purchased_without_amount_rejected(
         self, client: AsyncClient, authed_user: AuthedUser

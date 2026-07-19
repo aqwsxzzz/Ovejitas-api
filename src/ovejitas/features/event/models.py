@@ -96,7 +96,11 @@ class Event(Base, TimestampMixin):
         ),
         nullable=True,
     )
-    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
+    currency_id: Mapped[int | None] = mapped_column(
+        ForeignKey("currency.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     payload: Mapped[dict[str, Any]] = mapped_column(
         JSONB,

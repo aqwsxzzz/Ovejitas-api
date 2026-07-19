@@ -7,8 +7,8 @@ from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
 from ovejitas.features.asset.models import Asset, AssetMode
+from ovejitas.features.currency.service import CurrencyService
 from ovejitas.features.event.types import AcquisitionMethod
-from ovejitas.features.farm.models import Farm
 from ovejitas.features.individual.acquisition import (
     emit_acquisition,
     reconcile_acquisition,
@@ -46,8 +46,8 @@ class IndividualService:
         if asset.mode is not AssetMode.INDIVIDUAL:
             raise ValidationError("Cannot create an individual under an aggregated asset")
         await self._validate_parents(asset.farm_id, data.mother_id, data.father_id)
-        currency = (
-            await self._farm_currency(asset.farm_id)
+        currency_id = (
+            await CurrencyService(self.db).resolve_or_default(asset.farm_id, data.currency_id)
             if data.acquisition_method is AcquisitionMethod.PURCHASED
             else None
         )
@@ -55,7 +55,7 @@ class IndividualService:
             farm_id=asset.farm_id,
             asset_id=asset.id,
             status=IndividualStatus.ACTIVE,
-            **data.model_dump(exclude=_ACQUISITION_INPUT),
+            **data.model_dump(exclude=_ACQUISITION_INPUT | {"currency_id"}),
         )
         self.db.add(individual)
         try:
@@ -67,7 +67,7 @@ class IndividualService:
                 method=data.acquisition_method,
                 occurred_at=data.acquired_at,
                 amount=data.amount,
-                currency=currency,
+                currency_id=currency_id,
                 user_id=user_id,
             )
             individual.acquisition_event_id = acquisition.id
@@ -101,19 +101,22 @@ class IndividualService:
             if mother is not None and mother == father:
                 raise ValidationError("Mother and father cannot be the same individual")
             await self._validate_parents(asset.farm_id, mother, father)
+        chosen_currency_id = updates.pop("currency_id", None)
         acquisition_updates = {k: updates.pop(k) for k in _ACQUISITION_INPUT if k in updates}
         mortality_updates = {k: updates.pop(k) for k in _MORTALITY_INPUT if k in updates}
         sale_updates = {k: updates.pop(k) for k in _SALE_INPUT if k in updates}
         new_status = updates.get("status")
         try:
-            currency = await self._farm_currency(asset.farm_id)
+            currency_id = await CurrencyService(self.db).resolve_or_default(
+                asset.farm_id, chosen_currency_id
+            )
             if acquisition_updates:
                 await reconcile_acquisition(
                     self.db,
                     individual=individual,
                     asset=asset,
                     updates=acquisition_updates,
-                    currency=currency,
+                    currency_id=currency_id,
                     user_id=user_id,
                 )
             await apply_mortality(
@@ -130,7 +133,7 @@ class IndividualService:
                 individual=individual,
                 new_status=new_status,
                 updates=sale_updates,
-                currency=currency,
+                currency_id=currency_id,
                 user_id=user_id,
             )
             for key, value in updates.items():
@@ -153,12 +156,6 @@ class IndividualService:
         except Exception:
             await self.db.rollback()
             raise
-
-    async def _farm_currency(self, farm_id: int) -> str:
-        farm = await self.db.get(Farm, farm_id)
-        if farm is None:
-            raise NotFoundError("Farm not found")
-        return farm.default_currency
 
     async def list_individuals(
         self,

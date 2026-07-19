@@ -44,6 +44,7 @@ types:
       quantity: number | string
       unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
       amount: number | string
+      currency_id: integer | null
       supplier: string | null
       notes: string | null
       meta: object
@@ -51,7 +52,7 @@ types:
   MaterialPurchaseRead:
     kind: object
     required: [id, farm_id, material_asset_id, inventory_event_id, expense_event_id, occurred_at, quantity, unit, amount,
-      currency, supplier, notes, meta, idempotency_key, created_by, created_at, updated_at]
+      currency_id, supplier, notes, meta, idempotency_key, created_by, created_at, updated_at]
     fields:
       id: integer
       farm_id: integer
@@ -62,7 +63,7 @@ types:
       quantity: string
       unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
       amount: string
-      currency: string
+      currency_id: integer
       supplier: string | null
       notes: string | null
       meta: object

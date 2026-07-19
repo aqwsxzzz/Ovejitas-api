@@ -20,9 +20,19 @@ from ovejitas.features.report.schemas import (
     InventorySummaryReport,
     MaterialConsumptionAggregateQuery,
     MaterialConsumptionAggregateReport,
+    ProductionProductivityQuery,
+    ProductionProductivityReport,
+    SalesValueQuery,
+    SalesValueReport,
+    TimelineQuery,
+    UpcomingBirthsQuery,
+    UpcomingBirthsReport,
+)
+from ovejitas.features.report.schemas_profitability import (
+    ProfitabilityFullQuery,
+    ProfitabilityFullReport,
     ProfitabilityQuery,
     ProfitabilityReport,
-    TimelineQuery,
 )
 from ovejitas.features.report.service import ReportService
 
@@ -67,6 +77,33 @@ async def profitability(
 ) -> ProfitabilityReport:
     rows, totals = await svc.profitability(membership.farm_id, q)
     return ProfitabilityReport(data=rows, totals=totals)
+
+
+@router.get(
+    "/profitability-full",
+    response_model=ProfitabilityFullReport,
+    summary="Income minus total cost (direct expense + feed) per (asset, currency)",
+    description=(
+        "One row per (asset, currency), like R1 — currencies are never summed or "
+        "converted. Extends R1 with the average-cost value of the feed the asset "
+        "consumed: `net_incl_materials = income - (direct expense + feed)`. Feed "
+        "is valued in the currency of the purchases backing it (a mixed-currency "
+        "material splits its cost across currency rows in proportion to the "
+        "quantity purchased in each) and uses the same basis as cost-per-unit "
+        "(R3), so the two never disagree. `has_unvalued_consumption` is true only "
+        "when feed has no purchase basis in ANY currency; such feed contributes no "
+        "cost. An asset whose sole activity is unvalued feed appears once with a "
+        "null `currency`. The existing `net` (income - direct expense) is retained "
+        "unchanged. `date_from`/`date_to` bound income and direct expense; feed is "
+        "valued over full purchase history."
+    ),
+)
+async def profitability_full(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[ProfitabilityFullQuery, Depends()],
+) -> ProfitabilityFullReport:
+    return await svc.profitability_full(membership.farm_id, q)
 
 
 @router.get(
@@ -135,19 +172,23 @@ async def material_consumption_aggregate(
 @router.get(
     "/cost-per-unit",
     response_model=CostPerUnitReport,
-    summary="R3 — cost per produced unit, per producer asset",
+    summary="R3 — cost per produced unit, per (producer asset, currency)",
     description=(
         "Requires `unit` (what counts as one produced unit). One row per "
-        "producer asset (any asset with `production` events in that unit). "
+        "(producer, currency) — any asset with `production` events in that unit; "
+        "direct expense and feed are never summed across currencies, so a producer "
+        "with costs in two currencies yields two rows. "
         "`cost_per_unit = (direct expense events on the producer + the "
-        "average-cost value of the feed it was fed) / its production quantity`. "
-        "Feed is attributed via `material_consumption` with `reason=feeding` and "
-        "`consumer_asset_id` = the producer; a material's average cost is its "
-        "full purchase history (not bounded by `date_from`). `date_from`/"
-        "`date_to` bound production and direct expenses. A producer that made "
-        "nothing in the window still appears with `cost_per_unit` null; "
-        "`has_unvalued_consumption` flags rows whose feed has no purchase "
-        "history to value it."
+        "average-cost value of the feed it was fed) / its production quantity`, in "
+        "that row's currency. Feed is attributed via `material_consumption` with "
+        "`reason=feeding` and `consumer_asset_id` = the producer, valued in the "
+        "currency of the backing purchases (a mixed-currency material splits across "
+        "currency rows); a material's average cost is its full purchase history "
+        "(not bounded by `date_from`). `date_from`/`date_to` bound production and "
+        "direct expenses. A producer that made nothing in the window still appears "
+        "with `cost_per_unit` null; a producer with no cost in any currency appears "
+        "once with a null `currency`. `has_unvalued_consumption` flags rows whose "
+        "feed has no purchase history in ANY currency to value it."
     ),
 )
 async def cost_per_unit(
@@ -179,6 +220,27 @@ async def profitability_pdf(
     return _pdf_response(pdf, "rentabilidad.pdf")
 
 
+@router.get("/profitability-full/pdf", summary="Profitability-full — PDF download")
+async def profitability_full_pdf(
+    membership: FarmMembership,
+    current_user: CurrentUser,
+    svc: ReportSvc,
+    db: DBSession,
+    q: Annotated[ProfitabilityFullQuery, Depends()],
+) -> Response:
+    report = await svc.profitability_full(membership.farm_id, q)
+    pdf = render_pdf(
+        "profitability_full.html",
+        farm_name=await _farm_name(db, membership.farm_id),
+        title="Rentabilidad (con insumos)",
+        generated_by=current_user.name,
+        date_from=q.date_from,
+        date_to=q.date_to,
+        context={"rows": report.data, "totals": report.totals},
+    )
+    return _pdf_response(pdf, "rentabilidad-completa.pdf")
+
+
 @router.get("/cost-per-unit/pdf", summary="R3 — PDF download")
 async def cost_per_unit_pdf(
     membership: FarmMembership,
@@ -201,6 +263,52 @@ async def cost_per_unit_pdf(
 
 
 @router.get(
+    "/sales-value",
+    response_model=SalesValueReport,
+    summary="Realized average sale price per unit, per asset",
+    description=(
+        "One row per asset sold via the sale action in the window. "
+        "`value_per_unit = total sale income / total quantity sold` — the "
+        "weighted-average price actually received (e.g. value per egg), derived "
+        "from sale events, with no stored unit price. Only `material_sale` income "
+        "and its paired inventory decrements are counted; manually entered income "
+        "is excluded. When an asset was sold in more than one unit in the window, "
+        "income can't be split across units, so `unit`/`quantity_sold`/"
+        "`value_per_unit` are null and `ambiguous` is true. Assets with no sales "
+        "in the window do not appear."
+    ),
+)
+async def sales_value(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[SalesValueQuery, Depends()],
+) -> SalesValueReport:
+    return await svc.sales_value(membership.farm_id, q)
+
+
+@router.get(
+    "/production-productivity",
+    response_model=ProductionProductivityReport,
+    summary="Produced vs expected output, per asset and product",
+    description=(
+        "One row per (asset, product) that either produced in the window or has "
+        "an applicable production target. The product is a production category; "
+        "`produced` is converted into the product's unit. `expected` comes from "
+        "the target, scaled by its `basis` (per_head_continuous uses time-weighted "
+        "animal-days). A pair with no applicable target reports "
+        "`missing_capacity: true` with null `expected`/`productivity_pct`. "
+        "`date_from` and `date_to` are **required**."
+    ),
+)
+async def production_productivity(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[ProductionProductivityQuery, Depends()],
+) -> ProductionProductivityReport:
+    return await svc.production_productivity(membership.farm_id, q)
+
+
+@router.get(
     "/inventory-summary",
     response_model=InventorySummaryReport,
     summary="R5 — current on-hand inventory per asset",
@@ -219,6 +327,27 @@ async def inventory_summary(
 ) -> InventorySummaryReport:
     rows = await svc.inventory_summary(membership.farm_id, q)
     return InventorySummaryReport(data=rows)
+
+
+@router.get(
+    "/upcoming-births",
+    response_model=UpcomingBirthsReport,
+    summary="Individuals due to give birth within a window",
+    description=(
+        "One row per individual whose **latest** pregnancy check says pregnant "
+        "with an `expected_due_at` inside `[date_from, date_to]`. A later "
+        "not-pregnant check (after birth or loss) suppresses the alert. "
+        "`date_from` and `date_to` are **required** — they define the alert "
+        "window. `days_until_due` counts whole days from `date_from`."
+    ),
+)
+async def upcoming_births(
+    membership: FarmMembership,
+    svc: ReportSvc,
+    q: Annotated[UpcomingBirthsQuery, Depends()],
+) -> UpcomingBirthsReport:
+    rows = await svc.upcoming_births(membership.farm_id, q)
+    return UpcomingBirthsReport(data=rows)
 
 
 @router.get(

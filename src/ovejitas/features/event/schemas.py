@@ -20,6 +20,9 @@ class _EventCreateBase(StrictModel):
 
 class EventProductionCreate(_EventCreateBase):
     type: Literal[EventType.PRODUCTION]
+    # Required: production is attributed to a product (a production category) so
+    # the productivity report can compute produced-vs-expected. Going forward.
+    category_id: int
     quantity: Decimal = Field(gt=0)
     unit: Unit
 
@@ -27,11 +30,14 @@ class EventProductionCreate(_EventCreateBase):
 class EventExpenseCreate(_EventCreateBase):
     type: Literal[EventType.EXPENSE]
     amount: Decimal = Field(gt=0)
+    # Optional per-entry currency; falls back to the farm's preferred currency.
+    currency_id: int | None = None
 
 
 class EventIncomeCreate(_EventCreateBase):
     type: Literal[EventType.INCOME]
     amount: Decimal = Field(gt=0)
+    currency_id: int | None = None
 
 
 class EventObservationCreate(_EventCreateBase):
@@ -97,7 +103,7 @@ class EventRead(BaseModel):
     quantity: Decimal | None
     unit: Unit | None
     amount: Decimal | None
-    currency: str | None
+    currency_id: int | None
     adjustment: InventoryAdjustment | None
     notes: str | None
     payload: dict[str, Any]

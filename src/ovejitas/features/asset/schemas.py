@@ -10,7 +10,7 @@ from ovejitas.features.asset.models import AssetKind, AssetMode
 class AssetCreate(StrictModel):
     name: str = Field(min_length=1, max_length=255)
     kind: AssetKind
-    mode: AssetMode
+    mode: AssetMode | None = None
     location: OptionalStr = Field(default=None, max_length=255)
     description: OptionalStr = Field(default=None, max_length=1024)
 
@@ -31,7 +31,7 @@ class AssetRead(BaseModel):
     farm_id: int
     name: str
     kind: AssetKind
-    mode: AssetMode
+    mode: AssetMode | None
     location: str | None
     description: str | None
     produce_asset_id: int | None
@@ -42,3 +42,12 @@ class AssetRead(BaseModel):
 class AssetFilters(FilterParams):
     kind: AssetKind | None = None
     mode: AssetMode | None = None
+
+
+class AssetKindCount(BaseModel):
+    kind: AssetKind
+    count: int
+
+
+class AssetSummary(BaseModel):
+    data: list[AssetKindCount]

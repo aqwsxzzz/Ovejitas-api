@@ -35,9 +35,12 @@ class Asset(Base, TimestampMixin):
         SQLEnum(AssetKind, name="asset_kind", values_callable=lambda e: [m.value for m in e]),
         nullable=False,
     )
-    mode: Mapped[AssetMode] = mapped_column(
+    # Tracking mode is only meaningful for animals (the head-by-head vs lump
+    # distinction backing the individual feature). Material/equipment/location
+    # — and crops — carry no individuals, so mode is null for them.
+    mode: Mapped[AssetMode | None] = mapped_column(
         SQLEnum(AssetMode, name="asset_mode", values_callable=lambda e: [m.value for m in e]),
-        nullable=False,
+        nullable=True,
     )
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     description: Mapped[str | None] = mapped_column(String(1024), nullable=True)

@@ -36,7 +36,7 @@ async def emit_sale(
     asset: Asset,
     occurred_at: datetime,
     amount: Decimal,
-    currency: str,
+    currency_id: int,
     buyer: str | None,
     user_id: int,
 ) -> Event:
@@ -48,7 +48,7 @@ async def emit_sale(
         type=EventType.INCOME,
         occurred_at=occurred_at,
         amount=amount,
-        currency=currency,
+        currency_id=currency_id,
         payload=_sale_payload(buyer),
         created_by=user_id,
     )
@@ -96,7 +96,7 @@ async def apply_sale(
     individual: Individual,
     new_status: IndividualStatus | None,
     updates: dict[str, Any],
-    currency: str,
+    currency_id: int,
     user_id: int,
 ) -> None:
     """Emit, reconcile, or reverse the sale income event for a status change.
@@ -122,7 +122,7 @@ async def apply_sale(
             asset=asset,
             occurred_at=updates.get("sold_at") or datetime.now(UTC),
             amount=amount,
-            currency=currency,
+            currency_id=currency_id,
             buyer=updates.get("buyer"),
             user_id=user_id,
         )

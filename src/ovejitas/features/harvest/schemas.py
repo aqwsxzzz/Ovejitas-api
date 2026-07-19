@@ -15,7 +15,9 @@ class HarvestCreate(StrictModel):
     occurred_at: datetime = Field(default_factory=_utc_now)
     quantity: Decimal = Field(gt=0)
     unit: Unit
-    category_id: int | None = None
+    # Required: the production event a harvest emits is attributed to a product
+    # (a production category) for the productivity report. Going forward.
+    category_id: int
     notes: OptionalStr = Field(default=None, max_length=500)
 
 

@@ -10,6 +10,7 @@ from ovejitas.core.errors import NotFoundError
 from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.features.asset.models import Asset
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
 from ovejitas.features.individual.models import Individual
@@ -18,6 +19,13 @@ from ovejitas.features.report.material_consumption import (
     material_consumption_aggregate as run_material_consumption_aggregate,
 )
 from ovejitas.features.report.production_cost import production_cost
+from ovejitas.features.report.production_productivity import (
+    production_productivity as run_production_productivity,
+)
+from ovejitas.features.report.profitability_full import (
+    profitability_full as run_profitability_full,
+)
+from ovejitas.features.report.sales_value import sales_value as run_sales_value
 from ovejitas.features.report.schemas import (
     AggregateMeta,
     AggregateQuery,
@@ -28,11 +36,22 @@ from ovejitas.features.report.schemas import (
     InventorySummaryRow,
     MaterialConsumptionAggregateQuery,
     MaterialConsumptionAggregateTotal,
+    ProductionProductivityQuery,
+    ProductionProductivityReport,
+    SalesValueQuery,
+    SalesValueReport,
+    TimelineQuery,
+    UpcomingBirthRow,
+    UpcomingBirthsQuery,
+)
+from ovejitas.features.report.schemas_profitability import (
+    ProfitabilityFullQuery,
+    ProfitabilityFullReport,
     ProfitabilityQuery,
     ProfitabilityRow,
     ProfitabilityTotal,
-    TimelineQuery,
 )
+from ovejitas.features.report.upcoming_births import upcoming_births as run_upcoming_births
 
 
 def _profitability_totals(rows: list[ProfitabilityRow]) -> list[ProfitabilityTotal]:
@@ -78,26 +97,32 @@ class ReportService:
             select(
                 Asset.id.label("asset_id"),
                 Asset.name.label("asset_name"),
-                Event.currency.label("currency"),
+                Currency.code.label("currency"),
                 income.label("income_total"),
                 expense.label("expense_total"),
                 (income - expense).label("net"),
             )
             .join(Asset, Asset.id == Event.asset_id)
+            .join(Currency, Currency.id == Event.currency_id)
             .where(
                 Asset.farm_id == farm_id,
                 Event.type.in_([EventType.INCOME, EventType.EXPENSE]),
                 Event.amount.is_not(None),
-                Event.currency.is_not(None),
+                Event.currency_id.is_not(None),
             )
-            .group_by(Asset.id, Asset.name, Event.currency)
-            .order_by(Asset.name, Event.currency)
+            .group_by(Asset.id, Asset.name, Currency.code)
+            .order_by(Asset.name, Currency.code)
         )
         stmt = _scope(stmt, farm_id, q.date_from, q.date_to, q.asset_id)
         rows = (await self.db.execute(stmt)).mappings().all()
         data = [ProfitabilityRow.model_validate(r) for r in rows]
         totals = _profitability_totals(data)
         return data, totals
+
+    async def profitability_full(
+        self, farm_id: int, q: ProfitabilityFullQuery
+    ) -> ProfitabilityFullReport:
+        return await run_profitability_full(self.db, farm_id, q)
 
     async def aggregate(
         self, farm_id: int, q: AggregateQuery
@@ -111,6 +136,17 @@ class ReportService:
 
     async def cost_per_unit(self, farm_id: int, q: CostPerUnitQuery) -> CostPerUnitReport:
         return await production_cost(self.db, farm_id, q)
+
+    async def sales_value(self, farm_id: int, q: SalesValueQuery) -> SalesValueReport:
+        return await run_sales_value(self.db, farm_id, q)
+
+    async def production_productivity(
+        self, farm_id: int, q: ProductionProductivityQuery
+    ) -> ProductionProductivityReport:
+        return await run_production_productivity(self.db, farm_id, q)
+
+    async def upcoming_births(self, farm_id: int, q: UpcomingBirthsQuery) -> list[UpcomingBirthRow]:
+        return await run_upcoming_births(self.db, farm_id, q.date_from, q.date_to)
 
     async def inventory_summary(
         self, farm_id: int, q: InventorySummaryQuery

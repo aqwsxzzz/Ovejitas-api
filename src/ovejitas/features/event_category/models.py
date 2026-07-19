@@ -5,7 +5,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ovejitas.core.models import Base, TimestampMixin
-from ovejitas.features.event.types import EventType
+from ovejitas.features.event.types import EventType, Unit
 
 
 class EventCategory(Base, TimestampMixin):
@@ -23,6 +23,13 @@ class EventCategory(Base, TimestampMixin):
         nullable=False,
     )
     name: Mapped[str] = mapped_column(String(128), nullable=False)
+    # Unit of measure for production categories (the product's unit, e.g. unit/L/kg);
+    # null for non-production categories. "Required for production" is enforced at the
+    # API layer, going forward — not by a DB constraint (existing rows stay valid).
+    unit: Mapped[Unit | None] = mapped_column(
+        SQLEnum(Unit, name="unit", values_callable=lambda e: [m.value for m in e]),
+        nullable=True,
+    )
     color: Mapped[str | None] = mapped_column(String(16), nullable=True)
     archived_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),

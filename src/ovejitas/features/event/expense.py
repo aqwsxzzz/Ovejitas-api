@@ -22,7 +22,7 @@ async def emit_expense(
     *,
     material: Asset,
     amount: Decimal,
-    currency: str,
+    currency_id: int,
     occurred_at: datetime,
     created_by: int,
 ) -> Event:
@@ -33,7 +33,7 @@ async def emit_expense(
         type=EventType.EXPENSE,
         occurred_at=occurred_at,
         amount=amount,
-        currency=currency,
+        currency_id=currency_id,
         payload=dict(_PURCHASE_PAYLOAD),
         created_by=created_by,
     )

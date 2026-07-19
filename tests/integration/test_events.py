@@ -51,12 +51,19 @@ async def _create_individual(
 
 
 async def _create_category(
-    client: AsyncClient, authed: AuthedUser, event_type: str, name: str
+    client: AsyncClient,
+    authed: AuthedUser,
+    event_type: str,
+    name: str,
+    unit: str | None = None,
 ) -> int:
+    payload: dict[str, str] = {"type": event_type, "name": name}
+    if unit is not None:
+        payload["unit"] = unit
     resp = await client.post(
         categories_url(authed.farm_id),
         headers=authed.headers,
-        json={"type": event_type, "name": name},
+        json=payload,
     )
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]
@@ -65,6 +72,7 @@ async def _create_category(
 class TestCreateByType:
     async def test_production(self, client: AsyncClient, authed_user: AuthedUser) -> None:
         asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        category_id = await _create_category(client, authed_user, "production", "Leche", "l")
 
         response = await client.post(
             events_url(authed_user.farm_id, asset_id),
@@ -74,6 +82,7 @@ class TestCreateByType:
                 "occurred_at": OCCURRED,
                 "quantity": "12.5",
                 "unit": "l",
+                "category_id": category_id,
             },
         )
 
@@ -125,6 +134,7 @@ class TestCreateByType:
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        category_id = await _create_category(client, authed_user, "production", "Lana", "kg")
 
         response = await client.post(
             events_url(authed_user.farm_id, asset_id),
@@ -135,6 +145,7 @@ class TestCreateByType:
                 "quantity": "5",
                 "unit": "kg",
                 "amount": "10",
+                "category_id": category_id,
             },
         )
         assert response.status_code == 422
@@ -250,6 +261,63 @@ class TestGuards:
         assert response.status_code == 201, response.text
         assert response.json()["category_id"] == feed
 
+    async def test_production_requires_category(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+
+        response = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={"type": "production", "occurred_at": OCCURRED, "quantity": "5", "unit": "kg"},
+        )
+        assert response.status_code == 422
+
+    async def test_production_unit_must_match_category_family(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        eggs = await _create_category(client, authed_user, "production", "Huevos", "unit")
+
+        response = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={
+                "type": "production",
+                "occurred_at": OCCURRED,
+                "quantity": "5",
+                "unit": "kg",
+                "category_id": eggs,
+            },
+        )
+        assert response.status_code == 422
+        assert "compatible" in response.json()["detail"].lower()
+
+    async def test_production_category_cannot_be_nulled(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        category_id = await _create_category(client, authed_user, "production", "Lana", "kg")
+        created = await client.post(
+            events_url(authed_user.farm_id, asset_id),
+            headers=authed_user.headers,
+            json={
+                "type": "production",
+                "occurred_at": OCCURRED,
+                "quantity": "5",
+                "unit": "kg",
+                "category_id": category_id,
+            },
+        )
+        event_id = created.json()["id"]
+
+        response = await client.patch(
+            event_url(authed_user.farm_id, asset_id, event_id),
+            headers=authed_user.headers,
+            json={"category_id": None},
+        )
+        assert response.status_code == 422
+
 
 class TestIdempotency:
     async def test_same_key_rejected_on_farm(
@@ -281,6 +349,7 @@ class TestIdempotency:
 class TestListAndUpdate:
     async def test_filter_by_type(self, client: AsyncClient, authed_user: AuthedUser) -> None:
         asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        category_id = await _create_category(client, authed_user, "production", "Lana", "kg")
         await client.post(
             events_url(authed_user.farm_id, asset_id),
             headers=authed_user.headers,
@@ -289,6 +358,7 @@ class TestListAndUpdate:
                 "occurred_at": OCCURRED,
                 "quantity": "5",
                 "unit": "kg",
+                "category_id": category_id,
             },
         )
         await client.post(
@@ -470,10 +540,17 @@ class TestEventWritePathGuards:
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         asset_id = await _create_asset(client, authed_user, ANIMAL_AGGREGATED)
+        category_id = await _create_category(client, authed_user, "production", "Lana", "kg")
         created = await client.post(
             events_url(authed_user.farm_id, asset_id),
             headers=authed_user.headers,
-            json={"type": "production", "occurred_at": OCCURRED, "quantity": "5", "unit": "kg"},
+            json={
+                "type": "production",
+                "occurred_at": OCCURRED,
+                "quantity": "5",
+                "unit": "kg",
+                "category_id": category_id,
+            },
         )
         event_id = created.json()["id"]
 

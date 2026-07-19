@@ -2,6 +2,7 @@
 
 from ovejitas.core.models import Base
 from ovejitas.features.asset.models import Asset, AssetKind, AssetMode
+from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
 from ovejitas.features.event_category.models import EventCategory
@@ -12,14 +13,19 @@ from ovejitas.features.individual.models import Individual, IndividualStatus
 from ovejitas.features.material_consumption.models import MaterialConsumption
 from ovejitas.features.material_consumption.types import ConsumptionReason
 from ovejitas.features.material_purchase.models import MaterialPurchase
+from ovejitas.features.pregnancy.models import Pregnancy
+from ovejitas.features.production_target.models import AssetProductionTarget
+from ovejitas.features.production_target.types import ProductionBasis, TargetPeriod
 from ovejitas.features.user.models import User
 
 __all__ = [
     "Asset",
     "AssetKind",
     "AssetMode",
+    "AssetProductionTarget",
     "Base",
     "ConsumptionReason",
+    "Currency",
     "Event",
     "EventCategory",
     "EventType",
@@ -32,5 +38,8 @@ __all__ = [
     "InvitationStatus",
     "MaterialConsumption",
     "MaterialPurchase",
+    "Pregnancy",
+    "ProductionBasis",
+    "TargetPeriod",
     "User",
 ]

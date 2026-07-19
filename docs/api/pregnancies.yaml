@@ -1,0 +1,95 @@
+tag: pregnancies
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/pregnancies
+  summary: List pregnancy records in a farm
+  responses: {'200': Page_PregnancyRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/pregnancies
+  summary: Record a pregnancy / ultrasound check
+  description: Records a pregnancy check on one individual and emits a paired REPRODUCTIVE event on its timeline. A non-pregnant
+    check must omit `offspring_count` and `expected_due_at`. Replaying an `idempotency_key` returns the original record with
+    status 200.
+  body: PregnancyCreate
+  responses: {'201': PregnancyRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/pregnancies/{pregnancy_id}
+  summary: Get one pregnancy record
+  responses: {'200': PregnancyRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/pregnancies/{pregnancy_id}
+  summary: Update a pregnancy record
+  description: '`individual_id` is immutable. Changes reconcile the paired reproductive event. Clearing `is_pregnant` requires
+    also clearing `offspring_count` and `expected_due_at`.'
+  body: PregnancyUpdate
+  responses: {'200': PregnancyRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/pregnancies/{pregnancy_id}
+  summary: Delete a pregnancy record
+  description: Hard-deletes the record and reverses its reproductive event.
+  responses: {'204': any, '422': HTTPValidationError}
+types:
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_PregnancyRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: PregnancyRead[]
+      meta: PageMeta
+  PregnancyCreate:
+    kind: object
+    required: [individual_id, occurred_at, is_pregnant]
+    fields:
+      individual_id: integer
+      occurred_at: string (date-time)
+      is_pregnant: boolean
+      offspring_count: integer | null
+      expected_due_at: string (date-time) | null
+      notes: string | null
+      idempotency_key: string | null
+  PregnancyRead:
+    kind: object
+    required: [id, farm_id, individual_id, reproductive_event_id, occurred_at, is_pregnant, offspring_count, expected_due_at,
+      notes, idempotency_key, created_by, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      individual_id: integer
+      reproductive_event_id: integer
+      occurred_at: string (date-time)
+      is_pregnant: boolean
+      offspring_count: integer | null
+      expected_due_at: string (date-time) | null
+      notes: string | null
+      idempotency_key: string | null
+      created_by: integer
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  PregnancyUpdate:
+    kind: object
+    fields:
+      occurred_at: string (date-time) | null
+      is_pregnant: boolean | null
+      offspring_count: integer | null
+      expected_due_at: string (date-time) | null
+      notes: string | null
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

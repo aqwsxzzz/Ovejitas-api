@@ -70,6 +70,7 @@ types:
       acquired_at: string (date-time)
       acquisition_method: purchased | born | other
       amount: number | string | null
+      currency_id: integer | null
   IndividualRead:
     kind: object
     required: [id, farm_id, asset_id, name, tag, birth_date, mother_id, father_id, status, extra, acquisition_event_id, acquisition_expense_event_id,
@@ -105,6 +106,7 @@ types:
       acquired_at: string (date-time) | null
       acquisition_method: purchased | born | other | null
       amount: number | string | null
+      currency_id: integer | null
       died_at: string (date-time) | null
       cause: string | null
       sale_amount: number | string | null

@@ -8,7 +8,7 @@ from httpx import AsyncClient
 from ovejitas.features.asset.models import AssetKind, AssetMode
 from ovejitas.features.event.types import EventType
 from tests.conftest import AuthedUser
-from tests.factories import AssetFactory, EventFactory, IndividualFactory
+from tests.factories import AssetFactory, EventFactory, IndividualFactory, currency_id_for
 
 
 def reports(farm_id: int) -> str:
@@ -40,7 +40,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("300"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -50,7 +50,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -68,6 +68,43 @@ class TestProfitability:
         assert Decimal(row["net"]) == Decimal("200")
         assert row["currency"] == "USD"
 
+    async def test_includes_income_on_the_upper_bound_day(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # RED: reproduces "el resumen de balance no anda en el mes actual".
+        # In an in-progress ("running") month the user filters up to *today*.
+        # An income logged earlier today must still be counted, but the report
+        # applies an inclusive `occurred_at <= date_to`, and "today" arrives as
+        # midnight (00:00) — so any event later that same day is silently
+        # dropped. Past months look fine only because nothing lands exactly on
+        # their final midnight.
+        asset_id = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            asset_id,
+            authed_user.user_id,
+            type=EventType.INCOME,
+            amount=Decimal("300"),
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
+            quantity=None,
+            unit=None,
+            when=datetime(2026, 6, 14, 9, 0, tzinfo=UTC),  # today, mid-morning
+        )
+
+        resp = await client.get(
+            f"{reports(authed_user.farm_id)}/profitability",
+            headers=authed_user.headers,
+            params={
+                "date_from": "2026-06-01T00:00:00Z",
+                "date_to": "2026-06-14T00:00:00Z",  # "up to today" → midnight
+            },
+        )
+
+        assert resp.status_code == 200, resp.text
+        rows = resp.json()["data"]
+        assert len(rows) == 1, "income logged today dropped when date_to is today at 00:00"
+        assert Decimal(rows[0]["income_total"]) == Decimal("300")
+
     async def test_totals_grouped_by_currency(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
@@ -80,7 +117,7 @@ class TestProfitability:
                 authed_user.user_id,
                 type=EventType.INCOME,
                 amount=Decimal("100"),
-                currency="USD",
+                currency_id=await currency_id_for(authed_user.farm_id, "USD"),
                 quantity=None,
                 unit=None,
             )
@@ -90,7 +127,7 @@ class TestProfitability:
                 authed_user.user_id,
                 type=EventType.EXPENSE,
                 amount=Decimal("40"),
-                currency="USD",
+                currency_id=await currency_id_for(authed_user.farm_id, "USD"),
                 quantity=None,
                 unit=None,
             )
@@ -100,7 +137,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("500"),
-            currency="ARS",
+            currency_id=await currency_id_for(authed_user.farm_id, "ARS"),
             quantity=None,
             unit=None,
         )
@@ -123,7 +160,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("500"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -133,7 +170,7 @@ class TestProfitability:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("1000"),
-            currency="ARS",
+            currency_id=await currency_id_for(authed_user.farm_id, "ARS"),
             quantity=None,
             unit=None,
         )
@@ -153,17 +190,21 @@ async def _buy_material(
     quantity: str,
     amount: str,
     occurred_at: str = "2026-04-01T10:00:00Z",
+    currency: str | None = None,
 ) -> None:
+    body: dict[str, Any] = {
+        "material_asset_id": material_id,
+        "occurred_at": occurred_at,
+        "quantity": quantity,
+        "unit": "kg",
+        "amount": amount,
+    }
+    if currency is not None:
+        body["currency_id"] = await currency_id_for(authed.farm_id, currency)
     resp = await client.post(
         f"/api/v1/farms/{authed.farm_id}/material-purchases",
         headers=authed.headers,
-        json={
-            "material_asset_id": material_id,
-            "occurred_at": occurred_at,
-            "quantity": quantity,
-            "unit": "kg",
-            "amount": amount,
-        },
+        json=body,
     )
     assert resp.status_code in (200, 201), resp.text
 
@@ -226,7 +267,7 @@ class TestCostPerUnit:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("40"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -241,6 +282,55 @@ class TestCostPerUnit:
         assert Decimal(row["total_cost"]) == Decimal("100")
         assert Decimal(row["cost_per_unit"]) == Decimal("2")
         assert row["has_unvalued_consumption"] is False
+
+    async def test_feed_in_non_default_currency_costs_in_that_currency(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _asset(
+            authed_user.farm_id, name="Feed", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+        )
+        await _buy_material(client, authed_user, feed, "100", "300", currency="UYU")  # 3/kg
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _feed(client, authed_user, feed, flock, "20")  # 20 x 3 = 60 UYU
+
+        rows = await _cost_rows(client, authed_user)
+        assert len(rows) == 1
+        assert rows[0]["currency"] == "UYU"
+        assert Decimal(rows[0]["consumed_material_cost"]) == Decimal("60")
+        assert Decimal(rows[0]["cost_per_unit"]) == Decimal("1.20")
+
+    async def test_mixed_currency_feed_yields_a_cost_per_unit_row_each(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        feed = await _asset(
+            authed_user.farm_id, name="Feed", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+        )
+        await _buy_material(client, authed_user, feed, "60", "120", currency="USD")  # 2/kg
+        await _buy_material(client, authed_user, feed, "40", "200", currency="UYU")  # 5/kg
+        flock = await _asset(authed_user.farm_id, name="Gallinas")
+        await _event(
+            authed_user.farm_id,
+            flock,
+            authed_user.user_id,
+            type=EventType.PRODUCTION,
+            quantity=Decimal("50"),
+            unit="unit",
+        )
+        await _feed(client, authed_user, feed, flock, "50")  # 50/100 of a 100 kg pool
+
+        rows = {r["currency"]: r for r in await _cost_rows(client, authed_user)}
+        assert set(rows) == {"USD", "UYU"}
+        # USD: 50 * 120/100 = 60 over 50 units = 1.20 ; UYU: 50 * 200/100 = 100 = 2.00
+        assert Decimal(rows["USD"]["cost_per_unit"]) == Decimal("1.20")
+        assert Decimal(rows["UYU"]["cost_per_unit"]) == Decimal("2.00")
 
     async def test_average_cost_uses_purchases_before_date_from(
         self, client: AsyncClient, authed_user: AuthedUser
@@ -317,7 +407,7 @@ class TestCostPerUnit:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("40"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -347,7 +437,7 @@ class TestCostPerUnit:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("50"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -373,7 +463,7 @@ class TestCostPerUnit:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -443,7 +533,7 @@ class TestPdfDownload:
             authed_user.user_id,
             type=EventType.INCOME,
             amount=Decimal("300"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )
@@ -471,7 +561,7 @@ class TestPdfDownload:
             authed_user.user_id,
             type=EventType.EXPENSE,
             amount=Decimal("100"),
-            currency="USD",
+            currency_id=await currency_id_for(authed_user.farm_id, "USD"),
             quantity=None,
             unit=None,
         )

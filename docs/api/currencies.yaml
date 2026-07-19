@@ -1,0 +1,81 @@
+tag: currencies
+operations:
+- method: GET
+  path: /api/v1/farms/{farm_id}/currencies
+  summary: List currencies in a farm
+  responses: {'200': Page_CurrencyRead_, '422': HTTPValidationError}
+- method: POST
+  path: /api/v1/farms/{farm_id}/currencies
+  summary: Enable a currency for a farm
+  description: '`code` is a supported ISO 4217 code and is immutable after creation. Uniqueness enforced on (farm, code).'
+  body: CurrencyCreate
+  responses: {'201': CurrencyRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/currencies/{currency_id}
+  summary: Get one currency
+  responses: {'200': CurrencyRead, '422': HTTPValidationError}
+- method: PATCH
+  path: /api/v1/farms/{farm_id}/currencies/{currency_id}
+  summary: Update a currency
+  description: Only `name`/`symbol` are editable; `code` is frozen. Set `archived_at` to archive, or null to unarchive.
+  body: CurrencyUpdate
+  responses: {'200': CurrencyRead, '422': HTTPValidationError}
+- method: DELETE
+  path: /api/v1/farms/{farm_id}/currencies/{currency_id}
+  summary: Archive a currency
+  description: Currencies are never hard-deleted while ledger events reference them; this archives the currency (hidden from
+    pickers, history intact).
+  responses: {'204': any, '422': HTTPValidationError}
+types:
+  CurrencyCreate:
+    kind: object
+    required: [code, name]
+    fields:
+      code: string
+      name: string
+      symbol: string | null
+  CurrencyRead:
+    kind: object
+    required: [id, farm_id, code, name, symbol, archived_at, created_at, updated_at]
+    fields:
+      id: integer
+      farm_id: integer
+      code: string
+      name: string
+      symbol: string | null
+      archived_at: string (date-time) | null
+      created_at: string (date-time)
+      updated_at: string (date-time)
+  CurrencyUpdate:
+    kind: object
+    fields:
+      name: string | null
+      symbol: string | null
+      archived_at: string (date-time) | null
+  HTTPValidationError:
+    kind: object
+    fields:
+      detail: ValidationError[]
+  PageMeta:
+    kind: object
+    required: [page, page_size, total, has_next]
+    fields:
+      page: integer
+      page_size: integer
+      total: integer
+      has_next: boolean
+  Page_CurrencyRead_:
+    kind: object
+    required: [data, meta]
+    fields:
+      data: CurrencyRead[]
+      meta: PageMeta
+  ValidationError:
+    kind: object
+    required: [loc, msg, type]
+    fields:
+      loc: string | integer[]
+      msg: string
+      type: string
+      input: any
+      ctx: object

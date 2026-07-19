@@ -4,10 +4,13 @@ note: Auto-generated. Do not edit by hand.
 resources:
 - tag: assets
   file: assets.yaml
-  operations: 5
+  operations: 6
 - tag: auth
   file: auth.yaml
   operations: 4
+- tag: currencies
+  file: currencies.yaml
+  operations: 5
 - tag: event-categories
   file: event-categories.yaml
   operations: 5
@@ -44,6 +47,12 @@ resources:
 - tag: members
   file: members.yaml
   operations: 3
+- tag: pregnancies
+  file: pregnancies.yaml
+  operations: 5
+- tag: production-targets
+  file: production-targets.yaml
+  operations: 5
 - tag: reports
   file: reports.yaml
-  operations: 8
+  operations: 13

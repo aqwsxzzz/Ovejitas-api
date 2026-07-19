@@ -21,6 +21,7 @@ types:
       quantity: number | string
       unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
       amount: number | string
+      currency_id: integer | null
       buyer: string | null
       category_id: integer | null
       notes: string | null

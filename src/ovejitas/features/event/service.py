@@ -8,6 +8,7 @@ from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
 from ovejitas.features.asset.models import Asset
+from ovejitas.features.currency.service import CurrencyService
 from ovejitas.features.event.balance import compute_inventory_balance
 from ovejitas.features.event.guards import (
     assert_fields_valid_for_type,
@@ -18,8 +19,7 @@ from ovejitas.features.event.guards import (
 from ovejitas.features.event.inventory import assert_non_negative, lock_material
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.schemas import EventCreate, EventFilters, EventUpdate, InventoryBalance
-from ovejitas.features.event.types import EventType, InventoryAdjustment
-from ovejitas.features.farm.models import Farm
+from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 
 SEARCH_COLUMNS = [Event.notes]
 SORT_ALLOWED = {
@@ -44,14 +44,15 @@ class EventService:
     async def create(self, asset: Asset, user_id: int, data: EventCreate) -> Event:
         await validate_type_against_asset(data.type, asset)
         await validate_individual(self.db, asset, data.individual_id)
-        await validate_category(self.db, asset.farm_id, data.type, data.category_id)
+        unit: Unit | None = getattr(data, "unit", None)
+        await validate_category(self.db, asset.farm_id, data.type, data.category_id, unit)
         fields = data.model_dump()
         if "source" in fields["payload"]:
             raise ValidationError("payload.source is reserved for action-emitted events")
         if fields.get("amount") is not None:
-            farm = await self.db.get(Farm, asset.farm_id)
-            assert farm is not None
-            fields["currency"] = farm.default_currency
+            fields["currency_id"] = await CurrencyService(self.db).resolve_or_default(
+                asset.farm_id, fields.get("currency_id")
+            )
         event = Event(farm_id=asset.farm_id, asset_id=asset.id, created_by=user_id, **fields)
         # A hand-written inventory decrement must respect the same lock + non-negative
         # guard the action layer uses — POST /events is not a backdoor around it.
@@ -93,11 +94,16 @@ class EventService:
         if "individual_id" in updates:
             await validate_individual(self.db, asset, updates["individual_id"])
         if "category_id" in updates:
-            await validate_category(self.db, asset.farm_id, event.type, updates["category_id"])
-        if updates.get("amount") is not None and event.currency is None:
-            farm = await self.db.get(Farm, asset.farm_id)
-            assert farm is not None
-            event.currency = farm.default_currency
+            if event.type is EventType.PRODUCTION and updates["category_id"] is None:
+                raise ValidationError("Production events require a category")
+            unit: Unit | None = updates.get("unit", event.unit)
+            await validate_category(
+                self.db, asset.farm_id, event.type, updates["category_id"], unit
+            )
+        if updates.get("amount") is not None and event.currency_id is None:
+            event.currency_id = await CurrencyService(self.db).resolve_or_default(
+                asset.farm_id, None
+            )
         stock_fields = {"quantity", "unit", "adjustment", "occurred_at"}
         stock_affecting = event.type is EventType.INVENTORY and bool(stock_fields & updates.keys())
         old_unit = event.unit

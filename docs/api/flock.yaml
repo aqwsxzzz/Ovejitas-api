@@ -29,6 +29,7 @@ types:
       occurred_at: string (date-time)
       quantity: integer
       amount: number | string | null
+      currency_id: integer | null
   FlockActionRead:
     kind: object
     required: [inventory_event_id, paired_event_id, headcount]
@@ -50,6 +51,7 @@ types:
       occurred_at: string (date-time)
       quantity: integer
       amount: number | string
+      currency_id: integer | null
       buyer: string | null
   HTTPValidationError:
     kind: object

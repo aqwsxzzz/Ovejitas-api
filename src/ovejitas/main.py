@@ -9,6 +9,7 @@ from ovejitas.core.middleware import register_request_logging
 from ovejitas.core.startup import lifespan
 from ovejitas.features.asset.router import router as asset_router
 from ovejitas.features.auth.router import router as auth_router
+from ovejitas.features.currency.router import router as currency_router
 from ovejitas.features.event.router import router as event_router
 from ovejitas.features.event_category.router import router as event_category_router
 from ovejitas.features.farm.router import router as farm_router
@@ -20,6 +21,8 @@ from ovejitas.features.individual.router import router as individual_router
 from ovejitas.features.material_consumption.router import router as material_consumption_router
 from ovejitas.features.material_purchase.router import router as material_purchase_router
 from ovejitas.features.material_sale.router import router as material_sale_router
+from ovejitas.features.pregnancy.router import router as pregnancy_router
+from ovejitas.features.production_target.router import router as production_target_router
 from ovejitas.features.report.router import router as report_router
 
 API_PREFIX = "/api/v1"
@@ -64,6 +67,7 @@ def create_app() -> FastAPI:
     app.include_router(farm_member_router, prefix=API_PREFIX)
     app.include_router(asset_router, prefix=API_PREFIX)
     app.include_router(individual_router, prefix=API_PREFIX)
+    app.include_router(currency_router, prefix=API_PREFIX)
     app.include_router(event_category_router, prefix=API_PREFIX)
     app.include_router(event_router, prefix=API_PREFIX)
     app.include_router(material_consumption_router, prefix=API_PREFIX)
@@ -71,6 +75,8 @@ def create_app() -> FastAPI:
     app.include_router(flock_router, prefix=API_PREFIX)
     app.include_router(harvest_router, prefix=API_PREFIX)
     app.include_router(material_sale_router, prefix=API_PREFIX)
+    app.include_router(pregnancy_router, prefix=API_PREFIX)
+    app.include_router(production_target_router, prefix=API_PREFIX)
     app.include_router(report_router, prefix=API_PREFIX)
 
     @app.get("/health", tags=["health"], summary="Liveness check")
