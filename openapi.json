@@ -2020,6 +2020,10 @@
             "title": "Name",
             "type": "string"
           },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -2030,6 +2034,7 @@
           "id",
           "name",
           "default_currency",
+          "timezone",
           "created_at",
           "updated_at"
         ],
@@ -2073,6 +2078,19 @@
               }
             ],
             "title": "Name"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
           }
         },
         "title": "FarmUpdate",
@@ -2290,6 +2308,10 @@
             "title": "Occurred At",
             "type": "string"
           },
+          "produce_asset_id": {
+            "title": "Produce Asset Id",
+            "type": "integer"
+          },
           "quantity": {
             "anyOf": [
               {
@@ -2310,6 +2332,7 @@
         "required": [
           "quantity",
           "unit",
+          "produce_asset_id",
           "category_id"
         ],
         "title": "HarvestCreate",
@@ -4519,6 +4542,107 @@
         "title": "PregnancyUpdate",
         "type": "object"
       },
+      "ProduceOutcomeReport": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProduceOutcomeRow"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "unattributed_income": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unattributed Income",
+            "type": "string"
+          },
+          "unattributed_quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unattributed Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "unattributed_quantity",
+          "unattributed_income"
+        ],
+        "title": "ProduceOutcomeReport",
+        "type": "object"
+      },
+      "ProduceOutcomeRow": {
+        "properties": {
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "has_other_currency": {
+            "title": "Has Other Currency",
+            "type": "boolean"
+          },
+          "income_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Income Total",
+            "type": "string"
+          },
+          "lost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Lost",
+            "type": "string"
+          },
+          "produce_asset_id": {
+            "title": "Produce Asset Id",
+            "type": "integer"
+          },
+          "produce_name": {
+            "title": "Produce Name",
+            "type": "string"
+          },
+          "produced": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Produced",
+            "type": "string"
+          },
+          "producer_asset_id": {
+            "title": "Producer Asset Id",
+            "type": "integer"
+          },
+          "producer_name": {
+            "title": "Producer Name",
+            "type": "string"
+          },
+          "sold": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sold",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "producer_asset_id",
+          "producer_name",
+          "produce_asset_id",
+          "produce_name",
+          "unit",
+          "produced",
+          "sold",
+          "lost",
+          "currency",
+          "income_total",
+          "has_other_currency"
+        ],
+        "title": "ProduceOutcomeRow",
+        "type": "object"
+      },
       "ProductionBasis": {
         "description": "How a target's expected_rate scales into an expected quantity over a window.\n\n- ``per_head_continuous``: rate per head per ``period`` (eggs/day, milk/day) \u2014\n  scaled by animal-days in the window.\n- ``per_event``: expected yield per production event (shearing, harvest) \u2014\n  compared per event, not calendar-scaled.\n- ``total``: whole-asset expected yield (a crop field) \u2014 no headcount.",
         "enum": [
@@ -4658,6 +4782,11 @@
       },
       "ProfitabilityFullRow": {
         "properties": {
+          "allocated_produce_income": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Allocated Produce Income",
+            "type": "string"
+          },
           "asset_id": {
             "title": "Asset Id",
             "type": "integer"
@@ -4717,6 +4846,7 @@
           "asset_name",
           "currency",
           "income_total",
+          "allocated_produce_income",
           "direct_expense_total",
           "consumed_material_cost",
           "total_cost",
@@ -4729,6 +4859,11 @@
       },
       "ProfitabilityFullTotal": {
         "properties": {
+          "allocated_produce_income": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Allocated Produce Income",
+            "type": "string"
+          },
           "consumed_material_cost": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Consumed Material Cost",
@@ -4767,6 +4902,7 @@
         "required": [
           "currency",
           "income_total",
+          "allocated_produce_income",
           "direct_expense_total",
           "consumed_material_cost",
           "total_cost",
@@ -10980,6 +11116,120 @@
           }
         ],
         "summary": "Day/week material-consumption totals, bucketed and grouped",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/reports/produce-outcome": {
+      "get": {
+        "description": "One row per (producer, produce asset). `produced` is what that producer harvested into the pool; `sold` and `lost` are its derived share of what later left the pool, and `income_total` the money that share earned.\n\nShares are **derived, never stored**: pooled produce is fungible, so no per-producer income is ever observed. Each outflow consumes the pool's daily baskets oldest-first and is split within each basket in proportion to what each producer put in it, priced at that outflow's own unit price. Correcting a harvest changes this report the next time it is asked \u2014 nothing needs re-booking.\n\n`produced` is bounded by when the harvest happened; `sold`/`lost`/`income_total` by when the stock left. FIFO crosses window edges, so within a narrow window these are **not** expected to reconcile.\n\n`lost` is stock drawn at zero revenue (waste, spoilage) \u2014 produced but never earned from. Currencies are never summed: a producer whose output sold in more than one currency gets a null `currency` and `has_other_currency: true`. `unattributed_quantity` reports stock that left a pool with no lot behind it (a manual inventory increment, or stock carried across a reset).",
+        "operationId": "reports_produce_outcome",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "producer_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Producer Asset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "produce_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Produce Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProduceOutcomeReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Per-producer contribution to a produce pool, and what became of it",
         "tags": [
           "reports"
         ]

@@ -58,6 +58,12 @@ async def create_material_sale(
         )
         db.add(income)
         await db.flush()
+        # Point the stock movement at the money it earned. Income events cannot
+        # carry a quantity, so without this link nothing pairs one sale's
+        # decrement to one sale's amount — and the produce allocation needs a
+        # per-sale unit price, which an aggregate (as sales-value uses) can't
+        # give. Reassigned rather than mutated so SQLAlchemy sees the change.
+        decrement.payload = {**decrement.payload, "income_event_id": income.id}
         inventory_event_id, income_event_id = decrement.id, income.id
         await db.commit()
     except Exception:

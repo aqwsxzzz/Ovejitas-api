@@ -130,6 +130,7 @@ async def seed_cattle(db: AsyncSession, user: User, farm: Farm, today: datetime)
                 occurred_at=today - timedelta(days=offset),
                 quantity=Decimal("18.5"),
                 unit=Unit.L,
+                produce_asset_id=milk.id,
                 category_id=milk_category.id,
             ),
         )

@@ -18,6 +18,40 @@ operations:
     `date_from`/`date_to` bound income and direct expense; feed is valued over full purchase history.'
   responses: {'200': ProfitabilityFullReport, '422': HTTPValidationError}
 - method: GET
+  path: /api/v1/farms/{farm_id}/reports/cost-per-unit
+  summary: R3 — cost per produced unit, per (producer asset, currency)
+  description: Requires `unit` (what counts as one produced unit). One row per (producer, currency) — any asset with `production`
+    events in that unit; direct expense and feed are never summed across currencies, so a producer with costs in two currencies
+    yields two rows. `cost_per_unit = (direct expense events on the producer + the average-cost value of the feed it was fed)
+    / its production quantity`, in that row's currency. Feed is attributed via `material_consumption` with `reason=feeding`
+    and `consumer_asset_id` = the producer, valued in the currency of the backing purchases (a mixed-currency material splits
+    across currency rows); a material's average cost is its full purchase history (not bounded by `date_from`). `date_from`/`date_to`
+    bound production and direct expenses. A producer that made nothing in the window still appears with `cost_per_unit` null;
+    a producer with no cost in any currency appears once with a null `currency`. `has_unvalued_consumption` flags rows whose
+    feed has no purchase history in ANY currency to value it.
+  responses: {'200': CostPerUnitReport, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/sales-value
+  summary: Realized average sale price per unit, per asset
+  description: One row per asset sold via the sale action in the window. `value_per_unit = total sale income / total quantity
+    sold` — the weighted-average price actually received (e.g. value per egg), derived from sale events, with no stored unit
+    price. Only `material_sale` income and its paired inventory decrements are counted; manually entered income is excluded.
+    When an asset was sold in more than one unit in the window, income can't be split across units, so `unit`/`quantity_sold`/`value_per_unit`
+    are null and `ambiguous` is true. Assets with no sales in the window do not appear.
+  responses: {'200': SalesValueReport, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/profitability/pdf
+  summary: R1 — PDF download
+  responses: {'200': any, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/profitability-full/pdf
+  summary: Profitability-full — PDF download
+  responses: {'200': any, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/cost-per-unit/pdf
+  summary: R3 — PDF download
+  responses: {'200': any, '422': HTTPValidationError}
+- method: GET
   path: /api/v1/farms/{farm_id}/reports/aggregate
   summary: Generic time-bucketed aggregate over events of one type
   description: 'Dispatches on `type` and returns uniform `{bucket, group, group_label, measure, value, asset_id}` rows.
@@ -75,40 +109,6 @@ operations:
     `totals` carries the per-(group, unit) `total_qty` across all buckets.'
   responses: {'200': MaterialConsumptionAggregateReport, '422': HTTPValidationError}
 - method: GET
-  path: /api/v1/farms/{farm_id}/reports/cost-per-unit
-  summary: R3 — cost per produced unit, per (producer asset, currency)
-  description: Requires `unit` (what counts as one produced unit). One row per (producer, currency) — any asset with `production`
-    events in that unit; direct expense and feed are never summed across currencies, so a producer with costs in two currencies
-    yields two rows. `cost_per_unit = (direct expense events on the producer + the average-cost value of the feed it was fed)
-    / its production quantity`, in that row's currency. Feed is attributed via `material_consumption` with `reason=feeding`
-    and `consumer_asset_id` = the producer, valued in the currency of the backing purchases (a mixed-currency material splits
-    across currency rows); a material's average cost is its full purchase history (not bounded by `date_from`). `date_from`/`date_to`
-    bound production and direct expenses. A producer that made nothing in the window still appears with `cost_per_unit` null;
-    a producer with no cost in any currency appears once with a null `currency`. `has_unvalued_consumption` flags rows whose
-    feed has no purchase history in ANY currency to value it.
-  responses: {'200': CostPerUnitReport, '422': HTTPValidationError}
-- method: GET
-  path: /api/v1/farms/{farm_id}/reports/profitability/pdf
-  summary: R1 — PDF download
-  responses: {'200': any, '422': HTTPValidationError}
-- method: GET
-  path: /api/v1/farms/{farm_id}/reports/profitability-full/pdf
-  summary: Profitability-full — PDF download
-  responses: {'200': any, '422': HTTPValidationError}
-- method: GET
-  path: /api/v1/farms/{farm_id}/reports/cost-per-unit/pdf
-  summary: R3 — PDF download
-  responses: {'200': any, '422': HTTPValidationError}
-- method: GET
-  path: /api/v1/farms/{farm_id}/reports/sales-value
-  summary: Realized average sale price per unit, per asset
-  description: One row per asset sold via the sale action in the window. `value_per_unit = total sale income / total quantity
-    sold` — the weighted-average price actually received (e.g. value per egg), derived from sale events, with no stored unit
-    price. Only `material_sale` income and its paired inventory decrements are counted; manually entered income is excluded.
-    When an asset was sold in more than one unit in the window, income can't be split across units, so `unit`/`quantity_sold`/`value_per_unit`
-    are null and `ambiguous` is true. Assets with no sales in the window do not appear.
-  responses: {'200': SalesValueReport, '422': HTTPValidationError}
-- method: GET
   path: /api/v1/farms/{farm_id}/reports/production-productivity
   summary: Produced vs expected output, per asset and product
   description: 'One row per (asset, product) that either produced in the window or has an applicable production target. The
@@ -116,6 +116,27 @@ operations:
     scaled by its `basis` (per_head_continuous uses time-weighted animal-days). A pair with no applicable target reports `missing_capacity:
     true` with null `expected`/`productivity_pct`. `date_from` and `date_to` are **required**.'
   responses: {'200': ProductionProductivityReport, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/reports/produce-outcome
+  summary: Per-producer contribution to a produce pool, and what became of it
+  description: 'One row per (producer, produce asset). `produced` is what that producer harvested into the pool; `sold` and
+    `lost` are its derived share of what later left the pool, and `income_total` the money that share earned.
+
+
+    Shares are **derived, never stored**: pooled produce is fungible, so no per-producer income is ever observed. Each outflow
+    consumes the pool''s daily baskets oldest-first and is split within each basket in proportion to what each producer put
+    in it, priced at that outflow''s own unit price. Correcting a harvest changes this report the next time it is asked —
+    nothing needs re-booking.
+
+
+    `produced` is bounded by when the harvest happened; `sold`/`lost`/`income_total` by when the stock left. FIFO crosses
+    window edges, so within a narrow window these are **not** expected to reconcile.
+
+
+    `lost` is stock drawn at zero revenue (waste, spoilage) — produced but never earned from. Currencies are never summed:
+    a producer whose output sold in more than one currency gets a null `currency` and `has_other_currency: true`. `unattributed_quantity`
+    reports stock that left a pool with no lot behind it (a manual inventory increment, or stock carried across a reset).'
+  responses: {'200': ProduceOutcomeReport, '422': HTTPValidationError}
 - method: GET
   path: /api/v1/farms/{farm_id}/reports/inventory-summary
   summary: R5 — current on-hand inventory per asset
@@ -251,6 +272,29 @@ types:
     fields:
       data: EventRead[]
       meta: PageMeta
+  ProduceOutcomeReport:
+    kind: object
+    required: [data, unattributed_quantity, unattributed_income]
+    fields:
+      data: ProduceOutcomeRow[]
+      unattributed_quantity: string
+      unattributed_income: string
+  ProduceOutcomeRow:
+    kind: object
+    required: [producer_asset_id, producer_name, produce_asset_id, produce_name, unit, produced, sold, lost, currency, income_total,
+      has_other_currency]
+    fields:
+      producer_asset_id: integer
+      producer_name: string
+      produce_asset_id: integer
+      produce_name: string
+      unit: g | kg | lb | t | ml | l | gal | unit | dozen | head
+      produced: string
+      sold: string
+      lost: string
+      currency: string | null
+      income_total: string
+      has_other_currency: boolean
   ProductionProductivityReport:
     kind: object
     required: [data]
@@ -278,13 +322,14 @@ types:
       totals: ProfitabilityFullTotal[]
   ProfitabilityFullRow:
     kind: object
-    required: [asset_id, asset_name, currency, income_total, direct_expense_total, consumed_material_cost, total_cost, net,
-      net_incl_materials, has_unvalued_consumption]
+    required: [asset_id, asset_name, currency, income_total, allocated_produce_income, direct_expense_total, consumed_material_cost,
+      total_cost, net, net_incl_materials, has_unvalued_consumption]
     fields:
       asset_id: integer
       asset_name: string
       currency: string | null
       income_total: string
+      allocated_produce_income: string
       direct_expense_total: string
       consumed_material_cost: string
       total_cost: string
@@ -293,10 +338,12 @@ types:
       has_unvalued_consumption: boolean
   ProfitabilityFullTotal:
     kind: object
-    required: [currency, income_total, direct_expense_total, consumed_material_cost, total_cost, net, net_incl_materials]
+    required: [currency, income_total, allocated_produce_income, direct_expense_total, consumed_material_cost, total_cost,
+      net, net_incl_materials]
     fields:
       currency: string
       income_total: string
+      allocated_produce_income: string
       direct_expense_total: string
       consumed_material_cost: string
       total_cost: string

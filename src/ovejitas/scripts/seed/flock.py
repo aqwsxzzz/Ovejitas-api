@@ -117,6 +117,7 @@ async def seed_flock(db: AsyncSession, user: User, farm: Farm, today: datetime) 
                 occurred_at=today - timedelta(days=offset),
                 quantity=Decimal(180 + offset % 5),
                 unit=Unit.UNIT,
+                produce_asset_id=eggs.id,
                 category_id=egg_category.id,
             ),
         )

@@ -9,6 +9,7 @@ from ovejitas.features.event_category.models import EventCategory
 from ovejitas.features.farm.models import Farm
 from ovejitas.features.farm_invitation.models import FarmInvitation, InvitationStatus
 from ovejitas.features.farm_member.models import FarmMember, FarmRole
+from ovejitas.features.harvest.models import ProduceLot
 from ovejitas.features.individual.models import Individual, IndividualStatus
 from ovejitas.features.material_consumption.models import MaterialConsumption
 from ovejitas.features.material_consumption.types import ConsumptionReason
@@ -39,6 +40,7 @@ __all__ = [
     "MaterialConsumption",
     "MaterialPurchase",
     "Pregnancy",
+    "ProduceLot",
     "ProductionBasis",
     "TargetPeriod",
     "User",

@@ -171,7 +171,12 @@ class TestProductionToIncomeLoop:
         harvested = await client.post(
             f"{assets_url(authed_user.farm_id)}/{flock_id}/harvests",
             headers=authed_user.headers,
-            json={"quantity": "20", "unit": "unit", "category_id": category.json()["id"]},
+            json={
+                "quantity": "20",
+                "unit": "unit",
+                "produce_asset_id": eggs_id,
+                "category_id": category.json()["id"],
+            },
         )
         assert harvested.status_code == 201, harvested.text
 

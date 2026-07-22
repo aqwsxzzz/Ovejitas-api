@@ -9,6 +9,12 @@ MATERIAL assets are excluded: a material purchase books an expense on the
 material asset, and that same spend is re-attributed to the consumer as feed
 cost — including the material asset would double-count the feed. Its consumers
 (animals/crops) carry the cost instead.
+
+That exclusion is also why produce income has to be allocated back here. Selling
+a pooled produce asset books its income on the produce asset — a MATERIAL, so
+invisible to this report — leaving the animals that made it showing every cost
+and none of the revenue. ``allocated_produce_income`` closes that loop, and
+cannot double-count for the same reason: the pool's own income row is excluded.
 """
 
 from collections import defaultdict
@@ -23,6 +29,10 @@ from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
 from ovejitas.features.report.feed_cost import feed_cost_by_consumer
+from ovejitas.features.report.produce_income import (
+    allocations_for_farm,
+    income_by_producer_currency,
+)
 from ovejitas.features.report.schemas_profitability import (
     ProfitabilityFullQuery,
     ProfitabilityFullReport,
@@ -78,6 +88,7 @@ def _row(
     income: Decimal,
     direct: Decimal,
     consumed: Decimal,
+    allocated: Decimal,
     unvalued: bool,
 ) -> ProfitabilityFullRow:
     total = direct + consumed
@@ -86,11 +97,12 @@ def _row(
         asset_name=name,
         currency=currency,
         income_total=income,
+        allocated_produce_income=allocated,
         direct_expense_total=direct,
         consumed_material_cost=consumed,
         total_cost=total,
         net=income - direct,
-        net_incl_materials=income - total,
+        net_incl_materials=income + allocated - total,
         has_unvalued_consumption=unvalued,
     )
 
@@ -98,6 +110,7 @@ def _row(
 def _totals(rows: list[ProfitabilityFullRow]) -> list[ProfitabilityFullTotal]:
     fields = (
         "income_total",
+        "allocated_produce_income",
         "direct_expense_total",
         "consumed_material_cost",
         "total_cost",
@@ -121,8 +134,13 @@ async def profitability_full(
     feed_cost, unvalued = await feed_cost_by_consumer(
         db, farm_id, consumer_ids, q.date_from, q.date_to
     )
+    allocated = income_by_producer_currency(
+        await allocations_for_farm(db, farm_id), q.date_from, q.date_to
+    )
+    if q.asset_id is not None:
+        allocated = {k: v for k, v in allocated.items() if k[0] == q.asset_id}
 
-    keys = set(financials) | set(feed_cost)
+    keys = set(financials) | set(feed_cost) | set(allocated)
     priced_assets = {aid for aid, _ in keys}
     # an asset whose only activity is unvalued feed has no currency anywhere; it
     # still surfaces once so its missing feed cost is not silently dropped
@@ -136,12 +154,22 @@ async def profitability_full(
             names.get(asset_id, ""),
             *financials.get((asset_id, currency), (Decimal(0), Decimal(0))),
             feed_cost.get((asset_id, currency), Decimal(0)),
+            allocated.get((asset_id, currency), Decimal(0)),
             asset_id in unvalued,
         )
         for asset_id, currency in keys
     ]
     rows += [
-        _row(asset_id, None, names.get(asset_id, ""), Decimal(0), Decimal(0), Decimal(0), True)
+        _row(
+            asset_id,
+            None,
+            names.get(asset_id, ""),
+            Decimal(0),
+            Decimal(0),
+            Decimal(0),
+            Decimal(0),
+            True,
+        )
         for asset_id in pure_unvalued
     ]
     rows.sort(key=lambda r: (r.asset_name, r.asset_id, r.currency or ""))

@@ -25,7 +25,7 @@ from ovejitas.features.report.builders import (
     _quantity_by_unit,
     _scope,
 )
-from ovejitas.features.report.schemas import (
+from ovejitas.features.report.schemas_aggregate import (
     AggregateMeasure,
     AggregateMeta,
     AggregateQuery,
