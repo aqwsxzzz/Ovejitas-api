@@ -15,7 +15,7 @@ from ovejitas.core.filters import apply_date_range
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.types import Unit
 from ovejitas.features.material_consumption.models import MaterialConsumption
-from ovejitas.features.report.schemas import (
+from ovejitas.features.report.schemas_aggregate import (
     AggregateMeasure,
     AggregateRow,
     ConsumptionGroupBy,

@@ -12,11 +12,12 @@ operations:
 types:
   FarmRead:
     kind: object
-    required: [id, name, default_currency, created_at, updated_at]
+    required: [id, name, default_currency, timezone, created_at, updated_at]
     fields:
       id: integer
       name: string
       default_currency: string
+      timezone: string
       created_at: string (date-time)
       updated_at: string (date-time)
   FarmUpdate:
@@ -24,6 +25,7 @@ types:
     fields:
       name: string | null
       default_currency: string | null
+      timezone: string | null
   HTTPValidationError:
     kind: object
     fields:

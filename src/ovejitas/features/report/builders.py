@@ -15,7 +15,7 @@ from ovejitas.core.filters import apply_date_range
 from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
-from ovejitas.features.report.schemas import (
+from ovejitas.features.report.schemas_aggregate import (
     AggregateMeasure,
     AggregateQuery,
     AggregateRow,

@@ -18,7 +18,7 @@ from ovejitas.features.asset.models import Asset
 from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
-from ovejitas.features.report.schemas import (
+from ovejitas.features.report.schemas_profitability import (
     SalesValueQuery,
     SalesValueReport,
     SalesValueRow,

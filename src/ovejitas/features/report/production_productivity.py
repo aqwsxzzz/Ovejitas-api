@@ -34,7 +34,7 @@ from ovejitas.features.report.productivity_math import (
     head_days_between,
     window_end,
 )
-from ovejitas.features.report.schemas import (
+from ovejitas.features.report.schemas_production import (
     ProductionProductivityQuery,
     ProductionProductivityReport,
     ProductionProductivityRow,

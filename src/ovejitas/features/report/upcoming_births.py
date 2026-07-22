@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.features.individual.models import Individual
 from ovejitas.features.pregnancy.models import Pregnancy
-from ovejitas.features.report.schemas import UpcomingBirthRow
+from ovejitas.features.report.schemas_individual import UpcomingBirthRow
 
 
 async def upcoming_births(

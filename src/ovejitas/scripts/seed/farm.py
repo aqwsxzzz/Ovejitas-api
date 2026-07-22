@@ -21,7 +21,7 @@ async def already_seeded(db: AsyncSession) -> bool:
 
 async def seed_user_and_farm(db: AsyncSession) -> tuple[User, Farm]:
     user = User(email=DEMO_EMAIL, name="Demo", password_hash=hash_password(DEMO_PASSWORD))
-    farm = Farm(name="Granja Demo", default_currency="USD")
+    farm = Farm(name="Granja Demo", default_currency="USD", timezone="America/Montevideo")
     db.add_all([user, farm])
     await db.flush()
     db.add(Currency(farm_id=farm.id, code="USD", name="US Dollar"))
