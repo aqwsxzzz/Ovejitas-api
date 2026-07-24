@@ -1,5 +1,19 @@
 # Domain Rebuild Plan
 
+> **Status: COMPLETE (rebuild shipped, 2026). This is a historical design
+> document.** The three-primitive rebuild (asset / individual / event) it
+> describes was delivered and merged to `develop`. The schema has since evolved
+> beyond this plan — notably: `currency` is a first-class per-farm table (not an
+> `event` column); event types grew from 5 to 8 (added `acquisition`,
+> `mortality`, `inventory`); `asset.kind` gained `produce` (split from
+> `material`); and a layer of action features (material purchase/consumption/sale,
+> harvest/produce pools, pregnancy, flock, production targets) now emit the
+> bookkeeping events. **For the current model read
+> [domain-model.md](./domain-model.md) and the models under
+> `src/ovejitas/features/*/models.py`** — do not treat this document as the live
+> schema (in particular its `event.currency char(3)` column and 5-value `type`
+> enum are both outdated).
+
 Rebuild the backend around three primitives — **Asset** (farmOS convention — any trackable thing: animal, crop, equipment, material, location), **Individual**, **Event** — replacing the current tree of ~24 domain-specific resources. Also a full stack swap: **Node/Fastify/Sequelize → Python/FastAPI/SQLAlchemy**. Goal: a small, generic, scalable system that supports gallinas and vacas today and crops, beehives, aquaculture tomorrow without backend changes.
 
 Reference: [PRD v1 simplificado](./prd_granjas.md) · Inspired by the [farmOS Asset + Log model](https://farmos.org/model/).

@@ -1,25 +1,27 @@
 # Domain Notes
 
-Non-obvious domain knowledge distilled from legacy planning docs (temporal-database-schema.md, animal-tracking-features.md, stories 1.x). The legacy docs described a Node/Sequelize implementation that is being thrown out; these are the *rules and requirements* worth porting. They map onto the new three-primitive model (`asset` / `individual` / `event`) described in [domain-rebuild-plan.md](./domain-rebuild-plan.md).
+Non-obvious domain knowledge distilled from legacy planning docs (temporal-database-schema.md, animal-tracking-features.md, stories 1.x). The legacy docs described a Node/Sequelize implementation that was thrown out; these are the *rules and requirements* worth porting. They map onto the event-sourced core (`asset` / `individual` / `event` / `event_category`) described in [domain-model.md](./domain-model.md).
 
-## Feature Roadmap
+> **Note (2026):** the rebuild is shipped and the schema has evolved well past the original plan. For the current model read [domain-model.md](./domain-model.md) and the feature models under `src/ovejitas/features/*/models.py`. System event types are now eight — `production, expense, income, observation, reproductive, acquisition, mortality, inventory` — the last three emitted by domain actions (acquisition/mortality flows, inventory movements), not hand-entered. This file is kept for the underlying *requirements*, most of which still hold.
 
-### Phase 1 — Core foundation
+## Feature Roadmap (mostly delivered)
+
+### Phase 1 — Core foundation — SHIPPED
 - Historical weight tracking (→ `event` type=`observation`, category=`weight`)
 - Basic medical records (→ `event` type=`observation`, category=`vaccination`/`treatment`/`examination`)
-- Group / asset assignment (→ already in `asset`)
+- Group / asset assignment (→ `asset`)
 
-### Phase 2 — Extended
-- Full breeding management (→ `event` type=`reproductive`)
-- Financial tracking per unit / individual (→ `event` type=`expense`/`income`)
-- Location history & movement tracking (→ deferred; add `location_event` or reuse `event` with category)
-- Vaccination schedules with due-date reminders (→ new concern: see "Deferred concerns" below)
+### Phase 2 — Extended — mostly SHIPPED
+- Full breeding management (→ `event` type=`reproductive`; `pregnancy` action) — SHIPPED
+- Financial tracking per unit / individual (→ `event` type=`expense`/`income`) — SHIPPED
+- Location history & movement tracking — still deferred (add `location` table / reuse `event`)
+- Vaccination schedules with due-date reminders — still deferred (see "Deferred concerns")
 
-### Phase 3 — Nice-to-have
-- Analytics dashboard
+### Phase 3 — Nice-to-have — partly SHIPPED
+- Analytics dashboard (→ the `report` suite delivers the aggregates) — partly SHIPPED
 - Batch/bulk operations
 - Mobile API optimization
-- Export / import
+- Export / import (→ report PDF export exists)
 
 ## Domain Constraints (enforce in schema or service)
 
@@ -30,7 +32,7 @@ Non-obvious domain knowledge distilled from legacy planning docs (temporal-datab
 | Gestation period must be 20–400 days | event service (reproductive payload) | sanity bounds |
 | Cannot future-date events | event service | `occurred_at <= now()` assertion |
 | Events must reference valid, same-farm entities | event guards | already planned — see plan §Service-Layer Guards |
-| Currency stored with monetary values | event columns | `amount + currency` required together for income/expense |
+| Currency stored with monetary values | `currency` table + `event.currency_id` FK | Currency is a first-class per-farm resource (feature: `currency`); `amount` + `currency_id` resolved together for expense/income (falls back to the farm default) |
 
 ## Non-Obvious Requirements
 
@@ -49,7 +51,7 @@ Non-obvious domain knowledge distilled from legacy planning docs (temporal-datab
 These were hard-coded enums in the legacy schema. In the new model they are **user-defined categories** per farm, scoped by event type. Seed suggestions for onboarding:
 
 - **observation (was health)**: `weight`, `height`, `body_condition`, `vaccination`, `treatment`, `examination`, `illness`, `injury`
-- **production**: `eggs`, `milk`, `wool`, `meat`, `honey`
+- **production**: `eggs`, `milk`, `wool`, `meat`, `honey` — production categories are the farm's *products*: each carries a unit of measure (`event_category.unit`) and can own per-asset expected-rate targets (`asset_production_target`). The former egg-specific model was retired in favor of this generic product.
 - **expense**: `feed`, `medication`, `veterinary`, `acquisition`, `maintenance`, `insurance`
 - **income**: `animal_sale`, `product_sale`, `breeding_fee`
 - **reproductive**: `breeding`, `ai_breeding`, `pregnancy_check`, `birth`, `weaning`
@@ -70,7 +72,7 @@ These legacy features are *not* in v1 scope but the schema should not preclude t
 - **Partitioning** by date — premature; revisit when `event` table hits tens of millions of rows.
 - **Location as a first-class asset** — for v1, `asset.location` is free text. If farmers start moving individuals between real locations and need history, introduce a `location` table and convert movements into events.
 - **Vaccination-type catalog** — legacy had a `vaccination_types` lookup table (species-specific recommended frequency). Not in v1; the user models this as `event_category` with notes. Revisit if multi-farm standardization becomes a goal.
-- **Weight-unit normalization** — events store `unit` free-text (`kg`, `lbs`). UI converts at display time; DB stores as recorded.
+- **Weight-unit normalization** — `unit` is a closed enum (`Unit`: g/kg/lb/t/ml/l/gal/unit/dozen/head) shared across events, categories, and material/produce rows. UI converts at display time; DB stores the enum value as recorded.
 
 ## Porting Map (legacy → new)
 

@@ -4,6 +4,17 @@
 > (producción), cómo se refleja el valor del huevo?"*
 > Model decided via web research — see [Decisions](#decisions-locked).
 
+> **Status (shipped, 2026).** Farm-level egg value shipped as
+> `GET /farms/{farm_id}/reports/sales-value` (below, still accurate). The
+> **per-coop** goal also shipped — but via a *different* mechanism than the
+> "tag each sale to a coop" design proposed further down: `GET
+> /farms/{farm_id}/reports/produce-outcome` attributes pooled produce revenue
+> back to each producer by **derived FIFO** over daily contribution baskets
+> (#47). No `producer_asset_id` column was added, no per-sale coop tag, and no
+> `/reports/egg-value` endpoint — those sections below are **superseded**, kept
+> only for the rationale. Also note: after #48 eggs are a **produce** asset
+> (kind=`produce`), not a material.
+
 ## User story
 
 As a farm owner, I want each egg sale to record **how much an egg is worth** and
@@ -12,9 +23,9 @@ lump sum of income.
 
 ## What already exists
 
-- A sale (`POST /farms/{farm_id}/material-sales`) writes one `INCOME` event with
-  a **total `amount`** and decrements egg inventory — atomically
-  (`material_sale/actions.py`). The income lands on the **eggs material asset**.
+- A sale (`POST /farms/{farm_id}/assets/{asset_id}/sales`) writes one `INCOME`
+  event with a **total `amount`** and decrements egg inventory — atomically
+  (`material_sale/actions.py`). The income lands on the **eggs produce asset**.
 - `PRODUCTION`/harvest events carry **quantity only, no money**
   (`event/schemas.py`).
 - `cost-per-unit` already computes a per-coop **cost** (feed + direct expense ÷
@@ -24,8 +35,9 @@ lump sum of income.
 
 There is **no per‑unit value** anywhere (only `cost_per_unit`, which is a cost).
 The egg's worth is implicit as `amount ÷ quantity` at sale time. And egg income
-sits on the **shared eggs asset**, not the coop — so per‑coop profit can't be
-attributed today.
+sits on the **shared eggs produce asset**, not the coop — so per‑coop profit
+can't be attributed today. *(Since shipped: `produce-outcome` closes this gap by
+FIFO-attributing pooled produce revenue to each producer.)*
 
 ## Shipped in v1 — `GET /reports/sales-value`
 
@@ -39,11 +51,22 @@ null `value_per_unit`; assets with no sales don't appear. Paired with the
 existing `cost-per-unit` report (the cost floor), this answers *"cómo se refleja
 el valor del huevo"* and "what did I make" at the farm/asset level.
 
-## Deferred — needs validation with the actual farmer
+## Superseded — per-coop shipped via FIFO, not sale-tagging
+
+> **This section is historical.** The per-coop goal shipped as
+> `GET /farms/{farm_id}/reports/produce-outcome`: pooled produce is fungible, so
+> per-producer income is **never stored or tagged on the sale** — each outflow's
+> revenue is split back to producers by **derived FIFO** over daily contribution
+> baskets (`produce_lot`). Correcting a harvest re-derives attribution on the
+> next request; nothing is re-booked. Currencies are never summed
+> (`has_other_currency`); stock with no lot behind it surfaces as
+> `unattributed_quantity` / `unattributed_income`. No `producer_asset_id` column
+> and no `egg-value` endpoint were added. The sale-tagging design below was the
+> original proposal, kept for rationale only.
 
 The per-coop / tagging design below came from research-backed *defaults*, not a
-real user. It is **not built** and should be confirmed with the friend who runs
-the farm before implementing (see [questions for the farmer](#questions-for-the-farmer)).
+real user (see [questions for the farmer](#questions-for-the-farmer) — largely
+resolved by the FIFO-derivation approach, which needs no per-sale coop tag).
 
 1. **Tag each egg sale to a coop (the producing asset).** Add an *optional*
    producing‑coop reference to the egg sale; the booked `INCOME` is then

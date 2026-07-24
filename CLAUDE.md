@@ -14,7 +14,7 @@ project:
   database: postgresql 16
   entry: src/ovejitas/main.py
   src_dir: src/
-  status: rebuild in progress on branch feat/domain-rebuild — see docs/domain-rebuild-plan.md
+  status: rebuild complete; active development on develop. Core = asset/individual/event/event_category. See docs/domain-model.md and src/ovejitas/features/*/models.py for the current schema; docs/domain-rebuild-plan.md is historical
 
 scripts:
   dev: uv run uvicorn ovejitas.main:app --reload --host 0.0.0.0
@@ -88,9 +88,9 @@ project_layout:
 
 core_domain:
   primitives: asset, individual, event_category, event
-  event_types: [production, expense, income, observation, reproductive]
-  validation: pydantic discriminated union on event.type
-  details: see docs/domain-rebuild-plan.md
+  event_types: [production, expense, income, observation, reproductive, acquisition, mortality, inventory]
+  validation: pydantic discriminated union on event.type (acquisition/mortality are system-only, not in EventCreate)
+  details: see docs/domain-model.md and docs/events-and-actions.md
 
 list_endpoints:
   mandatory_from_day_0: true
