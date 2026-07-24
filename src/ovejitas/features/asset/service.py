@@ -70,12 +70,12 @@ class AssetService:
         self, farm_id: int, source_kind: AssetKind, produce_asset_id: int
     ) -> None:
         """A produce link is only meaningful on an asset that produces, and must
-        point at a material asset in the same farm."""
+        point at a produce asset in the same farm."""
         if source_kind not in (AssetKind.ANIMAL, AssetKind.CROP):
             raise ValidationError("Only animal or crop assets can link a produce asset")
         target = await self.get(farm_id, produce_asset_id)
-        if target.kind is not AssetKind.MATERIAL:
-            raise ValidationError("produce_asset_id must reference a material asset")
+        if target.kind is not AssetKind.PRODUCE:
+            raise ValidationError("produce_asset_id must reference a produce asset")
 
     async def delete(self, farm_id: int, asset_id: int) -> None:
         asset = await self.get(farm_id, asset_id)

@@ -51,7 +51,7 @@ async def seed_flock(db: AsyncSession, user: User, farm: Farm, today: datetime) 
     )
     eggs = await assets.create(
         farm.id,
-        AssetCreate(name="Huevos", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED),
+        AssetCreate(name="Huevos", kind=AssetKind.PRODUCE, mode=AssetMode.AGGREGATED),
     )
     feed = await assets.create(
         farm.id,

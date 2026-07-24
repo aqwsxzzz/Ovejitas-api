@@ -26,8 +26,8 @@ async def resolve_produce_asset(db: AsyncSession, source: Asset, produce_asset_i
     produce_asset = await db.get(Asset, produce_asset_id)
     if produce_asset is None or produce_asset.farm_id != source.farm_id:
         raise NotFoundError("Produce asset not found in this farm")
-    if produce_asset.kind is not AssetKind.MATERIAL:
-        raise ValidationError("Harvest must deposit into a material asset")
+    if produce_asset.kind is not AssetKind.PRODUCE:
+        raise ValidationError("Harvest must deposit into a produce asset")
     if produce_asset.id == source.id:
         raise ValidationError("An asset cannot harvest into itself")
     return produce_asset
