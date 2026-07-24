@@ -45,7 +45,7 @@ async def seed_cattle(db: AsyncSession, user: User, farm: Farm, today: datetime)
     )
     milk = await assets.create(
         farm.id,
-        AssetCreate(name="Leche", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED),
+        AssetCreate(name="Leche", kind=AssetKind.PRODUCE, mode=AssetMode.AGGREGATED),
     )
     herd = await assets.update(farm.id, herd.id, AssetUpdate(produce_asset_id=milk.id))
 

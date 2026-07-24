@@ -239,6 +239,7 @@
           "crop",
           "equipment",
           "material",
+          "produce",
           "location"
         ],
         "title": "AssetKind",

@@ -15,7 +15,8 @@ from tests.factories import AssetFactory, EventCategoryFactory, FarmFactory, Use
 ANIMAL_FLOCK = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
 CROP_FIELD = {"name": "Tomateras", "kind": "crop", "mode": "aggregated"}
 EQUIPMENT = {"name": "Tractor", "kind": "equipment", "mode": "individual"}
-EGGS = {"name": "Huevos", "kind": "material", "mode": "aggregated"}
+EGGS = {"name": "Huevos", "kind": "produce", "mode": "aggregated"}
+FEED = {"name": "Maíz", "kind": "material", "mode": "aggregated"}
 
 
 def assets_url(farm_id: int) -> str:
@@ -251,7 +252,7 @@ class TestHarvestDestination:
         assert len(await _events(client, authed_user, eggs_id, "inventory")) == 1
         assert len(await _events(client, authed_user, feathers_id, "inventory")) == 1
 
-    async def test_harvest_into_non_material_rejected(
+    async def test_harvest_into_animal_rejected(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         source_id = await _create_asset(client, authed_user, ANIMAL_FLOCK)
@@ -265,6 +266,28 @@ class TestHarvestDestination:
                 "quantity": "15",
                 "unit": "unit",
                 "produce_asset_id": other_flock,
+                "category_id": category_id,
+            },
+        )
+
+        assert resp.status_code == 422
+
+    async def test_harvest_into_consumable_material_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # The bug this feature fixes: a consumable material (feed) is no longer a
+        # valid harvest destination — only produce pools are.
+        source_id = await _create_asset(client, authed_user, ANIMAL_FLOCK)
+        feed_id = await _create_asset(client, authed_user, FEED)
+        category_id = await _prod_category(client, authed_user, "unit")
+
+        resp = await client.post(
+            harvest_url(authed_user.farm_id, source_id),
+            headers=authed_user.headers,
+            json={
+                "quantity": "15",
+                "unit": "unit",
+                "produce_asset_id": feed_id,
                 "category_id": category_id,
             },
         )
@@ -323,13 +346,24 @@ class TestHarvestRejections:
 
 
 class TestProduceLinkValidation:
-    async def test_link_to_non_material_rejected(
+    async def test_link_to_animal_rejected(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         flock = await _create_asset(client, authed_user, ANIMAL_FLOCK)
         other_flock = await _create_asset(client, authed_user, ANIMAL_FLOCK)
 
         resp = await _link_produce(client, authed_user, flock, other_flock)
+
+        assert resp.status_code == 422
+
+    async def test_link_to_consumable_material_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # A producer's produce target must be a produce pool, not a consumable.
+        flock = await _create_asset(client, authed_user, ANIMAL_FLOCK)
+        feed = await _create_asset(client, authed_user, FEED)
+
+        resp = await _link_produce(client, authed_user, flock, feed)
 
         assert resp.status_code == 422
 
@@ -354,7 +388,7 @@ class TestHarvestCrossFarmGuard:
         farm_a = await FarmFactory.create_async()
         farm_b = await FarmFactory.create_async()
         produce = await AssetFactory.create_async(
-            farm_id=farm_b.id, kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED
+            farm_id=farm_b.id, kind=AssetKind.PRODUCE, mode=AssetMode.AGGREGATED
         )
         source = await AssetFactory.create_async(
             farm_id=farm_a.id,

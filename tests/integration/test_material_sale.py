@@ -4,7 +4,7 @@ from tests.conftest import AuthedUser
 
 MATERIAL = {"name": "Maíz", "kind": "material", "mode": "aggregated"}
 ANIMAL_FLOCK = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
-EGGS = {"name": "Huevos", "kind": "material", "mode": "aggregated"}
+EGGS = {"name": "Huevos", "kind": "produce", "mode": "aggregated"}
 
 
 def assets_url(farm_id: int) -> str:

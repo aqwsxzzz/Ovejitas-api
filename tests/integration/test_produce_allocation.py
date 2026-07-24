@@ -10,7 +10,7 @@ from httpx import AsyncClient
 
 from tests.conftest import AuthedUser
 
-EGGS = {"name": "Huevos", "kind": "material", "mode": "aggregated"}
+EGGS = {"name": "Huevos", "kind": "produce", "mode": "aggregated"}
 FLOCK = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
 
 

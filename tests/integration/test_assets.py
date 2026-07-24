@@ -95,6 +95,32 @@ class TestListAssets:
         assert body["meta"]["total"] == 1
         assert body["data"][0]["kind"] == "crop"
 
+    async def test_filter_by_produce_excludes_consumable_materials(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # The harvest destination picker filters ?kind=produce — it must return
+        # produce pools only, never consumable materials like feed.
+        await client.post(
+            assets_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"name": "Huevos", "kind": "produce", "mode": "aggregated"},
+        )
+        await client.post(
+            assets_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"name": "Maíz", "kind": "material", "mode": "aggregated"},
+        )
+
+        response = await client.get(
+            assets_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"kind": "produce"},
+        )
+
+        body = response.json()
+        assert body["meta"]["total"] == 1
+        assert body["data"][0]["name"] == "Huevos"
+
     async def test_search_matches_name(self, client: AsyncClient, authed_user: AuthedUser) -> None:
         await client.post(
             assets_url(authed_user.farm_id),

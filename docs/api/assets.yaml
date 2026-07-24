@@ -32,7 +32,7 @@ types:
     required: [name, kind]
     fields:
       name: string
-      kind: animal | crop | equipment | material | location
+      kind: animal | crop | equipment | material | produce | location
       mode: aggregated | individual | null
       location: string | null
       description: string | null
@@ -40,7 +40,7 @@ types:
     kind: object
     required: [kind, count]
     fields:
-      kind: animal | crop | equipment | material | location
+      kind: animal | crop | equipment | material | produce | location
       count: integer
   AssetRead:
     kind: object
@@ -49,7 +49,7 @@ types:
       id: integer
       farm_id: integer
       name: string
-      kind: animal | crop | equipment | material | location
+      kind: animal | crop | equipment | material | produce | location
       mode: aggregated | individual | null
       location: string | null
       description: string | null
@@ -65,7 +65,7 @@ types:
     kind: object
     fields:
       name: string | null
-      kind: animal | crop | equipment | material | location | null
+      kind: animal | crop | equipment | material | produce | location | null
       mode: aggregated | individual | null
       location: string | null
       description: string | null

@@ -5,13 +5,13 @@ its direct expense events) against its income. Like R1, one row per (asset,
 currency): amounts in different currencies are never summed or converted. Feed is
 valued in the currency of the purchases backing it. Read-only.
 
-MATERIAL assets are excluded: a material purchase books an expense on the
-material asset, and that same spend is re-attributed to the consumer as feed
-cost — including the material asset would double-count the feed. Its consumers
-(animals/crops) carry the cost instead.
+Inventory-bearing assets (MATERIAL and PRODUCE) are excluded: a material purchase
+books an expense on the material asset, and that same spend is re-attributed to
+the consumer as feed cost — including the material asset would double-count the
+feed. Its consumers (animals/crops) carry the cost instead.
 
 That exclusion is also why produce income has to be allocated back here. Selling
-a pooled produce asset books its income on the produce asset — a MATERIAL, so
+a pooled produce asset books its income on the produce asset — a PRODUCE kind, so
 invisible to this report — leaving the animals that made it showing every cost
 and none of the revenue. ``allocated_produce_income`` closes that loop, and
 cannot double-count for the same reason: the pool's own income row is excluded.
@@ -24,7 +24,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.filters import apply_date_range
-from ovejitas.features.asset.models import Asset, AssetKind
+from ovejitas.features.asset.models import INVENTORY_KINDS, Asset
 from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
@@ -58,7 +58,7 @@ async def _financials(db: AsyncSession, farm_id: int, q: ProfitabilityFullQuery)
         .join(Currency, Currency.id == Event.currency_id)
         .where(
             Asset.farm_id == farm_id,
-            Asset.kind != AssetKind.MATERIAL,
+            Asset.kind.not_in(INVENTORY_KINDS),
             Event.type.in_([EventType.INCOME, EventType.EXPENSE]),
             Event.amount.is_not(None),
             Event.currency_id.is_not(None),
