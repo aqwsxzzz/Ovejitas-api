@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 
 from ovejitas.core.deps import DBSession
 from ovejitas.core.pagination import Page, PageParams
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.production_target.schemas import (
     AssetProductionTargetCreate,
@@ -33,7 +34,9 @@ async def list_production_targets(
     svc: ProductionTargetSvc,
     _membership: FarmMembership,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[AssetProductionTargetFilters, Depends()],
+    filters: Annotated[
+        AssetProductionTargetFilters, Depends(farm_local(AssetProductionTargetFilters))
+    ],
     sort: Annotated[str | None, Query(description="e.g. -effective_from,created_at")] = None,
 ) -> Page[AssetProductionTargetRead]:
     rows, total = await svc.list_targets(farm_id=farm_id, filters=filters, sort=sort, page=page)

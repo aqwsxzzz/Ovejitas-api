@@ -247,3 +247,116 @@ class TestProductionProductivity:
     ) -> None:
         resp = await client.get(_url(authed_user.farm_id), headers=authed_user.headers)
         assert resp.status_code == 422
+
+
+async def _set_timezone(client: AsyncClient, authed: AuthedUser, name: str) -> None:
+    resp = await client.patch(
+        f"/api/v1/farms/{authed.farm_id}", headers=authed.headers, json={"timezone": name}
+    )
+    assert resp.status_code == 200, resp.text
+
+
+# 10 whole local days, 2026-06-01 .. 2026-06-10 on the farm's calendar.
+LOCAL_JUNE = {"date_from": "2026-06-01", "date_to": "2026-06-10"}
+
+
+class TestTargetDatesAreFarmLocal:
+    """``effective_from``/``effective_to`` are bare calendar dates: a farmer
+    saying "from the 6th" means the 6th where the animals are. Read as UTC
+    midnight they start the rate three hours early at UTC-3."""
+
+    async def _coop_with_target(
+        self, client: AsyncClient, authed: AuthedUser, effective_from: str
+    ) -> None:
+        farm, user = authed.farm_id, authed.user_id
+        await _set_timezone(client, authed, "America/Montevideo")
+        coop = await _asset(farm, AssetKind.ANIMAL, "Gallinas")
+        cat = await _category(client, authed, "unit")
+        await _target(client, authed, coop, cat, expected_rate="1.0", effective_from=effective_from)
+        await _head(farm, coop, user, InventoryAdjustment.INCREMENT, "10", BEFORE)
+
+    async def test_target_starting_mid_window_bills_whole_local_days(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        await self._coop_with_target(client, authed_user, "2026-06-06")
+
+        resp = await client.get(
+            _url(authed_user.farm_id), headers=authed_user.headers, params=LOCAL_JUNE
+        )
+
+        assert resp.status_code == 200, resp.text
+        # 1.0 x (10 head x 5 whole local days) = 50 — not 51.25, which is what
+        # a UTC-midnight reading of the 6th would bill (5 days + 3 hours).
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("50")
+
+    async def test_target_starting_on_the_windows_last_local_day_still_applies(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        await self._coop_with_target(client, authed_user, "2026-06-10")
+
+        resp = await client.get(
+            _url(authed_user.farm_id), headers=authed_user.headers, params=LOCAL_JUNE
+        )
+
+        assert resp.status_code == 200, resp.text
+        row = resp.json()["data"][0]
+        assert row["missing_capacity"] is False
+        assert Decimal(row["expected"]) == Decimal("10")  # 1.0 x (10 head x 1 day)
+
+
+class TestWindowStartIsTheStartOfTheDay:
+    """A day-grained report asked about "today" must expect a whole day's goal,
+    whatever time of day the question is asked."""
+
+    async def _flock_of_500(self, client: AsyncClient, authed: AuthedUser) -> tuple[int, int]:
+        farm, user = authed.farm_id, authed.user_id
+        coop = await _asset(farm, AssetKind.ANIMAL, "Gallinas")
+        cat = await _category(client, authed, "unit")
+        await _target(client, authed, coop, cat, expected_rate="1.0")
+        await _head(farm, coop, user, InventoryAdjustment.INCREMENT, "500", BEFORE)
+        return coop, cat
+
+    async def test_whole_date_bounds_expect_the_full_flock(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        await self._flock_of_500(client, authed_user)
+
+        resp = await client.get(
+            _url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"date_from": "2026-06-05", "date_to": "2026-06-05"},
+        )
+
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("500")
+
+    async def test_asking_late_in_the_day_still_expects_the_full_flock(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        await self._flock_of_500(client, authed_user)
+
+        resp = await client.get(
+            _url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"date_from": "2026-06-05T18:45:00Z", "date_to": "2026-06-05T18:45:00Z"},
+        )
+
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("500")
+
+    async def test_asking_late_in_the_day_counts_the_mornings_production(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        """Numerator and denominator cover the same days. Bounding produced at
+        the raw date_from would drop this morning's eggs while still expecting
+        the whole day's goal, reporting a healthy flock at 0%."""
+        coop, cat = await self._flock_of_500(client, authed_user)
+        await _produce(authed_user.farm_id, coop, authed_user.user_id, cat, "400", "unit")
+
+        resp = await client.get(
+            _url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"date_from": "2026-06-05T18:45:00Z", "date_to": "2026-06-05T18:45:00Z"},
+        )
+
+        row = resp.json()["data"][0]
+        assert Decimal(row["produced"]) == Decimal("400")  # logged 09:00, before the ask
+        assert Decimal(row["productivity_pct"]) == Decimal("80.0")

@@ -2,7 +2,7 @@
 aggregate and the material-consumption aggregate, which share the bucketing
 and grouping vocabulary."""
 
-from datetime import datetime
+from datetime import date
 from decimal import Decimal
 from enum import StrEnum
 
@@ -30,7 +30,12 @@ class AggregateMeasure(StrEnum):
 
 
 class AggregateRow(BaseModel):
-    bucket: datetime
+    # The calendar period this row covers, named by its first day on the farm's
+    # own calendar (week -> its Monday, month -> its 1st). A date, not an
+    # instant: a bucket is a label, and a timestamp would only reopen the
+    # question of whose midnight it means. Feeding it back as `date_from`
+    # selects exactly this bucket again.
+    bucket: date
     group: str | None
     group_label: str | None = None
     measure: AggregateMeasure

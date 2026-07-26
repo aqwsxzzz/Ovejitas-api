@@ -16,6 +16,7 @@ from ovejitas.core.errors import ValidationError
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
+from ovejitas.features.farm.timezone import farm_timezone
 from ovejitas.features.report.builders import (
     _amount_by_currency,
     _bucket_col,
@@ -35,11 +36,11 @@ from ovejitas.features.report.schemas_aggregate import (
 
 
 async def _sum_quantity_by_asset(
-    db: AsyncSession, farm_id: int, q: AggregateQuery
+    db: AsyncSession, farm_id: int, q: AggregateQuery, tz: str
 ) -> list[AggregateRow]:
     """SUM(quantity), one row per (bucket, asset). Unit is not a grouping
     dimension here — quantity is summed across units per asset."""
-    b = _bucket_col(q.bucket)
+    b = _bucket_col(q.bucket, tz)
     stmt = (
         select(
             b,
@@ -67,7 +68,9 @@ async def _sum_quantity_by_asset(
     ]
 
 
-Builder = Callable[[AsyncSession, int, AggregateQuery], Coroutine[Any, Any, list[AggregateRow]]]
+Builder = Callable[
+    [AsyncSession, int, AggregateQuery, str], Coroutine[Any, Any, list[AggregateRow]]
+]
 
 _DISPATCH: dict[EventType, tuple[Builder, AggregateMeasure, str | None]] = {
     EventType.PRODUCTION: (_quantity_by_unit, AggregateMeasure.SUM_QUANTITY, "unit"),
@@ -98,7 +101,10 @@ async def aggregate(
             raise ValidationError(f"group_by=asset is not supported for type={q.type.value}")
         builder = _sum_quantity_by_asset
         group_key = "asset"
-    rows = await builder(db, farm_id, q)
+    # Resolved once here rather than inside each builder: only one builder runs
+    # per request, and passing it in keeps them testable without a farm row.
+    tz = (await farm_timezone(db, farm_id)).key
+    rows = await builder(db, farm_id, q, tz)
     meta = AggregateMeta(
         type=q.type,
         measure=measure,

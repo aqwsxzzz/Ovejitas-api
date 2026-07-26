@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends
 
 from ovejitas.core.pagination import Page, PageParams
 from ovejitas.features.event.schemas import EventRead
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.report.deps import ReportSvc
 from ovejitas.features.report.schemas_individual import (
@@ -33,7 +34,7 @@ router = APIRouter()
 async def upcoming_births(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[UpcomingBirthsQuery, Depends()],
+    q: Annotated[UpcomingBirthsQuery, Depends(farm_local(UpcomingBirthsQuery))],
 ) -> UpcomingBirthsReport:
     rows = await svc.upcoming_births(membership.farm_id, q)
     return UpcomingBirthsReport(data=rows)
@@ -49,7 +50,7 @@ async def timeline(
     individual_id: int,
     svc: ReportSvc,
     page: Annotated[PageParams, Depends()],
-    q: Annotated[TimelineQuery, Depends()],
+    q: Annotated[TimelineQuery, Depends(farm_local(TimelineQuery))],
 ) -> Page[EventRead]:
     rows, total = await svc.timeline(
         farm_id=membership.farm_id,

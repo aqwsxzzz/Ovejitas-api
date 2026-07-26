@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.report.deps import ReportSvc
 from ovejitas.features.report.schemas_production import (
@@ -32,6 +33,6 @@ router = APIRouter()
 async def production_productivity(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[ProductionProductivityQuery, Depends()],
+    q: Annotated[ProductionProductivityQuery, Depends(farm_local(ProductionProductivityQuery))],
 ) -> ProductionProductivityReport:
     return await svc.production_productivity(membership.farm_id, q)

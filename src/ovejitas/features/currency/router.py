@@ -11,6 +11,7 @@ from ovejitas.features.currency.schemas import (
     CurrencyUpdate,
 )
 from ovejitas.features.currency.service import CurrencyService
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 
 
@@ -33,7 +34,7 @@ async def list_currencies(
     svc: CurrencySvc,
     _membership: FarmMembership,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[CurrencyFilters, Depends()],
+    filters: Annotated[CurrencyFilters, Depends(farm_local(CurrencyFilters))],
     q: Annotated[str | None, Query(description="Search across code and name")] = None,
     sort: Annotated[str | None, Query(description="e.g. -created_at,code")] = None,
 ) -> Page[CurrencyRead]:

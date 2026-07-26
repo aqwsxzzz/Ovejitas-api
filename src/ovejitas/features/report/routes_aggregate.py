@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.report.deps import ReportSvc
 from ovejitas.features.report.schemas_aggregate import (
@@ -49,7 +50,7 @@ router = APIRouter()
 async def aggregate_report(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[AggregateQuery, Depends()],
+    q: Annotated[AggregateQuery, Depends(farm_local(AggregateQuery))],
 ) -> AggregateReport:
     rows, meta = await svc.aggregate(membership.farm_id, q)
     return AggregateReport(data=rows, meta=meta)
@@ -72,7 +73,9 @@ async def aggregate_report(
 async def material_consumption_aggregate(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[MaterialConsumptionAggregateQuery, Depends()],
+    q: Annotated[
+        MaterialConsumptionAggregateQuery, Depends(farm_local(MaterialConsumptionAggregateQuery))
+    ],
 ) -> MaterialConsumptionAggregateReport:
     rows, totals = await svc.material_consumption_aggregate(membership.farm_id, q)
     return MaterialConsumptionAggregateReport(

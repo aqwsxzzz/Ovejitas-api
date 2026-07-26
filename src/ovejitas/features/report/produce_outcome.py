@@ -22,9 +22,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.types import Unit
+from ovejitas.features.farm.timezone import farm_timezone
 from ovejitas.features.report.produce_fifo import draw
 from ovejitas.features.report.produce_ledger import (
-    farm_timezone,
     load_baskets,
     load_outflows,
     pool_ids,

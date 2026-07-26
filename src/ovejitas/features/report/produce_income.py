@@ -15,9 +15,9 @@ from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ovejitas.features.farm.timezone import farm_timezone
 from ovejitas.features.report.produce_fifo import Allocation, draw
 from ovejitas.features.report.produce_ledger import (
-    farm_timezone,
     load_baskets,
     load_outflows,
     pool_ids,
