@@ -175,7 +175,7 @@ types:
     kind: object
     required: [bucket, group, measure, value]
     fields:
-      bucket: string (date-time)
+      bucket: string (date)
       group: string | null
       group_label: string | null
       measure: sum_quantity | sum_amount | count

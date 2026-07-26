@@ -125,7 +125,7 @@
             "title": "Asset Id"
           },
           "bucket": {
-            "format": "date-time",
+            "format": "date",
             "title": "Bucket",
             "type": "string"
           },
@@ -5042,6 +5042,19 @@
             "minLength": 8,
             "title": "Password",
             "type": "string"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
           }
         },
         "required": [
