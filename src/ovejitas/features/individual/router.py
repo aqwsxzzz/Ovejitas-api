@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from ovejitas.core.deps import DBSession
 from ovejitas.core.pagination import Page, PageParams
 from ovejitas.features.asset.deps import AssetDep
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.individual.birth import create_birth
 from ovejitas.features.individual.schemas import (
@@ -39,7 +40,7 @@ async def list_individuals(
     asset: AssetDep,
     svc: IndividualSvc,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[IndividualFilters, Depends()],
+    filters: Annotated[IndividualFilters, Depends(farm_local(IndividualFilters))],
     q: Annotated[str | None, Query(description="Search across name, tag")] = None,
     sort: Annotated[str | None, Query(description="e.g. -created_at,name")] = None,
 ) -> Page[IndividualRead]:

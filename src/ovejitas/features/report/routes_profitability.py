@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Response
 
 from ovejitas.core.deps import DBSession
 from ovejitas.features.auth.deps import CurrentUser
+from ovejitas.features.farm.deps import FarmTimezone, farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.report.deps import ReportSvc, farm_name, pdf_response
 from ovejitas.features.report.pdf import render_pdf
@@ -36,7 +37,7 @@ router = APIRouter()
 async def profitability(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[ProfitabilityQuery, Depends()],
+    q: Annotated[ProfitabilityQuery, Depends(farm_local(ProfitabilityQuery))],
 ) -> ProfitabilityReport:
     rows, totals = await svc.profitability(membership.farm_id, q)
     return ProfitabilityReport(data=rows, totals=totals)
@@ -64,7 +65,7 @@ async def profitability(
 async def profitability_full(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[ProfitabilityFullQuery, Depends()],
+    q: Annotated[ProfitabilityFullQuery, Depends(farm_local(ProfitabilityFullQuery))],
 ) -> ProfitabilityFullReport:
     return await svc.profitability_full(membership.farm_id, q)
 
@@ -94,7 +95,7 @@ async def profitability_full(
 async def cost_per_unit(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[CostPerUnitQuery, Depends()],
+    q: Annotated[CostPerUnitQuery, Depends(farm_local(CostPerUnitQuery))],
 ) -> CostPerUnitReport:
     return await svc.cost_per_unit(membership.farm_id, q)
 
@@ -118,7 +119,7 @@ async def cost_per_unit(
 async def sales_value(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[SalesValueQuery, Depends()],
+    q: Annotated[SalesValueQuery, Depends(farm_local(SalesValueQuery))],
 ) -> SalesValueReport:
     return await svc.sales_value(membership.farm_id, q)
 
@@ -129,7 +130,8 @@ async def profitability_pdf(
     current_user: CurrentUser,
     svc: ReportSvc,
     db: DBSession,
-    q: Annotated[ProfitabilityQuery, Depends()],
+    tz: FarmTimezone,
+    q: Annotated[ProfitabilityQuery, Depends(farm_local(ProfitabilityQuery))],
 ) -> Response:
     rows, totals = await svc.profitability(membership.farm_id, q)
     pdf = render_pdf(
@@ -139,6 +141,7 @@ async def profitability_pdf(
         generated_by=current_user.name,
         date_from=q.date_from,
         date_to=q.date_to,
+        tz=tz,
         context={"rows": rows, "totals": totals},
     )
     return pdf_response(pdf, "rentabilidad.pdf")
@@ -150,7 +153,8 @@ async def profitability_full_pdf(
     current_user: CurrentUser,
     svc: ReportSvc,
     db: DBSession,
-    q: Annotated[ProfitabilityFullQuery, Depends()],
+    tz: FarmTimezone,
+    q: Annotated[ProfitabilityFullQuery, Depends(farm_local(ProfitabilityFullQuery))],
 ) -> Response:
     report = await svc.profitability_full(membership.farm_id, q)
     pdf = render_pdf(
@@ -160,6 +164,7 @@ async def profitability_full_pdf(
         generated_by=current_user.name,
         date_from=q.date_from,
         date_to=q.date_to,
+        tz=tz,
         context={"rows": report.data, "totals": report.totals},
     )
     return pdf_response(pdf, "rentabilidad-completa.pdf")
@@ -171,7 +176,8 @@ async def cost_per_unit_pdf(
     current_user: CurrentUser,
     svc: ReportSvc,
     db: DBSession,
-    q: Annotated[CostPerUnitQuery, Depends()],
+    tz: FarmTimezone,
+    q: Annotated[CostPerUnitQuery, Depends(farm_local(CostPerUnitQuery))],
 ) -> Response:
     report = await svc.cost_per_unit(membership.farm_id, q)
     pdf = render_pdf(
@@ -181,6 +187,7 @@ async def cost_per_unit_pdf(
         generated_by=current_user.name,
         date_from=q.date_from,
         date_to=q.date_to,
+        tz=tz,
         context={"rows": report.data, "unit": report.unit},
     )
     return pdf_response(pdf, "costo-por-unidad.pdf")

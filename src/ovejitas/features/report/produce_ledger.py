@@ -14,19 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
-from ovejitas.features.farm.models import Farm
 from ovejitas.features.harvest.models import ProduceLot
 
 _SALE_SOURCE = "material_sale"
-
-
-async def farm_timezone(db: AsyncSession, farm_id: int) -> ZoneInfo:
-    """The farm's local timezone, defaulting to UTC if the farm is gone.
-
-    The stored name is validated on write (FarmUpdate), so it always resolves.
-    """
-    name = (await db.execute(select(Farm.timezone).where(Farm.id == farm_id))).scalar_one_or_none()
-    return ZoneInfo(name or "UTC")
 
 
 @dataclass

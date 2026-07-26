@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.report.deps import ReportSvc
 from ovejitas.features.report.schemas_inventory import (
@@ -29,7 +30,7 @@ router = APIRouter()
 async def inventory_summary(
     membership: FarmMembership,
     svc: ReportSvc,
-    q: Annotated[InventorySummaryQuery, Depends()],
+    q: Annotated[InventorySummaryQuery, Depends(farm_local(InventorySummaryQuery))],
 ) -> InventorySummaryReport:
     rows = await svc.inventory_summary(membership.farm_id, q)
     return InventorySummaryReport(data=rows)

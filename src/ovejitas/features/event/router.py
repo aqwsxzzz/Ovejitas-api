@@ -14,6 +14,7 @@ from ovejitas.features.event.schemas import (
     InventoryBalance,
 )
 from ovejitas.features.event.service import EventService
+from ovejitas.features.farm.deps import farm_local
 
 
 def get_event_service(db: DBSession) -> EventService:
@@ -37,7 +38,7 @@ async def list_events(
     asset: AssetDep,
     svc: EventSvc,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[EventFilters, Depends()],
+    filters: Annotated[EventFilters, Depends(farm_local(EventFilters))],
     q: Annotated[str | None, Query(description="Search notes")] = None,
     sort: Annotated[str | None, Query(description="e.g. -occurred_at")] = None,
 ) -> Page[EventRead]:

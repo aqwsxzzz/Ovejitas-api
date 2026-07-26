@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 
 from ovejitas.core.deps import DBSession
 from ovejitas.core.pagination import Page, PageParams
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import require_farm_member, require_farm_role
 from ovejitas.features.farm_member.models import FarmMember, FarmRole
 from ovejitas.features.farm_member.schemas import (
@@ -46,7 +47,7 @@ async def list_members(
     svc: MemberSvc,
     _membership: ViewMembers,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[MemberFilters, Depends()],
+    filters: Annotated[MemberFilters, Depends(farm_local(MemberFilters))],
     sort: Annotated[str | None, Query(description="e.g. -created_at,role")] = None,
 ) -> Page[MemberRead]:
     rows, total = await svc.list(farm_id=farm_id, filters=filters, sort=sort, page=page)
