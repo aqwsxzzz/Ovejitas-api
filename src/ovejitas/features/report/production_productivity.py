@@ -123,7 +123,7 @@ async def _continuous_expected(
             seg_end = min(seg_end, window.local_midnight(targets[i + 1].effective_from))
         if t.effective_to is not None:
             seg_end = min(seg_end, window.local_midnight(t.effective_to) + timedelta(days=1))
-        hd = await head_days_between(db, t.asset_id, seg_start, seg_end)
+        hd = await head_days_between(db, t.asset_id, seg_start, seg_end, window.tz)
         rate = t.expected_rate / YEAR_DAYS if t.period is TargetPeriod.YEAR else t.expected_rate
         expected += rate * hd
     return expected

@@ -106,14 +106,32 @@ def _apply(balance: Decimal, adjustment: InventoryAdjustment, quantity: Decimal)
     return balance - Decimal(quantity)
 
 
+def _local_midnight(moment: datetime, tz: ZoneInfo) -> datetime:
+    """The instant the farm-local calendar day containing ``moment`` opens."""
+    local = moment.astimezone(tz)
+    return datetime(local.year, local.month, local.day, tzinfo=tz)
+
+
 async def head_days_between(
-    db: AsyncSession, asset_id: int, start: datetime, end: datetime
+    db: AsyncSession, asset_id: int, start: datetime, end: datetime, tz: ZoneInfo
 ) -> Decimal:
     """Animal-days: the integral of HEAD headcount over the half-open [start, end).
 
     Weights each headcount level by how long it held, so births/deaths/sales
     inside the interval are counted correctly. ``start``/``end`` are exact bounds
     (no whole-day rolling — the caller decides them).
+
+    One event is not a level change: the asset's very first HEAD event, which
+    establishes the flock rather than moving an existing headcount. It counts
+    from the start of its farm-local day. A coop acquired at 18:45 is owed a
+    whole day's goal — prorating it to the 5¼ hours that remained measured a
+    full day's production against a fifth of a day's expectation and reported
+    a healthy flock at 366%. Every later event keeps its exact instant: those
+    are real level changes at real times, and prorating them is correct.
+
+    "First" is the earliest HEAD event the asset has ever recorded, not the
+    earliest one inside the window — otherwise the same day would be billed
+    differently depending on which window asked about it.
     """
     if end <= start:
         return Decimal(0)
@@ -131,7 +149,10 @@ async def head_days_between(
     balance = Decimal(0)
     total = Decimal(0)
     cursor = start
-    for occurred_at, adjustment, quantity in rows:
+    for position, (occurred_at, adjustment, quantity) in enumerate(rows):
+        if position == 0:
+            # Unfiltered by the window, so this really is the establishing event.
+            occurred_at = _local_midnight(occurred_at, tz)
         if occurred_at < start:
             balance = _apply(balance, adjustment, quantity)
             continue

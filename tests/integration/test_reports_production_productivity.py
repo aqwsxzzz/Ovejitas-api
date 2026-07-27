@@ -360,3 +360,92 @@ class TestWindowStartIsTheStartOfTheDay:
         row = resp.json()["data"][0]
         assert Decimal(row["produced"]) == Decimal("400")  # logged 09:00, before the ask
         assert Decimal(row["productivity_pct"]) == Decimal("80.0")
+
+
+# One whole local day, 2026-06-05, on the farm's calendar.
+LOCAL_DAY = {"date_from": "2026-06-05", "date_to": "2026-06-05"}
+
+
+class TestEstablishingHeadcountCoversItsWholeDay:
+    """An asset's first HEAD event establishes its flock rather than moving an
+    existing level, so it counts from the start of its farm-local day. Anything
+    after it is an ordinary level change and stays time-weighted."""
+
+    async def _coop(self, client: AsyncClient, authed: AuthedUser) -> int:
+        coop = await _asset(authed.farm_id, AssetKind.ANIMAL, "Gallinas")
+        cat = await _category(client, authed, "unit")
+        await _target(client, authed, coop, cat, expected_rate="1.0")
+        return coop
+
+    async def test_flock_acquired_late_in_the_day_expects_a_whole_day(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await self._coop(client, authed_user)
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.INCREMENT,
+            "500",
+            datetime(2026, 6, 5, 18, 45, tzinfo=UTC),
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=LOCAL_DAY)
+
+        assert resp.status_code == 200, resp.text
+        # 1.0 x (500 head x 1 whole day) = 500 — not 109.375, the 5¼ hours that
+        # remained after the flock arrived.
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("500")
+
+    async def test_a_second_lot_the_same_day_is_still_time_weighted(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await self._coop(client, authed_user)
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.INCREMENT,
+            "300",
+            datetime(2026, 6, 5, 9, tzinfo=UTC),
+        )
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.INCREMENT,
+            "200",
+            datetime(2026, 6, 5, 18, 45, tzinfo=UTC),
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=LOCAL_DAY)
+
+        assert resp.status_code == 200, resp.text
+        # Only the establishing lot is made whole: 300 x 18.75h + 500 x 5.25h,
+        # over 24h = 343.75. The 18:45 lot is an ordinary level change.
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("343.75")
+
+    async def test_the_whole_day_is_the_farms_day_not_utcs(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        farm, user = authed_user.farm_id, authed_user.user_id
+        await _set_timezone(client, authed_user, "America/Montevideo")
+        coop = await self._coop(client, authed_user)
+        # 22:30 on the 5th in Montevideo — already the 6th in UTC.
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.INCREMENT,
+            "500",
+            datetime(2026, 6, 6, 1, 30, tzinfo=UTC),
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=LOCAL_DAY)
+
+        assert resp.status_code == 200, resp.text
+        # Flooring to UTC midnight would open the flock at 21:00 local on the
+        # 5th and bill 3 of the window's hours: 62.5.
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("500")
