@@ -331,6 +331,53 @@ class TestProductOwnsItsPool:
 
         assert delete.status_code == 422
 
+    async def test_renaming_product_renames_its_pool(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        created = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+        pool_id = created.json()["produce_asset_id"]
+
+        renamed = await client.patch(
+            category_url(authed_user.farm_id, created.json()["id"]),
+            headers=authed_user.headers,
+            json={"name": "Huevos de gallina"},
+        )
+
+        assert renamed.status_code == 200, renamed.text
+        pool = await client.get(
+            f"/api/v1/farms/{authed_user.farm_id}/assets/{pool_id}",
+            headers=authed_user.headers,
+        )
+        assert pool.json()["name"] == "Huevos de gallina"
+
+    async def test_archiving_product_leaves_its_pool_name_alone(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # A patch that never mentions the name must not blank the pool's.
+        created = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+        pool_id = created.json()["produce_asset_id"]
+
+        archived = await client.patch(
+            category_url(authed_user.farm_id, created.json()["id"]),
+            headers=authed_user.headers,
+            json={"archived_at": "2026-01-01T00:00:00Z"},
+        )
+
+        assert archived.status_code == 200, archived.text
+        pool = await client.get(
+            f"/api/v1/farms/{authed_user.farm_id}/assets/{pool_id}",
+            headers=authed_user.headers,
+        )
+        assert pool.json()["name"] == "Huevos"
+
 
 class TestFarmScope:
     async def test_non_member_cannot_list(
