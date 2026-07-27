@@ -243,6 +243,26 @@ class TestDepartureCoversItsWholeDay:
 
         assert await _expected(client, authed_user, JUNE) == Decimal("0")
 
+    async def test_a_cow_sold_exactly_at_midnight_does_not_gain_a_day(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        """The ceiling is a true one: a cow gone at 00:00:00 was present for
+        none of the day that instant opened."""
+        herd = await _herd(authed_user.farm_id)
+        cat = await _category(client, authed_user)
+        await _target(client, authed_user, herd, cat)
+        cow = await _cow(client, authed_user, herd, "COW-1", BEFORE)
+        await _retire(
+            client,
+            authed_user,
+            herd,
+            cow,
+            {"status": "sold", "sold_at": "2026-06-06T00:00:00Z", "sale_amount": "500"},
+        )
+
+        # The 1st through the 5th = 5 days; the 6th is not granted to her.
+        assert await _expected(client, authed_user, JUNE) == Decimal("5")
+
 
 class TestAggregatedAssetsAreUnaffected:
     async def test_a_flock_still_reads_its_inventory_stream(

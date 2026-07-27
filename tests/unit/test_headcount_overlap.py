@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from ovejitas.features.report.headcount import Span, overlap_days
+from ovejitas.features.report.productivity_math import Span, overlap_days
 
 MONTEVIDEO = ZoneInfo("America/Montevideo")  # UTC-3 year-round, no DST ambiguity
 

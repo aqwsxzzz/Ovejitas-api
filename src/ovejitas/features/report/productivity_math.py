@@ -14,6 +14,50 @@ from zoneinfo import ZoneInfo
 from ovejitas.features.event.types import Unit
 
 YEAR_DAYS = Decimal(365)
+_ONE_DAY = Decimal(86400)
+
+
+@dataclass(frozen=True)
+class Span:
+    """A half-open [start, end) interval to integrate headcount over, plus the
+    farm's zone.
+
+    Distinct from ``Window``: a window is a whole number of calendar days, while
+    a span is that window clipped to one target's effective dates and so may
+    open or close mid-day. The zone travels with it because headcount resolves
+    day boundaries on the farm's calendar, not UTC's.
+    """
+
+    start: datetime
+    end: datetime
+    tz: ZoneInfo
+
+
+def local_midnight(moment: datetime, tz: ZoneInfo) -> datetime:
+    """The instant the farm-local calendar day containing ``moment`` opens."""
+    local = moment.astimezone(tz)
+    return datetime(local.year, local.month, local.day, tzinfo=tz)
+
+
+def local_day_end(moment: datetime, tz: ZoneInfo) -> datetime:
+    """The first farm-local midnight at or after ``moment``.
+
+    A true ceiling, so a departure recorded exactly at midnight is left alone
+    rather than granted the whole day it opened. The animal was there for none
+    of that day, and every other bound in this report is half-open the same way.
+    """
+    opened = local_midnight(moment, tz)
+    return opened if opened == moment else opened + timedelta(days=1)
+
+
+def overlap_days(start: datetime, end: datetime, span: Span) -> Decimal:
+    """Days of [start, end) that fall inside ``span``. Pure; zero if disjoint."""
+    first = max(start, span.start)
+    last = min(end, span.end)
+    if last <= first:
+        return Decimal(0)
+    return Decimal((last - first).total_seconds()) / _ONE_DAY
+
 
 # Size of one unit in its family's base unit (count=unit, volume=ml, mass=g).
 # Same-family membership is guaranteed for stored production events by the
