@@ -7,6 +7,7 @@ from ovejitas.core.errors import NotFoundError, ValidationError
 from ovejitas.features.asset.models import Asset, AssetKind
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, Unit
+from ovejitas.features.event_category.models import EventCategory
 
 
 def validate_harvest_source(asset: Asset) -> None:
@@ -16,18 +17,25 @@ def validate_harvest_source(asset: Asset) -> None:
         raise ValidationError("Harvest requires an animal or crop asset")
 
 
-async def resolve_produce_asset(db: AsyncSession, source: Asset, produce_asset_id: int) -> Asset:
-    """Load the named destination pool, refusing anything the caller must not
-    reach through it.
+async def resolve_produce_asset(db: AsyncSession, source: Asset, category_id: int) -> Asset:
+    """Load the pool backing the named product, refusing anything the caller must
+    not reach through it.
 
-    The id is client-supplied, so this is the authorization boundary: a pool in
-    another farm is reported as not found rather than confirmed to exist.
+    The category id is client-supplied, so this is the authorization boundary: a
+    category in another farm is reported as not found rather than confirmed to
+    exist. ``validate_category`` still checks the product's type and unit — this
+    only resolves where its stock goes.
     """
-    produce_asset = await db.get(Asset, produce_asset_id)
-    if produce_asset is None or produce_asset.farm_id != source.farm_id:
-        raise NotFoundError("Produce asset not found in this farm")
-    if produce_asset.kind is not AssetKind.PRODUCE:
-        raise ValidationError("Harvest must deposit into a produce asset")
+    category = await db.get(EventCategory, category_id)
+    if category is None or category.farm_id != source.farm_id:
+        raise NotFoundError("Category not found in this farm")
+    if category.type is not EventType.PRODUCTION:
+        raise ValidationError("Harvest requires a production category")
+    if category.produce_asset_id is None:
+        raise ValidationError("This product has no produce pool to harvest into")
+    produce_asset = await db.get(Asset, category.produce_asset_id)
+    if produce_asset is None or produce_asset.kind is not AssetKind.PRODUCE:
+        raise ValidationError("This product's produce pool is missing")
     if produce_asset.id == source.id:
         raise ValidationError("An asset cannot harvest into itself")
     return produce_asset

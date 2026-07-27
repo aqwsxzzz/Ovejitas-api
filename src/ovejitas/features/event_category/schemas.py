@@ -40,6 +40,8 @@ class EventCategoryRead(BaseModel):
     type: EventType
     name: str
     unit: Unit | None
+    # The pool this product harvests into — provisioned by the API, not the client.
+    produce_asset_id: int | None
     color: str | None
     archived_at: datetime | None
     created_at: datetime

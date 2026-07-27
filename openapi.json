@@ -1094,6 +1094,17 @@
             "title": "Name",
             "type": "string"
           },
+          "produce_asset_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Produce Asset Id"
+          },
           "type": {
             "$ref": "#/components/schemas/EventType"
           },
@@ -1119,6 +1130,7 @@
           "type",
           "name",
           "unit",
+          "produce_asset_id",
           "color",
           "archived_at",
           "created_at",
@@ -2309,10 +2321,6 @@
             "title": "Occurred At",
             "type": "string"
           },
-          "produce_asset_id": {
-            "title": "Produce Asset Id",
-            "type": "integer"
-          },
           "quantity": {
             "anyOf": [
               {
@@ -2333,7 +2341,6 @@
         "required": [
           "quantity",
           "unit",
-          "produce_asset_id",
           "category_id"
         ],
         "title": "HarvestCreate",
@@ -6810,7 +6817,7 @@
     },
     "/api/v1/farms/{farm_id}/assets/{asset_id}/harvests": {
       "post": {
-        "description": "Collects produce from an `animal` or `crop` asset: emits a PRODUCTION event on the source asset and an INVENTORY increment on the produce asset linked via the source's `produce_asset_id`. `quantity` and `unit` feed both events; `unit` must match the produce asset's existing stock unit. The source asset must have a produce asset linked.",
+        "description": "Collects produce from an `animal` or `crop` asset: emits a PRODUCTION event on the source asset and an INVENTORY increment on the pool backing the named product (`event_category.produce_asset_id`). `quantity` and `unit` feed both events; `unit` must share a measurement family with the product's unit and match the pool's existing stock unit. The source needs no produce link \u2014 the product carries the routing.",
         "operationId": "harvest_create_harvest_endpoint",
         "parameters": [
           {

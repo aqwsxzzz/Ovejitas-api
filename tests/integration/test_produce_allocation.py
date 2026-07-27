@@ -10,7 +10,6 @@ from httpx import AsyncClient
 
 from tests.conftest import AuthedUser
 
-EGGS = {"name": "Huevos", "kind": "produce", "mode": "aggregated"}
 FLOCK = {"name": "Gallinas", "kind": "animal", "mode": "aggregated"}
 
 
@@ -32,21 +31,25 @@ async def _asset(client: AsyncClient, authed: AuthedUser, body: dict[str, str]) 
     return int(resp.json()["id"])
 
 
-async def _category(client: AsyncClient, authed: AuthedUser) -> int:
+async def _product(
+    client: AsyncClient, authed: AuthedUser, name: str = "Huevos"
+) -> tuple[int, int]:
+    """Create a product and return (category_id, pool_id) — the pool is
+    provisioned with the category, never created on its own."""
     resp = await client.post(
         f"/api/v1/farms/{authed.farm_id}/event-categories",
         headers=authed.headers,
-        json={"type": "production", "name": "Huevos", "unit": "unit"},
+        json={"type": "production", "name": name, "unit": "unit"},
     )
     assert resp.status_code == 201, resp.text
-    return int(resp.json()["id"])
+    body = resp.json()
+    return int(body["id"]), int(body["produce_asset_id"])
 
 
 async def _harvest(
     client: AsyncClient,
     authed: AuthedUser,
     producer_id: int,
-    pool_id: int,
     category_id: int,
     quantity: str,
     occurred_at: str,
@@ -57,7 +60,6 @@ async def _harvest(
         json={
             "quantity": quantity,
             "unit": "unit",
-            "produce_asset_id": pool_id,
             "category_id": category_id,
             "occurred_at": occurred_at,
         },
@@ -108,13 +110,12 @@ class TestPooledSaleAllocation:
     async def test_sale_income_splits_across_contributors_by_share(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
-        pool = await _asset(client, authed_user, EGGS)
         coop_a = await _asset(client, authed_user, {**FLOCK, "name": "Coop A"})
         coop_b = await _asset(client, authed_user, {**FLOCK, "name": "Coop B"})
-        category = await _category(client, authed_user)
+        category, pool = await _product(client, authed_user)
 
-        await _harvest(client, authed_user, coop_a, pool, category, "60", "2026-07-01T08:00:00Z")
-        await _harvest(client, authed_user, coop_b, pool, category, "40", "2026-07-01T10:00:00Z")
+        await _harvest(client, authed_user, coop_a, category, "60", "2026-07-01T08:00:00Z")
+        await _harvest(client, authed_user, coop_b, category, "40", "2026-07-01T10:00:00Z")
         await _sell(client, authed_user, pool, "100", "200.00", "2026-07-02T12:00:00Z")
 
         rows = await _outcome(client, authed_user)
@@ -127,11 +128,10 @@ class TestPooledSaleAllocation:
     async def test_allocated_income_reaches_profitability_full(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
-        pool = await _asset(client, authed_user, EGGS)
         coop = await _asset(client, authed_user, {**FLOCK, "name": "Coop A"})
-        category = await _category(client, authed_user)
+        category, pool = await _product(client, authed_user)
 
-        await _harvest(client, authed_user, coop, pool, category, "50", "2026-07-01T08:00:00Z")
+        await _harvest(client, authed_user, coop, category, "50", "2026-07-01T08:00:00Z")
         await _sell(client, authed_user, pool, "50", "125.00", "2026-07-02T12:00:00Z")
 
         rows = await _profitability_full(client, authed_user)
@@ -147,11 +147,10 @@ class TestPooledSaleAllocation:
     async def test_unsold_production_earns_nothing_but_is_still_reported(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
-        pool = await _asset(client, authed_user, EGGS)
         coop = await _asset(client, authed_user, {**FLOCK, "name": "Coop A"})
-        category = await _category(client, authed_user)
+        category, _pool = await _product(client, authed_user)
 
-        await _harvest(client, authed_user, coop, pool, category, "30", "2026-07-01T08:00:00Z")
+        await _harvest(client, authed_user, coop, category, "30", "2026-07-01T08:00:00Z")
 
         rows = await _outcome(client, authed_user)
 
@@ -163,13 +162,12 @@ class TestPooledSaleAllocation:
     async def test_second_pool_is_allocated_independently(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
-        eggs = await _asset(client, authed_user, EGGS)
-        feathers = await _asset(client, authed_user, {**EGGS, "name": "Plumas"})
         coop = await _asset(client, authed_user, {**FLOCK, "name": "Coop A"})
-        category = await _category(client, authed_user)
+        egg_category, eggs = await _product(client, authed_user)
+        feather_category, feathers = await _product(client, authed_user, name="Plumas")
 
-        await _harvest(client, authed_user, coop, eggs, category, "10", "2026-07-01T08:00:00Z")
-        await _harvest(client, authed_user, coop, feathers, category, "5", "2026-07-01T09:00:00Z")
+        await _harvest(client, authed_user, coop, egg_category, "10", "2026-07-01T08:00:00Z")
+        await _harvest(client, authed_user, coop, feather_category, "5", "2026-07-01T09:00:00Z")
         await _sell(client, authed_user, eggs, "10", "50.00", "2026-07-02T12:00:00Z")
 
         resp = await client.get(
@@ -197,12 +195,11 @@ class TestLocalDayBasketGrain:
     _SALE_AT = "2026-07-03T15:00:00Z"
 
     async def _run(self, client: AsyncClient, authed: AuthedUser) -> dict[int, dict[str, object]]:
-        pool = await _asset(client, authed, EGGS)
         coop_a = await _asset(client, authed, {**FLOCK, "name": "Coop A"})
         coop_b = await _asset(client, authed, {**FLOCK, "name": "Coop B"})
-        category = await _category(client, authed)
-        await _harvest(client, authed, coop_a, pool, category, "60", self._COOP_A_AT)
-        await _harvest(client, authed, coop_b, pool, category, "40", self._COOP_B_AT)
+        category, pool = await _product(client, authed)
+        await _harvest(client, authed, coop_a, category, "60", self._COOP_A_AT)
+        await _harvest(client, authed, coop_b, category, "40", self._COOP_B_AT)
         await _sell(client, authed, pool, "50", "100.00", self._SALE_AT)
         rows = await _outcome(client, authed)
         return {"a": rows.get(coop_a, {}), "b": rows.get(coop_b, {})}  # type: ignore[dict-item]
@@ -240,10 +237,9 @@ class TestSaleCorrelation:
     ) -> None:
         # Without this link nothing pairs one sale's quantity to one sale's
         # amount, and the allocation has no per-sale unit price to work from.
-        pool = await _asset(client, authed_user, EGGS)
         coop = await _asset(client, authed_user, {**FLOCK, "name": "Coop A"})
-        category = await _category(client, authed_user)
-        await _harvest(client, authed_user, coop, pool, category, "20", "2026-07-01T08:00:00Z")
+        category, pool = await _product(client, authed_user)
+        await _harvest(client, authed_user, coop, category, "20", "2026-07-01T08:00:00Z")
         await _sell(client, authed_user, pool, "5", "12.50", "2026-07-02T12:00:00Z")
 
         resp = await client.get(
@@ -262,16 +258,15 @@ class TestTwoSalesAtDifferentPrices:
     async def test_each_sale_prices_only_the_stock_it_took(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
-        pool = await _asset(client, authed_user, EGGS)
         coop_a = await _asset(client, authed_user, {**FLOCK, "name": "Coop A"})
         coop_b = await _asset(client, authed_user, {**FLOCK, "name": "Coop B"})
-        category = await _category(client, authed_user)
+        category, pool = await _product(client, authed_user)
 
         # Day 1 is all coop A; day 2 all coop B. The first sale drains day 1
         # cheaply, the second takes day 2 at double the price — so the price
         # difference must land entirely on coop B.
-        await _harvest(client, authed_user, coop_a, pool, category, "100", "2026-07-01T08:00:00Z")
-        await _harvest(client, authed_user, coop_b, pool, category, "100", "2026-07-02T08:00:00Z")
+        await _harvest(client, authed_user, coop_a, category, "100", "2026-07-01T08:00:00Z")
+        await _harvest(client, authed_user, coop_b, category, "100", "2026-07-02T08:00:00Z")
         await _sell(client, authed_user, pool, "100", "100.00", "2026-07-03T12:00:00Z")
         await _sell(client, authed_user, pool, "100", "200.00", "2026-07-04T12:00:00Z")
 

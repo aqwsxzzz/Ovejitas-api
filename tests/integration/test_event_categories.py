@@ -222,6 +222,116 @@ class TestUpdateDelete:
         assert follow_up.status_code == 404
 
 
+class TestProductOwnsItsPool:
+    """A production category provisions the produce asset holding its stock, so
+    "Huevos" is one thing the farmer creates rather than a category plus a
+    look-alike asset that nothing kept in agreement."""
+
+    async def test_production_category_provisions_a_produce_pool(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        response = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+
+        assert response.status_code == 201, response.text
+        pool_id = response.json()["produce_asset_id"]
+        assert pool_id is not None
+        pool = await client.get(
+            f"/api/v1/farms/{authed_user.farm_id}/assets/{pool_id}",
+            headers=authed_user.headers,
+        )
+        assert pool.status_code == 200, pool.text
+        assert pool.json()["kind"] == "produce"
+        assert pool.json()["name"] == "Huevos"
+
+    async def test_non_production_category_has_no_pool(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        response = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "expense", "name": "Veterinario"},
+        )
+
+        assert response.status_code == 201, response.text
+        assert response.json()["produce_asset_id"] is None
+
+    async def test_rejected_duplicate_leaves_no_orphan_pool(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # The category and its pool are one transaction — a name conflict must
+        # not leave a stray produce asset behind.
+        body = {"type": "production", "name": "Huevos", "unit": "unit"}
+        first = await client.post(
+            categories_url(authed_user.farm_id), headers=authed_user.headers, json=body
+        )
+        assert first.status_code == 201, first.text
+
+        duplicate = await client.post(
+            categories_url(authed_user.farm_id), headers=authed_user.headers, json=body
+        )
+
+        assert duplicate.status_code == 409, duplicate.text
+        pools = await client.get(
+            f"/api/v1/farms/{authed_user.farm_id}/assets",
+            headers=authed_user.headers,
+            params={"kind": "produce"},
+        )
+        assert pools.json()["meta"]["total"] == 1
+
+    async def test_delete_product_retires_its_pool(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        created = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+        pool_id = created.json()["produce_asset_id"]
+
+        delete = await client.delete(
+            category_url(authed_user.farm_id, created.json()["id"]),
+            headers=authed_user.headers,
+        )
+
+        assert delete.status_code == 204, delete.text
+        pool = await client.get(
+            f"/api/v1/farms/{authed_user.farm_id}/assets/{pool_id}",
+            headers=authed_user.headers,
+        )
+        assert pool.status_code == 404
+
+    async def test_delete_product_with_recorded_stock_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        flock = await client.post(
+            f"/api/v1/farms/{authed_user.farm_id}/assets",
+            headers=authed_user.headers,
+            json={"name": "Gallinas", "kind": "animal", "mode": "aggregated"},
+        )
+        created = await client.post(
+            categories_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+        harvested = await client.post(
+            f"/api/v1/farms/{authed_user.farm_id}/assets/{flock.json()['id']}/harvests",
+            headers=authed_user.headers,
+            json={"quantity": "12", "unit": "unit", "category_id": created.json()["id"]},
+        )
+        assert harvested.status_code == 201, harvested.text
+
+        delete = await client.delete(
+            category_url(authed_user.farm_id, created.json()["id"]),
+            headers=authed_user.headers,
+        )
+
+        assert delete.status_code == 422
+
+
 class TestFarmScope:
     async def test_non_member_cannot_list(
         self,

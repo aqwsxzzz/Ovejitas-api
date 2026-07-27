@@ -7,6 +7,8 @@ from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
+from ovejitas.features.asset.provisioning import build_produce_pool, retire_produce_pool
+from ovejitas.features.event.types import EventType
 from ovejitas.features.event_category.models import EventCategory
 from ovejitas.features.event_category.schemas import (
     EventCategoryCreate,
@@ -29,6 +31,12 @@ class EventCategoryService:
 
     async def create(self, farm_id: int, data: EventCategoryCreate) -> EventCategory:
         category = EventCategory(farm_id=farm_id, **data.model_dump())
+        if data.type is EventType.PRODUCTION:
+            # A product owns the pool holding its stock; the farmer never creates
+            # one by hand. Flushed first so the category can carry its id.
+            pool = build_produce_pool(self.db, farm_id=farm_id, name=data.name)
+            await self.db.flush()
+            category.produce_asset_id = pool.id
         self.db.add(category)
         try:
             await self.db.commit()
@@ -63,7 +71,13 @@ class EventCategoryService:
 
     async def delete(self, farm_id: int, category_id: int) -> None:
         category = await self.get(farm_id, category_id)
+        pool_id = category.produce_asset_id
         await self.db.delete(category)
+        if pool_id is not None:
+            # Ordered: the referencing row goes first, or the RESTRICT on
+            # produce_asset_id blocks the pool's delete.
+            await self.db.flush()
+            await retire_produce_pool(self.db, pool_id)
         await self.db.commit()
 
     async def list_categories(

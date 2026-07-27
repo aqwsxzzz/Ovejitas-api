@@ -19,10 +19,11 @@ router = APIRouter(
     summary="Record a harvest",
     description=(
         "Collects produce from an `animal` or `crop` asset: emits a PRODUCTION "
-        "event on the source asset and an INVENTORY increment on the produce "
-        "asset linked via the source's `produce_asset_id`. `quantity` and "
-        "`unit` feed both events; `unit` must match the produce asset's "
-        "existing stock unit. The source asset must have a produce asset linked."
+        "event on the source asset and an INVENTORY increment on the pool "
+        "backing the named product (`event_category.produce_asset_id`). "
+        "`quantity` and `unit` feed both events; `unit` must share a measurement "
+        "family with the product's unit and match the pool's existing stock "
+        "unit. The source needs no produce link — the product carries the routing."
     ),
 )
 async def create_harvest_endpoint(
