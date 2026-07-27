@@ -28,9 +28,10 @@ from ovejitas.features.event_category.models import EventCategory
 from ovejitas.features.farm.timezone import farm_timezone
 from ovejitas.features.production_target.models import AssetProductionTarget
 from ovejitas.features.production_target.types import ProductionBasis, TargetPeriod
-from ovejitas.features.report.headcount import Span, head_days_between
+from ovejitas.features.report.headcount import head_days_between
 from ovejitas.features.report.productivity_math import (
     YEAR_DAYS,
+    Span,
     Window,
     convert,
     resolve_window,

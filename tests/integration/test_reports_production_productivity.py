@@ -1,7 +1,8 @@
 """Production-productivity report — produced vs expected per (asset, product).
 
-Headcount is time-weighted (animal-days), so HEAD inventory is inserted with an
-explicit occurred_at before the window; production events carry a category_id.
+Headcount is time-weighted (animal-days) with arrivals and departures snapped to
+whole farm-local days, so HEAD inventory is inserted with an explicit occurred_at
+before the window; production events carry a category_id.
 """
 
 from datetime import UTC, datetime
@@ -366,10 +367,9 @@ class TestWindowStartIsTheStartOfTheDay:
 LOCAL_DAY = {"date_from": "2026-06-05", "date_to": "2026-06-05"}
 
 
-class TestEstablishingHeadcountCoversItsWholeDay:
-    """An asset's first HEAD event establishes its flock rather than moving an
-    existing level, so it counts from the start of its farm-local day. Anything
-    after it is an ordinary level change and stays time-weighted."""
+class TestArrivalCoversItsWholeDay:
+    """Head joining a flock count from the start of their farm-local day,
+    whether they establish it or join an existing pool."""
 
     async def _coop(self, client: AsyncClient, authed: AuthedUser) -> int:
         coop = await _asset(authed.farm_id, AssetKind.ANIMAL, "Gallinas")
@@ -398,7 +398,7 @@ class TestEstablishingHeadcountCoversItsWholeDay:
         # remained after the flock arrived.
         assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("500")
 
-    async def test_a_second_lot_the_same_day_is_still_time_weighted(
+    async def test_a_second_lot_the_same_day_also_covers_the_whole_day(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
         farm, user = authed_user.farm_id, authed_user.user_id
@@ -423,9 +423,9 @@ class TestEstablishingHeadcountCoversItsWholeDay:
         resp = await client.get(_url(farm), headers=authed_user.headers, params=LOCAL_DAY)
 
         assert resp.status_code == 200, resp.text
-        # Only the establishing lot is made whole: 300 x 18.75h + 500 x 5.25h,
-        # over 24h = 343.75. The 18:45 lot is an ordinary level change.
-        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("343.75")
+        # Both lots open the day they arrived, so the coop is owed a full day
+        # for all 500 head — not the 343.75 that prorating the 18:45 lot gives.
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("500")
 
     async def test_the_whole_day_is_the_farms_day_not_utcs(
         self, client: AsyncClient, authed_user: AuthedUser
@@ -449,3 +449,175 @@ class TestEstablishingHeadcountCoversItsWholeDay:
         # Flooring to UTC midnight would open the flock at 21:00 local on the
         # 5th and bill 3 of the window's hours: 62.5.
         assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("500")
+
+
+class TestDepartureCoversItsWholeDay:
+    """Animals sold or lost count for the day they left, matching the production
+    already credited to them that morning."""
+
+    async def _coop_of_10(self, client: AsyncClient, authed: AuthedUser) -> int:
+        coop = await _asset(authed.farm_id, AssetKind.ANIMAL, "Gallinas")
+        cat = await _category(client, authed, "unit")
+        await _target(client, authed, coop, cat, expected_rate="1.0")
+        await _head(
+            authed.farm_id, coop, authed.user_id, InventoryAdjustment.INCREMENT, "10", BEFORE
+        )
+        return coop
+
+    async def test_a_sale_mid_morning_still_counts_that_day(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await self._coop_of_10(client, authed_user)
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.DECREMENT,
+            "5",
+            datetime(2026, 6, 6, 8, 0, tzinfo=UTC),
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=JUNE)
+
+        assert resp.status_code == 200, resp.text
+        # 10 head through the end of the 6th (6 days) + 5 head for the 7th-10th
+        # (4 days) = 80. Prorating to 08:00 would give 78.33.
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("80")
+
+    async def test_a_departure_exactly_at_midnight_does_not_gain_a_day(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        """The ceiling is a true one. An animal gone at 00:00:00 was present for
+        none of the day that instant opened, and every other bound in this
+        report is half-open the same way."""
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await self._coop_of_10(client, authed_user)
+        await _head(
+            farm, coop, user, InventoryAdjustment.DECREMENT, "5", datetime(2026, 6, 6, tzinfo=UTC)
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=JUNE)
+
+        assert resp.status_code == 200, resp.text
+        # 10 head x 5d + 5 head x 5d = 75 — the 6th is not granted to the five
+        # that left as it began.
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("75")
+
+    async def test_a_later_increment_covers_its_whole_day(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        """Arrivals and departures are both whole-day facts, so a lot joining an
+        existing pool opens its day exactly as the establishing lot does."""
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await self._coop_of_10(client, authed_user)
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.INCREMENT,
+            "10",
+            datetime(2026, 6, 6, 18, 0, tzinfo=UTC),
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=JUNE)
+
+        assert resp.status_code == 200, resp.text
+        # 10 head x 5d (1st-5th) + 20 head x 5d (6th-10th) = 50 + 100 = 150
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("150")
+
+    async def test_a_sale_after_a_same_day_purchase_is_ordered_correctly(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        """Shifting moves rows both ways and can carry one past another, so the
+        stream is re-sorted before integrating — otherwise the cursor walks
+        backwards."""
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await self._coop_of_10(client, authed_user)
+        # Sold at 08:00 (moves forward to the 7th), bought more at 18:00 (moves
+        # back to the 6th) — the raw order is the reverse of the effective one.
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.DECREMENT,
+            "5",
+            datetime(2026, 6, 6, 8, 0, tzinfo=UTC),
+        )
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.INCREMENT,
+            "20",
+            datetime(2026, 6, 6, 18, 0, tzinfo=UTC),
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=JUNE)
+
+        assert resp.status_code == 200, resp.text
+        # 10 head x 5d (1st-5th) + 30 x 1d (the 6th, both lots present)
+        # + 25 x 4d (7th-10th) = 50 + 30 + 100 = 180
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("180")
+
+    async def test_a_flock_bought_and_sold_the_same_day_counts_that_day(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await _asset(farm, AssetKind.ANIMAL, "Gallinas")
+        cat = await _category(client, authed_user, "unit")
+        await _target(client, authed_user, coop, cat, expected_rate="1.0")
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.INCREMENT,
+            "500",
+            datetime(2026, 6, 5, 9, tzinfo=UTC),
+        )
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.DECREMENT,
+            "500",
+            datetime(2026, 6, 5, 15, tzinfo=UTC),
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=LOCAL_DAY)
+
+        assert resp.status_code == 200, resp.text
+        # Arrival opens the day, departure closes it — the same whole day an
+        # individually-tracked animal bought and sold that day would get.
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("500")
+
+
+class TestResetKeepsItsInstant:
+    """A RESET is the one adjustment whose direction the row does not reveal: it
+    sets the count absolutely, so whether it is a rise or a fall depends on the
+    running balance. Rather than guess between the floor and the ceil, it stays
+    where it was recorded."""
+
+    async def test_a_reset_is_not_moved_to_a_day_boundary(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        farm, user = authed_user.farm_id, authed_user.user_id
+        coop = await _asset(farm, AssetKind.ANIMAL, "Gallinas")
+        cat = await _category(client, authed_user, "unit")
+        await _target(client, authed_user, coop, cat, expected_rate="1.0")
+        await _head(farm, coop, user, InventoryAdjustment.INCREMENT, "10", BEFORE)
+        await _head(
+            farm,
+            coop,
+            user,
+            InventoryAdjustment.RESET,
+            "20",
+            datetime(2026, 6, 6, 12, tzinfo=UTC),
+        )
+
+        resp = await client.get(_url(farm), headers=authed_user.headers, params=JUNE)
+
+        assert resp.status_code == 200, resp.text
+        # 10 head x 5.5d + 20 head x 4.5d = 55 + 90 = 145. Flooring the reset
+        # would give 150, ceiling it 140.
+        assert Decimal(resp.json()["data"][0]["expected"]) == Decimal("145")

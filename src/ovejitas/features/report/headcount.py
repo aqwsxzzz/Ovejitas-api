@@ -16,8 +16,7 @@ generic event router refuses INVENTORY on an individual-mode animal
 (``event/guards.py``).
 """
 
-from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -29,30 +28,14 @@ from ovejitas.features.asset.models import Asset, AssetMode
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
 from ovejitas.features.individual.models import Individual
+from ovejitas.features.report.productivity_math import (
+    Span,
+    local_day_end,
+    local_midnight,
+    overlap_days,
+)
 
 _ONE_DAY = Decimal(86400)
-
-
-@dataclass(frozen=True)
-class Span:
-    """A half-open [start, end) interval to integrate headcount over, plus the
-    farm's zone.
-
-    Distinct from ``Window``: a window is a whole number of calendar days, while
-    a span is that window clipped to one target's effective dates and so may
-    open or close mid-day. The zone travels with it because both branches
-    resolve day boundaries on the farm's calendar, not UTC's.
-    """
-
-    start: datetime
-    end: datetime
-    tz: ZoneInfo
-
-
-def _local_midnight(moment: datetime, tz: ZoneInfo) -> datetime:
-    """The instant the farm-local calendar day containing ``moment`` opens."""
-    local = moment.astimezone(tz)
-    return datetime(local.year, local.month, local.day, tzinfo=tz)
 
 
 def _apply(balance: Decimal, adjustment: InventoryAdjustment, quantity: Decimal) -> Decimal:
@@ -63,31 +46,57 @@ def _apply(balance: Decimal, adjustment: InventoryAdjustment, quantity: Decimal)
     return balance - Decimal(quantity)
 
 
-def overlap_days(start: datetime, end: datetime, span: Span) -> Decimal:
-    """Days of [start, end) that fall inside ``span``. Pure; zero if disjoint."""
-    first = max(start, span.start)
-    last = min(end, span.end)
-    if last <= first:
-        return Decimal(0)
-    return Decimal((last - first).total_seconds()) / _ONE_DAY
+def _on_the_farms_calendar(
+    rows: list[tuple[datetime, InventoryAdjustment, Decimal]], tz: ZoneInfo
+) -> list[tuple[datetime, InventoryAdjustment, Decimal]]:
+    """Move each level change onto the farm's calendar, so headcount is measured
+    in whole days like everything else this report accounts in.
+
+    The report's unit of account is a per-day rate, and its numerator counts a
+    whole day's production, so an animal present for any part of a day counts
+    for that day:
+
+    - an **increment** opens its farm-local day. A coop acquired at 18:45 is
+      owed a whole day's goal; prorating it to the 5¼ hours that remained
+      measured a full day's production against a fifth of a day's expectation
+      and reported a healthy flock at 366%.
+    - a **decrement** closes its farm-local day, so animals sold or lost count
+      for the day they left, matching the production already credited to them
+      that morning.
+
+    A flock bought and sold on one day therefore counts that whole day, matching
+    how an individually-tracked animal is measured.
+
+    A **RESET** keeps its exact instant — alone among the three, its direction is
+    not knowable from the row. It sets the count absolutely, so whether it is a
+    rise (floor) or a fall (ceil) depends on the running balance, which depends
+    on the ordering this function has not yet produced. Rather than guess at a
+    rule, an absolute correction is left where it was recorded.
+
+    Shifting moves rows in both directions and can carry one past another, so the
+    result is re-sorted. The sort is stable, leaving rows that land on one
+    instant in their original ``occurred_at, id`` order.
+    """
+    moved = []
+    for position, (occurred_at, adjustment, quantity) in enumerate(rows):
+        when = occurred_at
+        if position == 0 or adjustment is InventoryAdjustment.INCREMENT:
+            # Position 0 establishes the flock, so it opens its day whatever
+            # kind of row it is — there is no prior level for it to move.
+            when = local_midnight(occurred_at, tz)
+        elif adjustment is InventoryAdjustment.DECREMENT:
+            when = local_day_end(occurred_at, tz)
+        moved.append((when, adjustment, quantity))
+    moved.sort(key=lambda row: row[0])
+    return moved
 
 
 async def _aggregated_head_days(db: AsyncSession, asset_id: int, span: Span) -> Decimal:
     """A flock: integrate HEAD inventory level changes over the span.
 
-    Weights each headcount level by how long it held, so acquisitions, sales and
-    deaths inside the span are counted at the moment they happened.
-
-    One event is not a level change: the asset's very first HEAD event, which
-    establishes the flock rather than moving an existing headcount. It counts
-    from the start of its farm-local day. A coop acquired at 18:45 is owed a
-    whole day's goal — prorating it to the 5¼ hours that remained measured a
-    full day's production against a fifth of a day's expectation and reported a
-    healthy flock at 366%.
-
-    "First" is the earliest HEAD event the asset has ever recorded, not the
-    earliest one inside the span — otherwise the same day would be billed
-    differently depending on which window asked about it.
+    Weights each headcount level by how long it held, so a mid-span change is
+    counted from the moment it took effect — see ``_on_the_farms_calendar`` for
+    which moments are whole-day facts rather than instants.
     """
     if span.end <= span.start:
         return Decimal(0)
@@ -100,15 +109,19 @@ async def _aggregated_head_days(db: AsyncSession, asset_id: int, span: Span) -> 
         )
         .order_by(Event.occurred_at.asc(), Event.id.asc())
     )
-    rows = (await db.execute(stmt)).all()
+    # adjustment/quantity are nullable on Event because most event types have no
+    # use for them; an INVENTORY row always carries both. Dropping any that
+    # somehow lack one is the safe direction — it never invents headcount.
+    rows = [
+        (occurred_at, adjustment, quantity)
+        for occurred_at, adjustment, quantity in (await db.execute(stmt)).all()
+        if adjustment is not None and quantity is not None
+    ]
 
     balance = Decimal(0)
     total = Decimal(0)
     cursor = span.start
-    for position, (occurred_at, adjustment, quantity) in enumerate(rows):
-        if position == 0:
-            # Unfiltered by the span, so this really is the establishing event.
-            occurred_at = _local_midnight(occurred_at, span.tz)
+    for occurred_at, adjustment, quantity in _on_the_farms_calendar(rows, span.tz):
         if occurred_at < span.start:
             balance = _apply(balance, adjustment, quantity)
             continue
@@ -155,12 +168,8 @@ async def _individual_head_days(db: AsyncSession, asset_id: int, span: Span) -> 
         # Status is single-valued so at most one departure is set; taking the
         # earlier of the two is only defensive.
         departures = [moment for moment in (died_at, sold_at) if moment is not None]
-        arrived = _local_midnight(arrived_at, span.tz)
-        left = (
-            _local_midnight(min(departures), span.tz) + timedelta(days=1)
-            if departures
-            else span.end
-        )
+        arrived = local_midnight(arrived_at, span.tz)
+        left = local_day_end(min(departures), span.tz) if departures else span.end
         total += overlap_days(arrived, left, span)
     return total
 
