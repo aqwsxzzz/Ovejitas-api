@@ -7,7 +7,11 @@ from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
-from ovejitas.features.asset.provisioning import build_produce_pool, retire_produce_pool
+from ovejitas.features.asset.provisioning import (
+    build_produce_pool,
+    rename_produce_pool,
+    retire_produce_pool,
+)
 from ovejitas.features.event.types import EventType
 from ovejitas.features.event_category.models import EventCategory
 from ovejitas.features.event_category.schemas import (
@@ -59,8 +63,14 @@ class EventCategoryService:
         self, farm_id: int, category_id: int, data: EventCategoryUpdate
     ) -> EventCategory:
         category = await self.get(farm_id, category_id)
-        for key, value in data.model_dump(exclude_unset=True).items():
+        patch = data.model_dump(exclude_unset=True)
+        for key, value in patch.items():
             setattr(category, key, value)
+        new_name = patch.get("name")
+        if new_name is not None and category.produce_asset_id is not None:
+            # The pool wears the product's name on the stock and sale screens.
+            # Renamed in the same transaction, or the two drift apart silently.
+            await rename_produce_pool(self.db, category.produce_asset_id, new_name)
         try:
             await self.db.commit()
         except IntegrityError as exc:
