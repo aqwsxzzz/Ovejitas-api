@@ -152,8 +152,15 @@ class TestProductionToIncomeLoop:
     async def test_harvest_then_sale_closes_the_loop(
         self, client: AsyncClient, authed_user: AuthedUser
     ) -> None:
-        eggs_id = await _create_asset(client, authed_user, EGGS)
         flock_id = await _create_asset(client, authed_user, ANIMAL_FLOCK)
+        category = await client.post(
+            f"/api/v1/farms/{authed_user.farm_id}/event-categories",
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+        assert category.status_code == 201, category.text
+        eggs_id = category.json()["produce_asset_id"]
+
         linked = await client.patch(
             f"{assets_url(authed_user.farm_id)}/{flock_id}",
             headers=authed_user.headers,
@@ -161,20 +168,12 @@ class TestProductionToIncomeLoop:
         )
         assert linked.status_code == 200, linked.text
 
-        category = await client.post(
-            f"/api/v1/farms/{authed_user.farm_id}/event-categories",
-            headers=authed_user.headers,
-            json={"type": "production", "name": "Huevos", "unit": "unit"},
-        )
-        assert category.status_code == 201, category.text
-
         harvested = await client.post(
             f"{assets_url(authed_user.farm_id)}/{flock_id}/harvests",
             headers=authed_user.headers,
             json={
                 "quantity": "20",
                 "unit": "unit",
-                "produce_asset_id": eggs_id,
                 "category_id": category.json()["id"],
             },
         )

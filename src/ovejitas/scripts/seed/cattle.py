@@ -43,10 +43,14 @@ async def seed_cattle(db: AsyncSession, user: User, farm: Farm, today: datetime)
             location="Potrero sur",
         ),
     )
-    milk = await assets.create(
+    # The product provisions the pool that holds its stock — "Leche" is created
+    # once, as a category, and the produce asset comes with it.
+    milk_category = await EventCategoryService(db).create(
         farm.id,
-        AssetCreate(name="Leche", kind=AssetKind.PRODUCE, mode=AssetMode.AGGREGATED),
+        EventCategoryCreate(type=EventType.PRODUCTION, name="Leche", unit=Unit.L),
     )
+    assert milk_category.produce_asset_id is not None
+    milk = await assets.get(farm.id, milk_category.produce_asset_id)
     herd = await assets.update(farm.id, herd.id, AssetUpdate(produce_asset_id=milk.id))
 
     individuals = IndividualService(db)
@@ -117,10 +121,6 @@ async def seed_cattle(db: AsyncSession, user: User, farm: Farm, today: datetime)
         ),
     )
 
-    milk_category = await EventCategoryService(db).create(
-        farm.id,
-        EventCategoryCreate(type=EventType.PRODUCTION, name="Leche", unit=Unit.L),
-    )
     for offset in range(7, 0, -1):
         await create_harvest(
             db,
@@ -130,7 +130,6 @@ async def seed_cattle(db: AsyncSession, user: User, farm: Farm, today: datetime)
                 occurred_at=today - timedelta(days=offset),
                 quantity=Decimal("18.5"),
                 unit=Unit.L,
-                produce_asset_id=milk.id,
                 category_id=milk_category.id,
             ),
         )

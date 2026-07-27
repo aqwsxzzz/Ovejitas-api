@@ -10,7 +10,12 @@ from ovejitas.features.event.types import EventType, Unit
 
 class EventCategory(Base, TimestampMixin):
     __tablename__ = "event_category"
-    __table_args__ = (UniqueConstraint("farm_id", "type", "name", name="farm_type_name"),)
+    __table_args__ = (
+        UniqueConstraint("farm_id", "type", "name", name="farm_type_name"),
+        # One pool backs exactly one product, so a harvest resolves its destination
+        # from the product alone.
+        UniqueConstraint("produce_asset_id", name="uq_event_category_produce_asset_id"),
+    )
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     farm_id: Mapped[int] = mapped_column(
@@ -28,6 +33,15 @@ class EventCategory(Base, TimestampMixin):
     # API layer, going forward — not by a DB constraint (existing rows stay valid).
     unit: Mapped[Unit | None] = mapped_column(
         SQLEnum(Unit, name="unit", values_callable=lambda e: [m.value for m in e]),
+        nullable=True,
+    )
+    # The produce asset holding this product's stock. The farmer never creates it:
+    # a production category provisions and owns its pool, so "Huevos" is one thing
+    # to author rather than a category plus a look-alike asset. Null for
+    # non-production categories, and for legacy rows the backfill could not pair.
+    # RESTRICT: the pool cannot be deleted out from under the product it backs.
+    produce_asset_id: Mapped[int | None] = mapped_column(
+        ForeignKey("asset.id", ondelete="RESTRICT"),
         nullable=True,
     )
     color: Mapped[str | None] = mapped_column(String(16), nullable=True)

@@ -11,7 +11,7 @@ The event-sourced core is four tables; everything a farm *does* still resolves t
 - **`asset`** — any trackable thing on a farm: animals, crops, equipment, materials, produce pools, locations. Has a `kind` (classifier enum) and, for animals only, a `mode` (`aggregated` for a bulk/count flock, `individual` for tagged instances). A producer asset may link to a produce pool via `produce_asset_id`.
 - **`individual`** — one tagged instance of an `individual`-mode animal asset. Optional. Created only when tracking a specific animal with parentage, tag, birth date, and lifecycle status. Carries FK columns pointing at the events its lifecycle actions emitted (`acquisition_event_id`, `acquisition_expense_event_id`, `mortality_event_id`, `sale_event_id`, `birth_event_id`).
 - **`event`** — one immutable fact against an asset (and optionally a specific individual): produced, spent, earned, observed, reproduced, acquired, died, or stock-adjusted.
-- **`event_category`** — a per-farm label for events, scoped by `(farm_id, type, name)`. For `production` events a category *is the product* — it carries the product's unit of measure. Not global.
+- **`event_category`** — a per-farm label for events, scoped by `(farm_id, type, name)`. For `production` events a category *is the product* — it carries the product's unit of measure and owns the produce pool holding its stock (`produce_asset_id`, unique). Creating the category provisions the pool, so a product is one thing the farmer creates; `POST /assets` refuses `kind=produce`. Not global.
 
 Beyond the core, several first-class tables carry structured domain state: **`currency`** (per-farm currencies, `features/currency/`), **`asset_production_target`** (expected production rates), and the action sidecars **`material_purchase`**, **`material_consumption`**, **`produce_lot`** (harvest), and **`pregnancy`** — each of which owns the bookkeeping events its action emitted.
 
@@ -57,7 +57,7 @@ A real-world action that touches both money and inventory is a single server-sid
 | Record a death | `individual` (mortality) | `mortality` |
 | Sell an individual | `individual` (sale) | `income` |
 | Record a birth | `individual` (birth) | `reproductive` + N×`acquisition` |
-| Harvest produce | `harvest` | `production` (on producer) + `inventory` increment (on produce pool), recorded as a `produce_lot` |
+| Harvest produce | `harvest` | `production` (on producer) + `inventory` increment (on the product's produce pool), recorded as a `produce_lot` |
 | Flock acquisition / sale / mortality | `flock` | `inventory` ± with a paired `acquisition`/`income`/`mortality` |
 | Pregnancy / ultrasound check | `pregnancy` | `reproductive` |
 

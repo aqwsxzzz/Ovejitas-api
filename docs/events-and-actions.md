@@ -75,11 +75,14 @@ Every action-emitted event carries `payload.source` (e.g. `"flock_acquisition"`,
 - **Table-less actions** (`flock`, `material_sale`) emit events with no owning
   row — correlated only by `payload.source` + `occurred_at`.
 - All three are create-only by design (no edit/reverse).
-- Each harvest names its destination pool **per request**
-  (`HarvestCreate.produce_asset_id`, required), so one producer can feed several
-  products and two producers can feed different pools. `asset.produce_asset_id`
-  is only a UI default — routing never reads it. The producer→pool link that
-  matters is the `produce_lot` row.
+- Each harvest names only its **product** (`HarvestCreate.category_id`,
+  required); the destination pool comes from `event_category.produce_asset_id`,
+  so the stock and the production event can never be attributed to different
+  products. One producer still feeds several products by harvesting each under
+  its own category, and two producers still share a pool by harvesting the same
+  one. `asset.produce_asset_id` is only a UI default for a producer's usual
+  product — routing never reads it. The producer→pool link that matters is the
+  `produce_lot` row.
 
 ## Event write paths — the rules
 

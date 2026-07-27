@@ -24,6 +24,7 @@ class AssetService:
         self.db = db
 
     async def create(self, farm_id: int, data: AssetCreate) -> Asset:
+        self._reject_hand_authored_produce(data.kind)
         self._validate_kind_mode(data.kind, data.mode)
         asset = Asset(farm_id=farm_id, **data.model_dump())
         self.db.add(asset)
@@ -49,6 +50,8 @@ class AssetService:
         )
         if structural_changed and await asset_has_events(self.db, asset_id):
             raise ValidationError("Cannot change kind or mode of an asset that already has events")
+        if "kind" in updates:
+            self._reject_hand_authored_produce(updates["kind"])
         if "kind" in updates or "mode" in updates:
             self._validate_kind_mode(
                 updates.get("kind", asset.kind), updates.get("mode", asset.mode)
@@ -58,6 +61,17 @@ class AssetService:
         await self.db.commit()
         await self.db.refresh(asset)
         return asset
+
+    @staticmethod
+    def _reject_hand_authored_produce(kind: AssetKind) -> None:
+        """A produce pool belongs to a product and is created with it. Allowing one
+        here is what let "Huevos" exist twice — as a category and as a look-alike
+        asset — with nothing keeping the two in agreement."""
+        if kind is AssetKind.PRODUCE:
+            raise ValidationError(
+                "Produce assets are created by their production category — "
+                "create the category instead"
+            )
 
     @staticmethod
     def _validate_kind_mode(kind: AssetKind, mode: AssetMode | None) -> None:

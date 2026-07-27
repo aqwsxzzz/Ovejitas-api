@@ -5,9 +5,10 @@ increment on the named produce material asset (managed stock), and the
 PRODUCE_LOT row tying the two together so the pool remembers who contributed
 what (Philosophy 1).
 
-The destination is named per request. ``asset.produce_asset_id`` survives only
-as a UI default — routing must not read it, or a producer could never feed more
-than one product.
+The request names only the product; its pool comes from
+``event_category.produce_asset_id``, so the stock and the production event can
+never be attributed to different products. ``asset.produce_asset_id`` survives
+only as a UI default for which product a producer harvests by default.
 
 Create-only: no reconcile/reverse. The router calls ``create_harvest`` directly.
 """
@@ -36,9 +37,11 @@ async def create_harvest(
     """Emit the PRODUCTION event on ``asset``, increment the named produce
     asset's stock by the same quantity, and record the lot — atomically."""
     validate_harvest_source(asset)
-    produce_asset = await resolve_produce_asset(db, asset, data.produce_asset_id)
-    await validate_produce_unit(db, produce_asset.id, data.unit)
+    # Destination first: it is the farm-scope boundary on the client-supplied
+    # category id, and answers "not found" before anything else is revealed.
+    produce_asset = await resolve_produce_asset(db, asset, data.category_id)
     await validate_category(db, asset.farm_id, EventType.PRODUCTION, data.category_id, data.unit)
+    await validate_produce_unit(db, produce_asset.id, data.unit)
     try:
         production = Event(
             farm_id=asset.farm_id,
