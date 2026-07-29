@@ -40,9 +40,6 @@ coverage.xml
 # Project
 .bmad-core
 .bmad-core/*
-.claude/*
-!.claude/skills/
-!.claude/commands/
 .seeded
 *.local
 postgres-data/
