@@ -11,6 +11,7 @@ editing the offspring or the event individually.
 """
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,7 @@ from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.guards import validate_category, validate_type_against_asset
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import AcquisitionMethod, EventType
+from ovejitas.features.farm.timezone import farm_timezone
 from ovejitas.features.individual.acquisition import emit_acquisition
 from ovejitas.features.individual.models import Individual, IndividualStatus
 from ovejitas.features.individual.schemas import BirthCreate, OffspringCreate
@@ -73,13 +75,17 @@ def _offspring_individual(
     asset: Asset,
     father_id: int | None,
     occurred_at: datetime,
+    tz: ZoneInfo,
 ) -> Individual:
     return Individual(
         farm_id=asset.farm_id,
         asset_id=asset.id,
         tag=spec.tag,
         name=spec.name,
-        birth_date=spec.birth_date or occurred_at.date(),
+        # The calendar day the birth happened on the farm. Derived from the UTC
+        # instant it would be tomorrow's date for anything born after 21:00 in
+        # Montevideo — a lamb born tonight dated to tomorrow ages wrong forever.
+        birth_date=spec.birth_date or occurred_at.astimezone(tz).date(),
         mother_id=mother.id,
         father_id=father_id,
         status=IndividualStatus.ACTIVE,
@@ -95,6 +101,7 @@ async def _create_offspring(
     asset: Asset,
     reproductive_id: int,
     user_id: int,
+    tz: ZoneInfo,
 ) -> list[Individual]:
     """Insert the offspring rows and emit each one's ACQUISITION(born) event."""
     offspring = [
@@ -104,6 +111,7 @@ async def _create_offspring(
             asset=asset,
             father_id=data.father_id,
             occurred_at=data.occurred_at,
+            tz=tz,
         )
         for spec in data.offspring
     ]
@@ -147,6 +155,7 @@ async def create_birth(
             asset=asset,
             reproductive_id=reproductive.id,
             user_id=user_id,
+            tz=await farm_timezone(db, asset.farm_id),
         )
         await db.commit()
     except Exception:

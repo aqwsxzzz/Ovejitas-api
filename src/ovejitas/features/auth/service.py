@@ -54,6 +54,8 @@ class AuthService:
         user = await self.create_user(email=data.email, name=data.name, password=data.password)
 
         farm = Farm(name=DEFAULT_FARM_NAME, default_currency=DEFAULT_CURRENCY)
+        if data.timezone is not None:
+            farm.timezone = data.timezone
         self.db.add(farm)
         await self.db.flush()
 

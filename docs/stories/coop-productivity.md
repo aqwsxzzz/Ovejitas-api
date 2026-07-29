@@ -4,6 +4,27 @@
 > sobre puesta de huevos)."*
 > Model decided via web research — see [Decisions](#decisions-locked).
 
+> **Status (shipped, 2026 — generalized).** This shipped as
+> `GET /farms/{farm_id}/reports/production-productivity`, generalized from
+> eggs/coops to **any product** (#40 retired the egg-specific model). The egg-only
+> acceptance criteria below are **superseded**; the current shape is:
+> - Expected output is **not** a column on the coop `Asset`. It is a first-class,
+>   effective-dated **production target** (`/farms/{farm_id}/production-targets`,
+>   `AssetProductionTarget`) per (asset, product-category) with a `basis` of
+>   `per_head_continuous` (rate × time-weighted animal-days), `per_event`, or `total`.
+> - The report returns one row per **(asset, product)**: `asset_id, asset_name,
+>   category_id, product_name, unit, produced, expected, productivity_pct, basis,
+>   missing_capacity`. `date_from`/`date_to` required.
+> - Works for any production `event_category`, not just eggs; `produced` is
+>   unit-converted into the product's unit. A pair with no applicable target →
+>   `missing_capacity: true`, null `expected`/`productivity_pct`.
+> - The time-weighted **bird-days** upgrade (listed "out of scope" below) actually
+>   **shipped** — rate changes mid-window are time-weighted across effective-dated
+>   targets (#42).
+>
+> The sections below are kept for the rationale (per-head vs flat, event-derived
+> headcount); read them as design history, not current API.
+
 ## User story
 
 As a farm owner, I want to see each coop's **laying performance over a period** —

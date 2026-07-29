@@ -1,0 +1,33 @@
+{
+  "catalogVersion": "2.5.1",
+  "installedAt": "2026-05-28T11:36:21.769Z",
+  "skills": [
+    "code-structure",
+    "docker-best-practices",
+    "fastapi",
+    "security-practices",
+    "sql",
+    "testing-best-practices"
+  ],
+  "commands": [
+    "deep-review.md",
+    "plan-feature.md",
+    "preplan.md",
+    "refactor.md",
+    "ship.md"
+  ],
+  "agents": [
+    "deep-review-cross-table.md",
+    "deep-review-dead-reference.md",
+    "deep-review-guard-bypass.md",
+    "deep-review-protocol-conformance.md",
+    "deep-review-state-persistence.md",
+    "plan-feature-pattern.md",
+    "plan-feature-reuse.md",
+    "plan-feature-touch-points.md",
+    "refactor-complexity.md",
+    "refactor-coupling.md",
+    "refactor-duplication.md",
+    "refactor-size.md"
+  ]
+}

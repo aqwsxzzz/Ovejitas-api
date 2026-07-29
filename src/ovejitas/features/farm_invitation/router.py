@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from ovejitas.core.deps import DBSession
 from ovejitas.core.pagination import Page, PageParams
 from ovejitas.features.auth.schemas import TokenPair
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_invitation.schemas import (
     AcceptInvitation,
     InvitationCreate,
@@ -72,7 +73,7 @@ async def list_invitations(
     svc: InvitationSvc,
     _membership: ManageInvites,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[InvitationFilters, Depends()],
+    filters: Annotated[InvitationFilters, Depends(farm_local(InvitationFilters))],
     sort: Annotated[str | None, Query(description="e.g. -created_at,email")] = None,
 ) -> Page[InvitationRead]:
     rows, total = await svc.list(farm_id=farm_id, filters=filters, sort=sort, page=page)

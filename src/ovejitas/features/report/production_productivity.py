@@ -14,27 +14,29 @@ change mid-window is not yet time-weighted across targets.
 """
 
 from collections import defaultdict
-from datetime import UTC, date, datetime, timedelta
+from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ovejitas.core.filters import apply_date_range
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
 from ovejitas.features.event_category.models import EventCategory
+from ovejitas.features.farm.timezone import farm_timezone
 from ovejitas.features.production_target.models import AssetProductionTarget
 from ovejitas.features.production_target.types import ProductionBasis, TargetPeriod
+from ovejitas.features.report.headcount import head_days_between
 from ovejitas.features.report.productivity_math import (
     YEAR_DAYS,
+    Span,
+    Window,
     convert,
-    head_days_between,
-    window_end,
+    resolve_window,
 )
-from ovejitas.features.report.schemas import (
+from ovejitas.features.report.schemas_production import (
     ProductionProductivityQuery,
     ProductionProductivityReport,
     ProductionProductivityRow,
@@ -44,7 +46,7 @@ Pair = tuple[int, int]
 
 
 async def _produced(
-    db: AsyncSession, farm_id: int, q: ProductionProductivityQuery
+    db: AsyncSession, farm_id: int, q: ProductionProductivityQuery, window: Window
 ) -> dict[Pair, dict[str, Any]]:
     stmt = (
         select(
@@ -58,7 +60,11 @@ async def _produced(
         )
         .group_by(Event.asset_id, Event.category_id, Event.unit)
     )
-    stmt = apply_date_range(stmt, Event.occurred_at, q.date_from, q.date_to)
+    # The same whole-day window the denominator integrates over, not the raw
+    # query bounds. Measuring a part-day numerator against a full-day expected
+    # would report a flock as underperforming purely because of the hour the
+    # question was asked.
+    stmt = stmt.where(Event.occurred_at >= window.start, Event.occurred_at < window.end)
     if q.asset_id is not None:
         stmt = stmt.where(Event.asset_id == q.asset_id)
     if q.category_id is not None:
@@ -72,10 +78,13 @@ async def _produced(
 
 
 async def _targets(
-    db: AsyncSession, farm_id: int, q: ProductionProductivityQuery
+    db: AsyncSession, farm_id: int, q: ProductionProductivityQuery, window: Window
 ) -> dict[Pair, list[AssetProductionTarget]]:
-    wf = q.date_from.date()
-    wt = window_end(q.date_to).date()
+    # Effective dates are farm-local calendar dates, so the window has to be
+    # expressed as local days too before the two can be compared — otherwise a
+    # target starting on the window's first or last day is off by one at UTC-3.
+    wf = window.first_day
+    wt = window.last_day
     stmt = (
         select(AssetProductionTarget)
         .where(
@@ -101,27 +110,21 @@ async def _targets(
     return out
 
 
-def _to_dt(d: date) -> datetime:
-    return datetime(d.year, d.month, d.day, tzinfo=UTC)
-
-
 async def _continuous_expected(
-    db: AsyncSession, q: ProductionProductivityQuery, targets: list[AssetProductionTarget]
+    db: AsyncSession, asset: Asset, window: Window, targets: list[AssetProductionTarget]
 ) -> Decimal:
     """Time-weighted expected for per_head_continuous, honouring effective-dated
     rate changes: each target's rate applies over its slice of the window, and
     the animal-days in that slice are integrated at that rate."""
-    window_start = q.date_from
-    upper = window_end(q.date_to)
     expected = Decimal(0)
     for i, t in enumerate(targets):
-        seg_start = max(window_start, _to_dt(t.effective_from))
-        seg_end = upper
+        seg_start = max(window.start, window.local_midnight(t.effective_from))
+        seg_end = window.end
         if i + 1 < len(targets):
-            seg_end = min(seg_end, _to_dt(targets[i + 1].effective_from))
+            seg_end = min(seg_end, window.local_midnight(targets[i + 1].effective_from))
         if t.effective_to is not None:
-            seg_end = min(seg_end, _to_dt(t.effective_to) + timedelta(days=1))
-        hd = await head_days_between(db, t.asset_id, seg_start, seg_end)
+            seg_end = min(seg_end, window.local_midnight(t.effective_to) + timedelta(days=1))
+        hd = await head_days_between(db, asset, Span(seg_start, seg_end, window.tz))
         rate = t.expected_rate / YEAR_DAYS if t.period is TargetPeriod.YEAR else t.expected_rate
         expected += rate * hd
     return expected
@@ -129,7 +132,8 @@ async def _continuous_expected(
 
 async def _expected(
     db: AsyncSession,
-    q: ProductionProductivityQuery,
+    asset: Asset,
+    window: Window,
     targets: list[AssetProductionTarget],
     event_count: int,
 ) -> Decimal:
@@ -138,20 +142,22 @@ async def _expected(
         return latest.expected_rate
     if latest.basis is ProductionBasis.PER_EVENT:
         return latest.expected_rate * event_count
-    return await _continuous_expected(db, q, targets)
+    return await _continuous_expected(db, asset, window, targets)
 
 
 async def _names(
     db: AsyncSession, asset_ids: set[int], category_ids: set[int]
-) -> tuple[dict[int, str], dict[int, EventCategory]]:
-    assets = {}
+) -> tuple[dict[int, Asset], dict[int, EventCategory]]:
+    # Whole Asset rows rather than names alone: the expected side also needs
+    # each asset's tracking mode to know which headcount stream to read.
+    assets: dict[int, Asset] = {}
     if asset_ids:
-        rows = await db.execute(select(Asset.id, Asset.name).where(Asset.id.in_(asset_ids)))
-        assets = {aid: name for aid, name in rows.all()}
-    categories = {}
+        asset_rows = await db.execute(select(Asset).where(Asset.id.in_(asset_ids)))
+        assets = {a.id: a for a in asset_rows.scalars()}
+    categories: dict[int, EventCategory] = {}
     if category_ids:
-        rows = await db.execute(select(EventCategory).where(EventCategory.id.in_(category_ids)))
-        categories = {c.id: c for c in rows.scalars()}
+        cat_rows = await db.execute(select(EventCategory).where(EventCategory.id.in_(category_ids)))
+        categories = {c.id: c for c in cat_rows.scalars()}
     return assets, categories
 
 
@@ -167,8 +173,9 @@ def _produced_total(produced: dict[str, Any], category: EventCategory) -> Decima
 async def production_productivity(
     db: AsyncSession, farm_id: int, q: ProductionProductivityQuery
 ) -> ProductionProductivityReport:
-    produced = await _produced(db, farm_id, q)
-    targets = await _targets(db, farm_id, q)
+    window = resolve_window(q.date_from, q.date_to, await farm_timezone(db, farm_id))
+    produced = await _produced(db, farm_id, q, window)
+    targets = await _targets(db, farm_id, q, window)
     pairs = set(produced) | set(targets)
     asset_ids = {aid for aid, _ in pairs}
     category_ids = {cid for _, cid in pairs}
@@ -177,7 +184,8 @@ async def production_productivity(
     rows = []
     for asset_id, category_id in pairs:
         category = categories.get(category_id)
-        if category is None:
+        asset = assets.get(asset_id)
+        if category is None or asset is None:
             continue
         prod = produced.get((asset_id, category_id), {"units": {}, "count": 0})
         produced_qty = _produced_total(prod, category)
@@ -185,7 +193,7 @@ async def production_productivity(
         expected: Decimal | None = None
         pct: Decimal | None = None
         if target_list:
-            expected = await _expected(db, q, target_list, prod["count"])
+            expected = await _expected(db, asset, window, target_list, prod["count"])
             if expected > 0:
                 pct = (produced_qty / expected * 100).quantize(
                     Decimal("0.1"), rounding=ROUND_HALF_UP
@@ -194,7 +202,7 @@ async def production_productivity(
         rows.append(
             ProductionProductivityRow(
                 asset_id=asset_id,
-                asset_name=assets.get(asset_id, ""),
+                asset_name=asset.name,
                 category_id=category_id,
                 product_name=category.name,
                 unit=category.unit,

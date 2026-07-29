@@ -7,15 +7,16 @@ Backs GET /reports/material-consumption-aggregate. Reuses the generic
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import RowMapping, Select, func, select
+from sqlalchemy import Date, RowMapping, Select, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from ovejitas.core.filters import apply_date_range
 from ovejitas.features.asset.models import Asset
 from ovejitas.features.event.types import Unit
+from ovejitas.features.farm.timezone import farm_timezone
 from ovejitas.features.material_consumption.models import MaterialConsumption
-from ovejitas.features.report.schemas import (
+from ovejitas.features.report.schemas_aggregate import (
     AggregateMeasure,
     AggregateRow,
     ConsumptionGroupBy,
@@ -27,8 +28,14 @@ _material = aliased(Asset, name="material")
 _consumer = aliased(Asset, name="consumer")
 
 
-def _build_query(farm_id: int, q: MaterialConsumptionAggregateQuery) -> Select[Any]:
-    bucket = func.date_trunc(q.bucket.value, MaterialConsumption.occurred_at).label("bucket")
+def _build_query(farm_id: int, q: MaterialConsumptionAggregateQuery, tz: str) -> Select[Any]:
+    # Bucketed on the farm's calendar: AT TIME ZONE reads the instant as local
+    # wall clock so the truncation lands on a local boundary, and the cast keeps
+    # the result a period label rather than an instant. Wrapping stays in the
+    # SELECT/GROUP BY — the window predicates below keep the column bare so its
+    # index is still usable.
+    local = func.timezone(tz, MaterialConsumption.occurred_at)
+    bucket = cast(func.date_trunc(q.bucket.value, local), Date).label("bucket")
     selected: list[Any] = [
         bucket,
         MaterialConsumption.unit.label("unit"),
@@ -108,6 +115,7 @@ def _totals(rows: list[AggregateRow]) -> list[MaterialConsumptionAggregateTotal]
 async def material_consumption_aggregate(
     db: AsyncSession, farm_id: int, q: MaterialConsumptionAggregateQuery
 ) -> tuple[list[AggregateRow], list[MaterialConsumptionAggregateTotal]]:
-    result = (await db.execute(_build_query(farm_id, q))).mappings().all()
+    tz = (await farm_timezone(db, farm_id)).key
+    result = (await db.execute(_build_query(farm_id, q, tz))).mappings().all()
     rows = [_to_row(q.group_by, r) for r in result]
     return rows, _totals(rows)

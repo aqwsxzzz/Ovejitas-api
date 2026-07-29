@@ -58,6 +58,7 @@ types:
       email: string (email)
       name: string
       password: string
+      timezone: string | null
   TokenPair:
     kind: object
     required: [access_token, refresh_token]

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 
 from ovejitas.core.deps import DBSession
 from ovejitas.core.pagination import Page, PageParams
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.material_consumption.schemas import (
     MaterialConsumptionCreate,
@@ -38,7 +39,7 @@ async def list_material_consumptions(
     svc: MaterialConsumptionSvc,
     _membership: FarmMembership,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[MaterialConsumptionFilters, Depends()],
+    filters: Annotated[MaterialConsumptionFilters, Depends(farm_local(MaterialConsumptionFilters))],
     q: Annotated[str | None, Query(description="Search notes")] = None,
     sort: Annotated[str | None, Query(description="e.g. -occurred_at,quantity")] = None,
 ) -> Page[MaterialConsumptionRead]:

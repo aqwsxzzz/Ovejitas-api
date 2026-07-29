@@ -18,7 +18,11 @@ from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType
 from ovejitas.features.report.feed_cost import feed_cost_by_consumer
-from ovejitas.features.report.schemas import CostPerUnitQuery, CostPerUnitReport, CostPerUnitRow
+from ovejitas.features.report.schemas_profitability import (
+    CostPerUnitQuery,
+    CostPerUnitReport,
+    CostPerUnitRow,
+)
 
 
 async def _producers(db: AsyncSession, farm_id: int, q: CostPerUnitQuery) -> dict[int, str]:

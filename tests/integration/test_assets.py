@@ -49,6 +49,19 @@ class TestCreateAsset:
         )
         assert response.status_code == 422
 
+    async def test_create_produce_asset_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # A pool belongs to a product and is created with it. Allowing one here is
+        # what let "Huevos" exist twice, as a category and as a look-alike asset.
+        response = await client.post(
+            assets_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"name": "Huevos", "kind": "produce", "mode": "aggregated"},
+        )
+
+        assert response.status_code == 422
+
 
 class TestListAssets:
     async def test_returns_paginated_envelope(
@@ -94,6 +107,33 @@ class TestListAssets:
         body = response.json()
         assert body["meta"]["total"] == 1
         assert body["data"][0]["kind"] == "crop"
+
+    async def test_filter_by_produce_excludes_consumable_materials(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        # A ?kind=produce listing must return produce pools only, never consumable
+        # materials like feed. The pool comes from its product — creating the
+        # production category is what puts a produce asset in the farm.
+        await client.post(
+            f"/api/v1/farms/{authed_user.farm_id}/event-categories",
+            headers=authed_user.headers,
+            json={"type": "production", "name": "Huevos", "unit": "unit"},
+        )
+        await client.post(
+            assets_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"name": "Maíz", "kind": "material", "mode": "aggregated"},
+        )
+
+        response = await client.get(
+            assets_url(authed_user.farm_id),
+            headers=authed_user.headers,
+            params={"kind": "produce"},
+        )
+
+        body = response.json()
+        assert body["meta"]["total"] == 1
+        assert body["data"][0]["name"] == "Huevos"
 
     async def test_search_matches_name(self, client: AsyncClient, authed_user: AuthedUser) -> None:
         await client.post(

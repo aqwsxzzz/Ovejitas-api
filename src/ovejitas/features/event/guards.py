@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.errors import ValidationError
-from ovejitas.features.asset.models import Asset, AssetKind, AssetMode
+from ovejitas.features.asset.models import INVENTORY_KINDS, Asset, AssetKind, AssetMode
 from ovejitas.features.event.types import EventType, Unit
 from ovejitas.features.event_category.models import EventCategory
 from ovejitas.features.individual.models import Individual
@@ -25,9 +25,9 @@ def _same_family(a: Unit, b: Unit) -> bool:
 
 
 def _asset_tracks_inventory(asset: Asset) -> bool:
-    """Inventory events are valid for a material asset, or for a flock — an
-    animal asset counted in aggregate."""
-    if asset.kind is AssetKind.MATERIAL:
+    """Inventory events are valid for a stock-bearing asset (material or produce),
+    or for a flock — an animal asset counted in aggregate."""
+    if asset.kind in INVENTORY_KINDS:
         return True
     return asset.kind is AssetKind.ANIMAL and asset.mode is AssetMode.AGGREGATED
 

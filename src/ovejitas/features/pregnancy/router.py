@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 
 from ovejitas.core.deps import DBSession
 from ovejitas.core.pagination import Page, PageParams
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 from ovejitas.features.pregnancy.schemas import (
     PregnancyCreate,
@@ -33,7 +34,7 @@ async def list_pregnancies(
     svc: PregnancySvc,
     _membership: FarmMembership,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[PregnancyFilters, Depends()],
+    filters: Annotated[PregnancyFilters, Depends(farm_local(PregnancyFilters))],
     q: Annotated[str | None, Query(description="Search notes")] = None,
     sort: Annotated[str | None, Query(description="e.g. -occurred_at,expected_due_at")] = None,
 ) -> Page[PregnancyRead]:

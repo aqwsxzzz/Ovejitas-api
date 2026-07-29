@@ -1,20 +1,63 @@
-"""Pure-ish math for the production-productivity report: within-family unit
-conversion and time-weighted headcount (animal-days) over a window.
+"""Pure math for the production-productivity report: within-family unit
+conversion and resolving a query's bounds onto the farm's calendar.
 
 Kept separate from the report orchestration so the fiddly bits are small and
-independently testable.
+independently testable. Headcount lives in ``headcount.py`` — it needs the
+database, and "how many animals were here" is its own question.
 """
 
-from datetime import datetime, time, timedelta
+from dataclasses import dataclass
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from ovejitas.features.event.models import Event
-from ovejitas.features.event.types import EventType, InventoryAdjustment, Unit
+from ovejitas.features.event.types import Unit
 
 YEAR_DAYS = Decimal(365)
+_ONE_DAY = Decimal(86400)
+
+
+@dataclass(frozen=True)
+class Span:
+    """A half-open [start, end) interval to integrate headcount over, plus the
+    farm's zone.
+
+    Distinct from ``Window``: a window is a whole number of calendar days, while
+    a span is that window clipped to one target's effective dates and so may
+    open or close mid-day. The zone travels with it because headcount resolves
+    day boundaries on the farm's calendar, not UTC's.
+    """
+
+    start: datetime
+    end: datetime
+    tz: ZoneInfo
+
+
+def local_midnight(moment: datetime, tz: ZoneInfo) -> datetime:
+    """The instant the farm-local calendar day containing ``moment`` opens."""
+    local = moment.astimezone(tz)
+    return datetime(local.year, local.month, local.day, tzinfo=tz)
+
+
+def local_day_end(moment: datetime, tz: ZoneInfo) -> datetime:
+    """The first farm-local midnight at or after ``moment``.
+
+    A true ceiling, so a departure recorded exactly at midnight is left alone
+    rather than granted the whole day it opened. The animal was there for none
+    of that day, and every other bound in this report is half-open the same way.
+    """
+    opened = local_midnight(moment, tz)
+    return opened if opened == moment else opened + timedelta(days=1)
+
+
+def overlap_days(start: datetime, end: datetime, span: Span) -> Decimal:
+    """Days of [start, end) that fall inside ``span``. Pure; zero if disjoint."""
+    first = max(start, span.start)
+    last = min(end, span.end)
+    if last <= first:
+        return Decimal(0)
+    return Decimal((last - first).total_seconds()) / _ONE_DAY
+
 
 # Size of one unit in its family's base unit (count=unit, volume=ml, mass=g).
 # Same-family membership is guaranteed for stored production events by the
@@ -39,68 +82,58 @@ def convert(quantity: Decimal, from_unit: Unit, to_unit: Unit) -> Decimal:
     return quantity * _BASE_SIZE[from_unit] / _BASE_SIZE[to_unit]
 
 
-def window_end(date_to: datetime) -> datetime:
-    """Exclusive end of ``date_to``'s calendar day.
+@dataclass(frozen=True)
+class Window:
+    """A productivity window resolved onto the farm's calendar.
 
-    The report is day-grained: a target is a per-day (or per-year) rate, so the
-    day containing ``date_to`` always counts as a whole day — even when the
-    caller passes an in-progress timestamp (``date_to`` = now, mid-afternoon).
-    Without this the current day is prorated to elapsed hours, so the expected
-    yield reads as a fraction of the day's goal that climbs by the hour. A
-    midnight bound is unchanged: it already meant 'through that whole day'.
+    A whole number of calendar days: ``start`` is the midnight opening
+    ``date_from``'s day, ``end`` the exclusive midnight closing ``date_to``'s.
+    Both the produced numerator and the animal-day denominator are bounded by
+    these same two instants, so the two halves of the ratio can never disagree
+    about which days they cover.
     """
-    day_start = datetime.combine(date_to.date(), time(), tzinfo=date_to.tzinfo)
-    return day_start + timedelta(days=1)
+
+    start: datetime
+    end: datetime
+    tz: ZoneInfo
+
+    @property
+    def first_day(self) -> date:
+        """First farm-local calendar day the window touches."""
+        return self.start.astimezone(self.tz).date()
+
+    @property
+    def last_day(self) -> date:
+        """Last farm-local calendar day the window touches (``end`` is exclusive)."""
+        return (self.end - timedelta(microseconds=1)).astimezone(self.tz).date()
+
+    def local_midnight(self, day: date) -> datetime:
+        """The instant calendar day ``day`` opens on the farm.
+
+        Effective-dated target rows store bare calendar dates — a farmer saying
+        "this rate applies from the 10th" means the 10th where the animals are.
+        Reading one as UTC midnight starts the rate three hours early at UTC-3,
+        which silently mis-weights every animal-day in the first segment.
+        """
+        return datetime(day.year, day.month, day.day, tzinfo=self.tz)
 
 
-def _apply(balance: Decimal, adjustment: InventoryAdjustment, quantity: Decimal) -> Decimal:
-    if adjustment is InventoryAdjustment.RESET:
-        return Decimal(quantity)
-    if adjustment is InventoryAdjustment.INCREMENT:
-        return balance + Decimal(quantity)
-    return balance - Decimal(quantity)
+def resolve_window(date_from: datetime, date_to: datetime, tz: ZoneInfo) -> Window:
+    """Widen the bounds to the whole calendar days they fall on.
 
+    The report is day-grained — a target is a per-day (or per-year) rate — so
+    both ends snap to day boundaries. Asking about today at 18:45 must expect a
+    whole day's goal: with the lower bound left raw, a 500-head flock at 1/head
+    expects 109 rather than 500, because only 5¼ hours of the day remain to
+    integrate over. The same reasoning closes the upper bound at the *end* of
+    ``date_to``'s day, so an in-progress day is never prorated to elapsed hours.
 
-async def head_days_between(
-    db: AsyncSession, asset_id: int, start: datetime, end: datetime
-) -> Decimal:
-    """Animal-days: the integral of HEAD headcount over the half-open [start, end).
-
-    Weights each headcount level by how long it held, so births/deaths/sales
-    inside the interval are counted correctly. ``start``/``end`` are exact bounds
-    (no whole-day rolling — the caller decides them).
+    Both ends snap in the bound's own frame, matching ``apply_date_range``:
+    after localization a naive bound already carries the farm's zone, and an
+    explicit offset is the client naming a frame deliberately. ``tz`` is carried
+    separately because target rows store bare dates that have no frame of their
+    own — see ``local_midnight``.
     """
-    if end <= start:
-        return Decimal(0)
-    base = (
-        select(Event.occurred_at, Event.adjustment, Event.quantity)
-        .where(
-            Event.asset_id == asset_id,
-            Event.type == EventType.INVENTORY,
-            Event.unit == Unit.HEAD,
-        )
-        .order_by(Event.occurred_at.asc(), Event.id.asc())
-    )
-    rows = (await db.execute(base)).all()
-
-    balance = Decimal(0)
-    total = Decimal(0)
-    cursor = start
-    for occurred_at, adjustment, quantity in rows:
-        if occurred_at < start:
-            balance = _apply(balance, adjustment, quantity)
-            continue
-        if occurred_at >= end:
-            break
-        total += balance * Decimal((occurred_at - cursor).total_seconds()) / Decimal(86400)
-        balance = _apply(balance, adjustment, quantity)
-        cursor = occurred_at
-    total += balance * Decimal((end - cursor).total_seconds()) / Decimal(86400)
-    return total
-
-
-async def head_days(
-    db: AsyncSession, asset_id: int, date_from: datetime, date_to: datetime
-) -> Decimal:
-    """Animal-days over a report window (date_to gets whole-day rolling)."""
-    return await head_days_between(db, asset_id, date_from, window_end(date_to))
+    start = datetime.combine(date_from.date(), time(), tzinfo=date_from.tzinfo)
+    last_day_start = datetime.combine(date_to.date(), time(), tzinfo=date_to.tzinfo)
+    return Window(start=start, end=last_day_start + timedelta(days=1), tz=tz)

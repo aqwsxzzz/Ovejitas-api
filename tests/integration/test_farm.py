@@ -18,6 +18,7 @@ class TestGetFarm:
         body = resp.json()
         assert body["id"] == authed_user.farm_id
         assert body["default_currency"] == "USD"
+        assert body["timezone"] == "UTC"
 
     async def test_non_member_returns_403(
         self, client: AsyncClient, authed_user: AuthedUser
@@ -65,6 +66,28 @@ class TestUpdateFarm:
             FARM.format(farm_id=authed_user.farm_id),
             headers=authed_user.headers,
             json={"default_currency": "US"},
+        )
+        assert resp.status_code == 422
+
+    async def test_member_can_set_iana_timezone(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        resp = await client.patch(
+            FARM.format(farm_id=authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"timezone": "America/Montevideo"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["timezone"] == "America/Montevideo"
+
+    async def test_unknown_timezone_rejected(
+        self, client: AsyncClient, authed_user: AuthedUser
+    ) -> None:
+        resp = await client.patch(
+            FARM.format(farm_id=authed_user.farm_id),
+            headers=authed_user.headers,
+            json={"timezone": "Mars/Olympus_Mons"},
         )
         assert resp.status_code == 422
 

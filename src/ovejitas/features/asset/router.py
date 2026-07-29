@@ -13,6 +13,7 @@ from ovejitas.features.asset.schemas import (
     AssetUpdate,
 )
 from ovejitas.features.asset.service import AssetService
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 
 
@@ -31,7 +32,7 @@ async def list_assets(
     svc: AssetSvc,
     _membership: FarmMembership,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[AssetFilters, Depends()],
+    filters: Annotated[AssetFilters, Depends(farm_local(AssetFilters))],
     q: Annotated[str | None, Query(description="Search across name, description, location")] = None,
     sort: Annotated[str | None, Query(description="e.g. -created_at,name")] = None,
 ) -> Page[AssetRead]:

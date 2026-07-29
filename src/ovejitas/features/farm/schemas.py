@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ovejitas.core.schemas import StrictModel
+from ovejitas.features.farm.timezone import IanaTimezone
 
 
 class FarmRead(BaseModel):
@@ -11,6 +12,7 @@ class FarmRead(BaseModel):
     id: int
     name: str
     default_currency: str
+    timezone: str
     created_at: datetime
     updated_at: datetime
 
@@ -18,6 +20,7 @@ class FarmRead(BaseModel):
 class FarmUpdate(StrictModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     default_currency: str | None = Field(default=None, min_length=3, max_length=3)
+    timezone: IanaTimezone | None = None
 
     @field_validator("default_currency")
     @classmethod

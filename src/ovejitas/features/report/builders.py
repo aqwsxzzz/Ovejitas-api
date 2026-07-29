@@ -8,14 +8,14 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Select, case, func, select
+from sqlalchemy import Date, Select, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ovejitas.core.filters import apply_date_range
 from ovejitas.features.currency.models import Currency
 from ovejitas.features.event.models import Event
 from ovejitas.features.event.types import EventType, InventoryAdjustment
-from ovejitas.features.report.schemas import (
+from ovejitas.features.report.schemas_aggregate import (
     AggregateMeasure,
     AggregateQuery,
     AggregateRow,
@@ -37,14 +37,27 @@ def _scope(
     return stmt
 
 
-def _bucket_col(bucket: Bucket) -> Any:
-    return func.date_trunc(bucket.value, Event.occurred_at).label("bucket")
+def _bucket_col(bucket: Bucket, tz: str) -> Any:
+    """The calendar period ``occurred_at`` falls in, on the farm's calendar.
+
+    ``AT TIME ZONE`` reads the stored instant as farm-local wall clock, so the
+    truncation lands on a local boundary — without it a milking logged at 21:00
+    in Montevideo buckets into the next day. Casting to ``date`` then keeps the
+    result a period label rather than an instant, which is the only shape that
+    cannot be re-interpreted against the wrong zone downstream.
+
+    Only the SELECT/GROUP BY expression is wrapped. The window predicates in
+    ``_scope`` stay bare comparisons against the column, so its index is still
+    usable — never move this wrapping into the WHERE clause.
+    """
+    local = func.timezone(tz, Event.occurred_at)
+    return cast(func.date_trunc(bucket.value, local), Date).label("bucket")
 
 
 async def _quantity_by_unit(
-    db: AsyncSession, farm_id: int, q: AggregateQuery
+    db: AsyncSession, farm_id: int, q: AggregateQuery, tz: str
 ) -> list[AggregateRow]:
-    b = _bucket_col(q.bucket)
+    b = _bucket_col(q.bucket, tz)
     stmt = (
         select(b, Event.unit.label("unit"), func.sum(Event.quantity).label("value"))
         .where(
@@ -70,8 +83,10 @@ async def _quantity_by_unit(
     ]
 
 
-async def _headcount(db: AsyncSession, farm_id: int, q: AggregateQuery) -> list[AggregateRow]:
-    b = _bucket_col(q.bucket)
+async def _headcount(
+    db: AsyncSession, farm_id: int, q: AggregateQuery, tz: str
+) -> list[AggregateRow]:
+    b = _bucket_col(q.bucket, tz)
     stmt = (
         select(b, func.sum(Event.quantity).label("value"))
         .where(Event.type == q.type, Event.quantity.is_not(None))
@@ -92,10 +107,10 @@ async def _headcount(db: AsyncSession, farm_id: int, q: AggregateQuery) -> list[
 
 
 async def _inventory_signed(
-    db: AsyncSession, farm_id: int, q: AggregateQuery
+    db: AsyncSession, farm_id: int, q: AggregateQuery, tz: str
 ) -> list[AggregateRow]:
     """Net flow within window. Resets excluded unless explicitly filtered for."""
-    b = _bucket_col(q.bucket)
+    b = _bucket_col(q.bucket, tz)
     if q.adjustment is None:
         value = func.sum(
             case(
@@ -129,9 +144,9 @@ async def _inventory_signed(
 
 
 async def _amount_by_currency(
-    db: AsyncSession, farm_id: int, q: AggregateQuery
+    db: AsyncSession, farm_id: int, q: AggregateQuery, tz: str
 ) -> list[AggregateRow]:
-    b = _bucket_col(q.bucket)
+    b = _bucket_col(q.bucket, tz)
     stmt = (
         select(b, Currency.code.label("currency"), func.sum(Event.amount).label("value"))
         .join(Currency, Currency.id == Event.currency_id)
@@ -158,8 +173,10 @@ async def _amount_by_currency(
     ]
 
 
-async def _count(db: AsyncSession, farm_id: int, q: AggregateQuery) -> list[AggregateRow]:
-    b = _bucket_col(q.bucket)
+async def _count(
+    db: AsyncSession, farm_id: int, q: AggregateQuery, tz: str
+) -> list[AggregateRow]:
+    b = _bucket_col(q.bucket, tz)
     stmt = (
         select(b, func.count().label("value")).where(Event.type == q.type).group_by(b).order_by(b)
     )

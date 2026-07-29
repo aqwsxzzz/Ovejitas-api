@@ -11,6 +11,7 @@ from ovejitas.features.event_category.schemas import (
     EventCategoryUpdate,
 )
 from ovejitas.features.event_category.service import EventCategoryService
+from ovejitas.features.farm.deps import farm_local
 from ovejitas.features.farm_member.deps import FarmMembership
 
 
@@ -33,7 +34,7 @@ async def list_event_categories(
     svc: EventCategorySvc,
     _membership: FarmMembership,
     page: Annotated[PageParams, Depends()],
-    filters: Annotated[EventCategoryFilters, Depends()],
+    filters: Annotated[EventCategoryFilters, Depends(farm_local(EventCategoryFilters))],
     q: Annotated[str | None, Query(description="Search across name")] = None,
     sort: Annotated[str | None, Query(description="e.g. -created_at,name")] = None,
 ) -> Page[EventCategoryRead]:

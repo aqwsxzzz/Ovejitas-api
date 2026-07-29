@@ -12,7 +12,15 @@ class AssetKind(StrEnum):
     CROP = "crop"
     EQUIPMENT = "equipment"
     MATERIAL = "material"
+    PRODUCE = "produce"
     LOCATION = "location"
+
+
+# Asset kinds that carry an inventory balance: they bear INVENTORY events and are
+# sold via the material-sale action. MATERIAL is consumable input you buy;
+# PRODUCE is farm output you harvest into and sell. Reference this set, never the
+# bare values, so a future stock-bearing kind slots in here exactly once.
+INVENTORY_KINDS = frozenset({AssetKind.MATERIAL, AssetKind.PRODUCE})
 
 
 class AssetMode(StrEnum):

@@ -24,6 +24,7 @@ class AssetService:
         self.db = db
 
     async def create(self, farm_id: int, data: AssetCreate) -> Asset:
+        self._reject_hand_authored_produce(data.kind)
         self._validate_kind_mode(data.kind, data.mode)
         asset = Asset(farm_id=farm_id, **data.model_dump())
         self.db.add(asset)
@@ -49,6 +50,8 @@ class AssetService:
         )
         if structural_changed and await asset_has_events(self.db, asset_id):
             raise ValidationError("Cannot change kind or mode of an asset that already has events")
+        if "kind" in updates:
+            self._reject_hand_authored_produce(updates["kind"])
         if "kind" in updates or "mode" in updates:
             self._validate_kind_mode(
                 updates.get("kind", asset.kind), updates.get("mode", asset.mode)
@@ -58,6 +61,17 @@ class AssetService:
         await self.db.commit()
         await self.db.refresh(asset)
         return asset
+
+    @staticmethod
+    def _reject_hand_authored_produce(kind: AssetKind) -> None:
+        """A produce pool belongs to a product and is created with it. Allowing one
+        here is what let "Huevos" exist twice — as a category and as a look-alike
+        asset — with nothing keeping the two in agreement."""
+        if kind is AssetKind.PRODUCE:
+            raise ValidationError(
+                "Produce assets are created by their production category — "
+                "create the category instead"
+            )
 
     @staticmethod
     def _validate_kind_mode(kind: AssetKind, mode: AssetMode | None) -> None:
@@ -70,12 +84,12 @@ class AssetService:
         self, farm_id: int, source_kind: AssetKind, produce_asset_id: int
     ) -> None:
         """A produce link is only meaningful on an asset that produces, and must
-        point at a material asset in the same farm."""
+        point at a produce asset in the same farm."""
         if source_kind not in (AssetKind.ANIMAL, AssetKind.CROP):
             raise ValidationError("Only animal or crop assets can link a produce asset")
         target = await self.get(farm_id, produce_asset_id)
-        if target.kind is not AssetKind.MATERIAL:
-            raise ValidationError("produce_asset_id must reference a material asset")
+        if target.kind is not AssetKind.PRODUCE:
+            raise ValidationError("produce_asset_id must reference a produce asset")
 
     async def delete(self, farm_id: int, asset_id: int) -> None:
         asset = await self.get(farm_id, asset_id)

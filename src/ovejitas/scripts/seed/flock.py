@@ -49,10 +49,14 @@ async def seed_flock(db: AsyncSession, user: User, farm: Farm, today: datetime) 
             location="Galpón norte",
         ),
     )
-    eggs = await assets.create(
+    # The product provisions the pool that holds its stock — "Huevos" is created
+    # once, as a category, and the produce asset comes with it.
+    egg_category = await EventCategoryService(db).create(
         farm.id,
-        AssetCreate(name="Huevos", kind=AssetKind.MATERIAL, mode=AssetMode.AGGREGATED),
+        EventCategoryCreate(type=EventType.PRODUCTION, name="Huevos", unit=Unit.UNIT),
     )
+    assert egg_category.produce_asset_id is not None
+    eggs = await assets.get(farm.id, egg_category.produce_asset_id)
     feed = await assets.create(
         farm.id,
         AssetCreate(
@@ -104,10 +108,6 @@ async def seed_flock(db: AsyncSession, user: User, farm: Farm, today: datetime) 
             ),
         )
 
-    egg_category = await EventCategoryService(db).create(
-        farm.id,
-        EventCategoryCreate(type=EventType.PRODUCTION, name="Huevos", unit=Unit.UNIT),
-    )
     for offset in range(14, 0, -1):
         await create_harvest(
             db,
