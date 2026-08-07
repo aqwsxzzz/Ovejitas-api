@@ -29,7 +29,7 @@ Non-obvious domain knowledge distilled from legacy planning docs (temporal-datab
 |---|---|---|
 | Measurement values must be positive | event service (observation + production) | CHECK on `quantity > 0` is fine for production/observation |
 | Temperature must be 35.0–45.0°C | event service (observation payload) | service-level validation, keep in `payload` |
-| Gestation period must be 20–400 days | event service (reproductive payload) | sanity bounds |
+| Gestation period must be 20–400 days | `asset.gestation_days` — Pydantic bound + `ck_asset_gestation_days_sane` | SHIPPED; animal assets only, and the base for deriving a check's `expected_due_at` |
 | Cannot future-date events | event service | `occurred_at <= now()` assertion |
 | Events must reference valid, same-farm entities | event guards | already planned — see plan §Service-Layer Guards |
 | Currency stored with monetary values | `currency` table + `event.currency_id` FK | Currency is a first-class per-farm resource (feature: `currency`); `amount` + `currency_id` resolved together for expense/income (falls back to the farm default) |

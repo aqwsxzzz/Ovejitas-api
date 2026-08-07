@@ -65,6 +65,16 @@ class Pregnancy(Base, TimestampMixin):
         nullable=False,
         unique=True,
     )
+    # The date she was served. Optional — a farmer who only ultrasounds may
+    # never know it — but when present it is the honest base for a due date,
+    # since a check performed weeks after conception is not day zero.
+    service_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Who bred her. Indexed because sire performance is a list filter.
+    sire_individual_id: Mapped[int | None] = mapped_column(
+        ForeignKey("individual.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_pregnant: Mapped[bool] = mapped_column(Boolean, nullable=False)
     offspring_count: Mapped[int | None] = mapped_column(Integer, nullable=True)

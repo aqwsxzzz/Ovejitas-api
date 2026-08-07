@@ -26,6 +26,7 @@ class AssetService:
     async def create(self, farm_id: int, data: AssetCreate) -> Asset:
         self._reject_hand_authored_produce(data.kind)
         self._validate_kind_mode(data.kind, data.mode)
+        self._validate_gestation_kind(data.kind, data.gestation_days)
         asset = Asset(farm_id=farm_id, **data.model_dump())
         self.db.add(asset)
         await self.db.commit()
@@ -56,6 +57,11 @@ class AssetService:
             self._validate_kind_mode(
                 updates.get("kind", asset.kind), updates.get("mode", asset.mode)
             )
+        if "kind" in updates or "gestation_days" in updates:
+            self._validate_gestation_kind(
+                updates.get("kind", asset.kind),
+                updates.get("gestation_days", asset.gestation_days),
+            )
         for key, value in updates.items():
             setattr(asset, key, value)
         await self.db.commit()
@@ -79,6 +85,12 @@ class AssetService:
         every other kind leaves it null."""
         if kind is AssetKind.ANIMAL and mode is None:
             raise ValidationError("Animal assets require a tracking mode")
+
+    @staticmethod
+    def _validate_gestation_kind(kind: AssetKind, gestation_days: int | None) -> None:
+        """Only animals gestate — a crop, a barn or a sack of feed does not."""
+        if gestation_days is not None and kind is not AssetKind.ANIMAL:
+            raise ValidationError("Only animal assets carry a gestation length")
 
     async def _validate_produce_link(
         self, farm_id: int, source_kind: AssetKind, produce_asset_id: int

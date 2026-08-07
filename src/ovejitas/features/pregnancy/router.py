@@ -53,7 +53,12 @@ async def list_pregnancies(
         "Records a pregnancy check on one individual and emits a paired "
         "REPRODUCTIVE event on its timeline. A non-pregnant check must omit "
         "`offspring_count` and `expected_due_at`. Replaying an `idempotency_key` "
-        "returns the original record with status 200."
+        "returns the original record with status 200.\n\n"
+        "Omit `expected_due_at` on a positive check to have it derived as "
+        "`(service_date or occurred_at) + asset.gestation_days`. A value you "
+        "supply is always kept as given, and an asset with no `gestation_days` "
+        "configured derives nothing rather than erroring. `sire_individual_id` "
+        "must be a different individual in the same farm."
     ),
 )
 async def create_pregnancy(
@@ -90,7 +95,8 @@ async def get_pregnancy(
     description=(
         "`individual_id` is immutable. Changes reconcile the paired reproductive "
         "event. Clearing `is_pregnant` requires also clearing `offspring_count` "
-        "and `expected_due_at`."
+        "and `expected_due_at`. `expected_due_at` is never re-derived here: "
+        "editing `service_date` leaves an already-stored due date alone."
     ),
 )
 async def update_pregnancy(

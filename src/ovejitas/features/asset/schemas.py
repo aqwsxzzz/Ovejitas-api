@@ -1,10 +1,15 @@
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ovejitas.core.filters import FilterParams
 from ovejitas.core.schemas import OptionalStr, StrictModel
 from ovejitas.features.asset.models import AssetKind, AssetMode
+
+# Sanity bounds, not biology: wide enough for every farmed species, narrow
+# enough to catch a farmer typing weeks or months into a days field.
+GestationDays = Annotated[int | None, Field(default=None, ge=20, le=400)]
 
 
 class AssetCreate(StrictModel):
@@ -13,6 +18,7 @@ class AssetCreate(StrictModel):
     mode: AssetMode | None = None
     location: OptionalStr = Field(default=None, max_length=255)
     description: OptionalStr = Field(default=None, max_length=1024)
+    gestation_days: GestationDays = None
 
 
 class AssetUpdate(StrictModel):
@@ -22,6 +28,7 @@ class AssetUpdate(StrictModel):
     location: OptionalStr = Field(default=None, max_length=255)
     description: OptionalStr = Field(default=None, max_length=1024)
     produce_asset_id: int | None = None
+    gestation_days: GestationDays = None
 
 
 class AssetRead(BaseModel):
@@ -35,6 +42,7 @@ class AssetRead(BaseModel):
     location: str | None
     description: str | None
     produce_asset_id: int | None
+    gestation_days: int | None
     created_at: datetime
     updated_at: datetime
 

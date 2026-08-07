@@ -12,7 +12,11 @@ class PregnancyCreate(StrictModel):
     individual_id: int
     occurred_at: datetime
     is_pregnant: bool
+    service_date: datetime | None = None
+    sire_individual_id: int | None = None
     offspring_count: int | None = Field(default=None, ge=0)
+    # Omit on a positive check to have it derived from the asset's gestation
+    # length; a value supplied here is always kept as given.
     expected_due_at: datetime | None = None
     notes: OptionalStr = None
     idempotency_key: OptionalStr = Field(default=None, max_length=128)
@@ -26,10 +30,13 @@ class PregnancyCreate(StrictModel):
 class PregnancyUpdate(StrictModel):
     """PATCH body. ``individual_id`` is immutable — a different individual is a
     different pregnancy record. The non-pregnant projection rule is enforced on
-    the merged state in the service."""
+    the merged state in the service. ``expected_due_at`` is never re-derived
+    here: editing ``service_date`` leaves an already-stored due date alone."""
 
     occurred_at: datetime | None = None
     is_pregnant: bool | None = None
+    service_date: datetime | None = None
+    sire_individual_id: int | None = None
     offspring_count: int | None = Field(default=None, ge=0)
     expected_due_at: datetime | None = None
     notes: OptionalStr = None
@@ -44,6 +51,8 @@ class PregnancyRead(BaseModel):
     reproductive_event_id: int
     occurred_at: datetime
     is_pregnant: bool
+    service_date: datetime | None
+    sire_individual_id: int | None
     offspring_count: int | None
     expected_due_at: datetime | None
     notes: str | None
@@ -55,4 +64,5 @@ class PregnancyRead(BaseModel):
 
 class PregnancyFilters(FilterParams):
     individual_id: int | None = None
+    sire_individual_id: int | None = None
     is_pregnant: bool | None = None

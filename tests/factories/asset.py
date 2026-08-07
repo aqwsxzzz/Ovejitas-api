@@ -8,6 +8,9 @@ class AssetFactory(BaseFactory):
     __model__ = Asset
     kind = AssetKind.ANIMAL
     mode = AssetMode.AGGREGATED
+    # Left unset by default: a random int would break the 20-400 sanity CHECK,
+    # and most tests do not care how long this animal gestates.
+    gestation_days = None
 
     @classmethod
     def name(cls) -> str:

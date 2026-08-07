@@ -36,6 +36,7 @@ types:
       mode: aggregated | individual | null
       location: string | null
       description: string | null
+      gestation_days: integer | null
   AssetKindCount:
     kind: object
     required: [kind, count]
@@ -44,7 +45,7 @@ types:
       count: integer
   AssetRead:
     kind: object
-    required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, created_at, updated_at]
+    required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, gestation_days, created_at, updated_at]
     fields:
       id: integer
       farm_id: integer
@@ -54,6 +55,7 @@ types:
       location: string | null
       description: string | null
       produce_asset_id: integer | null
+      gestation_days: integer | null
       created_at: string (date-time)
       updated_at: string (date-time)
   AssetSummary:
@@ -70,6 +72,7 @@ types:
       location: string | null
       description: string | null
       produce_asset_id: integer | null
+      gestation_days: integer | null
   HTTPValidationError:
     kind: object
     fields:
