@@ -194,6 +194,19 @@
             ],
             "title": "Description"
           },
+          "gestation_days": {
+            "anyOf": [
+              {
+                "maximum": 400.0,
+                "minimum": 20.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gestation Days"
+          },
           "kind": {
             "$ref": "#/components/schemas/AssetKind"
           },
@@ -497,6 +510,17 @@
             "title": "Farm Id",
             "type": "integer"
           },
+          "gestation_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gestation Days"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
@@ -555,6 +579,7 @@
           "location",
           "description",
           "produce_asset_id",
+          "gestation_days",
           "created_at",
           "updated_at"
         ],
@@ -591,6 +616,19 @@
               }
             ],
             "title": "Description"
+          },
+          "gestation_days": {
+            "anyOf": [
+              {
+                "maximum": 400.0,
+                "minimum": 20.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gestation Days"
           },
           "kind": {
             "anyOf": [
@@ -4369,6 +4407,29 @@
               }
             ],
             "title": "Offspring Count"
+          },
+          "service_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Date"
+          },
+          "sire_individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sire Individual Id"
           }
         },
         "required": [
@@ -4460,6 +4521,29 @@
             "title": "Reproductive Event Id",
             "type": "integer"
           },
+          "service_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Date"
+          },
+          "sire_individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sire Individual Id"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -4473,6 +4557,8 @@
           "reproductive_event_id",
           "occurred_at",
           "is_pregnant",
+          "service_date",
+          "sire_individual_id",
           "offspring_count",
           "expected_due_at",
           "notes",
@@ -4486,7 +4572,7 @@
       },
       "PregnancyUpdate": {
         "additionalProperties": false,
-        "description": "PATCH body. ``individual_id`` is immutable \u2014 a different individual is a\ndifferent pregnancy record. The non-pregnant projection rule is enforced on\nthe merged state in the service.",
+        "description": "PATCH body. ``individual_id`` is immutable \u2014 a different individual is a\ndifferent pregnancy record. The non-pregnant projection rule is enforced on\nthe merged state in the service. ``expected_due_at`` is never re-derived\nhere: editing ``service_date`` leaves an already-stored due date alone.",
         "properties": {
           "expected_due_at": {
             "anyOf": [
@@ -4545,6 +4631,29 @@
               }
             ],
             "title": "Offspring Count"
+          },
+          "service_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Date"
+          },
+          "sire_individual_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sire Individual Id"
           }
         },
         "title": "PregnancyUpdate",
@@ -9696,6 +9805,22 @@
           },
           {
             "in": "query",
+            "name": "sire_individual_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sire Individual Id"
+            }
+          },
+          {
+            "in": "query",
             "name": "is_pregnant",
             "required": false,
             "schema": {
@@ -9744,7 +9869,7 @@
         ]
       },
       "post": {
-        "description": "Records a pregnancy check on one individual and emits a paired REPRODUCTIVE event on its timeline. A non-pregnant check must omit `offspring_count` and `expected_due_at`. Replaying an `idempotency_key` returns the original record with status 200.",
+        "description": "Records a pregnancy check on one individual and emits a paired REPRODUCTIVE event on its timeline. A non-pregnant check must omit `offspring_count` and `expected_due_at`. Replaying an `idempotency_key` returns the original record with status 200.\n\nOmit `expected_due_at` on a positive check to have it derived as `(service_date or occurred_at) + asset.gestation_days`. A value you supply is always kept as given, and an asset with no `gestation_days` configured derives nothing rather than erroring. `sire_individual_id` must be a different individual in the same farm.",
         "operationId": "pregnancies_create_pregnancy",
         "parameters": [
           {
@@ -9904,7 +10029,7 @@
         ]
       },
       "patch": {
-        "description": "`individual_id` is immutable. Changes reconcile the paired reproductive event. Clearing `is_pregnant` requires also clearing `offspring_count` and `expected_due_at`.",
+        "description": "`individual_id` is immutable. Changes reconcile the paired reproductive event. Clearing `is_pregnant` requires also clearing `offspring_count` and `expected_due_at`. `expected_due_at` is never re-derived here: editing `service_date` leaves an already-stored due date alone.",
         "operationId": "pregnancies_update_pregnancy",
         "parameters": [
           {

@@ -1,7 +1,7 @@
 from enum import StrEnum
 
+from sqlalchemy import CheckConstraint, ForeignKey, Identity, Index, Integer, String
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import ForeignKey, Identity, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ovejitas.core.models import Base, TimestampMixin
@@ -30,7 +30,13 @@ class AssetMode(StrEnum):
 
 class Asset(Base, TimestampMixin):
     __tablename__ = "asset"
-    __table_args__ = (Index("ix_asset_farm_kind", "farm_id", "kind"),)
+    __table_args__ = (
+        CheckConstraint(
+            "gestation_days IS NULL OR gestation_days BETWEEN 20 AND 400",
+            name="gestation_days_sane",
+        ),
+        Index("ix_asset_farm_kind", "farm_id", "kind"),
+    )
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     farm_id: Mapped[int] = mapped_column(
@@ -60,3 +66,8 @@ class Asset(Base, TimestampMixin):
         nullable=True,
         index=True,
     )
+    # How long this animal carries a pregnancy, in days — the farm's own number,
+    # not a species lookup. Null means the farmer hasn't told us, and a due date
+    # is simply never derived from it. Only animals gestate; every other kind
+    # leaves it null (enforced in the service alongside the mode rule).
+    gestation_days: Mapped[int | None] = mapped_column(Integer, nullable=True)

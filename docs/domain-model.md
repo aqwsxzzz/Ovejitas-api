@@ -8,7 +8,7 @@ Companion to [events-and-actions.md](./events-and-actions.md), [domain-rebuild-p
 
 The event-sourced core is four tables; everything a farm *does* still resolves to `event` rows.
 
-- **`asset`** — any trackable thing on a farm: animals, crops, equipment, materials, produce pools, locations. Has a `kind` (classifier enum) and, for animals only, a `mode` (`aggregated` for a bulk/count flock, `individual` for tagged instances). A producer asset may link to a produce pool via `produce_asset_id`.
+- **`asset`** — any trackable thing on a farm: animals, crops, equipment, materials, produce pools, locations. Has a `kind` (classifier enum) and, for animals only, a `mode` (`aggregated` for a bulk/count flock, `individual` for tagged instances) and an optional `gestation_days` (20–400). A producer asset may link to a produce pool via `produce_asset_id`.
 - **`individual`** — one tagged instance of an `individual`-mode animal asset. Optional. Created only when tracking a specific animal with parentage, tag, birth date, and lifecycle status. Carries FK columns pointing at the events its lifecycle actions emitted (`acquisition_event_id`, `acquisition_expense_event_id`, `mortality_event_id`, `sale_event_id`, `birth_event_id`).
 - **`event`** — one immutable fact against an asset (and optionally a specific individual): produced, spent, earned, observed, reproduced, acquired, died, or stock-adjusted.
 - **`event_category`** — a per-farm label for events, scoped by `(farm_id, type, name)`. For `production` events a category *is the product* — it carries the product's unit of measure and owns the produce pool holding its stock (`produce_asset_id`, unique). Creating the category provisions the pool, so a product is one thing the farmer creates; `POST /assets` refuses `kind=produce`. Not global.
@@ -60,6 +60,20 @@ A real-world action that touches both money and inventory is a single server-sid
 | Harvest produce | `harvest` | `production` (on producer) + `inventory` increment (on the product's produce pool), recorded as a `produce_lot` |
 | Flock acquisition / sale / mortality | `flock` | `inventory` ± with a paired `acquisition`/`income`/`mortality` |
 | Pregnancy / ultrasound check | `pregnancy` | `reproductive` |
+
+### Expected due date
+
+A pregnancy check is one row per check, not one row per gestation; current state is
+reconstructed latest-record-wins by `report/upcoming_births.py`. A check may record
+`service_date` (when she was served) and `sire_individual_id` (who bred her); both are
+optional, both are mirrored onto the paired `reproductive` event's payload, and the sire
+must be a different individual in the same farm.
+
+`expected_due_at` is derived on **create** when the check is positive and the caller omits
+it: `(service_date or occurred_at) + asset.gestation_days`. A value supplied by the caller
+is always kept as given, and an asset with no `gestation_days` derives nothing rather than
+erroring. PATCH never re-derives, so a stored due date does not move when the flock's
+gestation length is edited later.
 
 Clients call the action endpoint; they never assemble the event pair themselves. `idempotency_key` (unique per `(farm_id, key)`) makes the whole action retry-safe. Every finance event carries a `currency_id`, resolved via `CurrencyService.resolve_or_default(farm_id, currency_id)` — reports never sum across currencies.
 
