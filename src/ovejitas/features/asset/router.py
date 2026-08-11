@@ -39,7 +39,8 @@ async def list_assets(
     rows, total = await svc.list_assets(
         farm_id=farm_id, filters=filters, search=q, sort=sort, page=page
     )
-    return Page.build([AssetRead.model_validate(r) for r in rows], total, page)
+    deletable = await svc.deletable_flags(rows)
+    return Page.build([AssetRead.of(r, deletable=deletable[r.id]) for r in rows], total, page)
 
 
 @router.post(
@@ -54,7 +55,8 @@ async def create_asset(
     svc: AssetSvc,
     _membership: FarmMembership,
 ) -> AssetRead:
-    return AssetRead.model_validate(await svc.create(farm_id, data))
+    asset = await svc.create(farm_id, data)
+    return AssetRead.of(asset, deletable=await svc.is_deletable(asset.id))
 
 
 @router.get(
@@ -71,17 +73,28 @@ async def asset_summary(
     return AssetSummary(data=[AssetKindCount(kind=kind, count=count) for kind, count in counts])
 
 
-@router.get("/{asset_id}", response_model=AssetRead, summary="Get one asset")
+@router.get(
+    "/{asset_id}",
+    response_model=AssetRead,
+    summary="Get one asset",
+    description="Resolves archived assets too, so history views can still name them.",
+)
 async def get_asset(
     farm_id: int,
     asset_id: int,
     svc: AssetSvc,
     _membership: FarmMembership,
 ) -> AssetRead:
-    return AssetRead.model_validate(await svc.get(farm_id, asset_id))
+    asset = await svc.get(farm_id, asset_id)
+    return AssetRead.of(asset, deletable=await svc.is_deletable(asset.id))
 
 
-@router.patch("/{asset_id}", response_model=AssetRead, summary="Update an asset")
+@router.patch(
+    "/{asset_id}",
+    response_model=AssetRead,
+    summary="Update an asset",
+    description="Set `archived_at` to retire the asset; set it to null to bring it back.",
+)
 async def update_asset(
     farm_id: int,
     asset_id: int,
@@ -89,13 +102,20 @@ async def update_asset(
     svc: AssetSvc,
     _membership: FarmMembership,
 ) -> AssetRead:
-    return AssetRead.model_validate(await svc.update(farm_id, asset_id, data))
+    asset = await svc.update(farm_id, asset_id, data)
+    return AssetRead.of(asset, deletable=await svc.is_deletable(asset.id))
 
 
 @router.delete(
     "/{asset_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an asset",
+    description=(
+        "Refused with 409 once anything records the asset — a harvest, a feed "
+        "consumption, a purchase, a product's pool. Archive it instead; "
+        "`deletable` on the asset says up front which of the two applies."
+    ),
+    responses={409: {"description": "The asset is referenced by recorded history"}},
 )
 async def delete_asset(
     farm_id: int,

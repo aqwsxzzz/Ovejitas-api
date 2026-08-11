@@ -11,6 +11,9 @@ class AssetFactory(BaseFactory):
     # Left unset by default: a random int would break the 20-400 sanity CHECK,
     # and most tests do not care how long this animal gestates.
     gestation_days = None
+    # Active by default: a random timestamp here would archive the asset and
+    # drop it out of every default list.
+    archived_at = None
 
     @classmethod
     def name(cls) -> str:
