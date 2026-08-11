@@ -31,7 +31,7 @@ resources:
   operations: 1
 - tag: individuals
   file: individuals.yaml
-  operations: 6
+  operations: 7
 - tag: invitations
   file: invitations.yaml
   operations: 5

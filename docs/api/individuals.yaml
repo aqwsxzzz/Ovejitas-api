@@ -35,6 +35,12 @@ operations:
     event and its `birth_event_id` linked to that reproductive event. The mother must be `active` and under an `animal` asset.
   body: BirthCreate
   responses: {'201': BirthRead, '422': HTTPValidationError}
+- method: GET
+  path: /api/v1/farms/{farm_id}/individuals
+  summary: List every individual in a farm
+  description: Farm-wide counterpart to the per-asset list, for cases that span lots — picking a sire kept apart from the
+    females, for one. Filter with `status=active` and `asset_id`; search across tag and name.
+  responses: {'200': Page_IndividualRead_, '422': HTTPValidationError}
 types:
   BirthCreate:
     kind: object
