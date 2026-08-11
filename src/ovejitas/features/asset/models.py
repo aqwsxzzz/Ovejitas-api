@@ -57,7 +57,17 @@ class Asset(Base, TimestampMixin):
         SQLEnum(AssetMode, name="asset_mode", values_callable=lambda e: [m.value for m in e]),
         nullable=True,
     )
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Where this asset is: the `location`-kind asset containing it. A relationship
+    # rather than the free-text string it replaces, so it survives a rename and
+    # "what is in this paddock" is a query instead of a spelling coincidence.
+    # A location may itself sit in a location (paddock inside a field), guarded
+    # against cycles in the service. SET NULL on delete, matching produce_asset_id:
+    # removing a paddock empties the link rather than deleting what stood in it.
+    location_asset_id: Mapped[int | None] = mapped_column(
+        ForeignKey("asset.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     description: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     # The produce material asset this asset harvests into (e.g. a hen flock ->
     # an "Eggs" asset). Set on animal/crop assets; null until linked. SET NULL

@@ -216,11 +216,11 @@ class TestGetUpdateDelete:
         response = await client.patch(
             asset_url(authed_user.farm_id, asset_id),
             headers=authed_user.headers,
-            json={"location": "Galpón norte"},
+            json={"description": "Ponedoras Hy-Line"},
         )
 
         body = response.json()
-        assert body["location"] == "Galpón norte"
+        assert body["description"] == "Ponedoras Hy-Line"
         assert body["name"] == "Gallinas"
 
     async def test_delete_removes_asset(self, client: AsyncClient, authed_user: AuthedUser) -> None:

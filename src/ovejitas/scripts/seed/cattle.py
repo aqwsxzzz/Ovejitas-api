@@ -34,13 +34,17 @@ from ovejitas.features.user.models import User
 
 async def seed_cattle(db: AsyncSession, user: User, farm: Farm, today: datetime) -> None:
     assets = AssetService(db)
+    potrero = await assets.create(
+        farm.id,
+        AssetCreate(name="Potrero sur", kind=AssetKind.LOCATION),
+    )
     herd = await assets.create(
         farm.id,
         AssetCreate(
             name="Vacas lecheras",
             kind=AssetKind.ANIMAL,
             mode=AssetMode.INDIVIDUAL,
-            location="Potrero sur",
+            location_asset_id=potrero.id,
         ),
     )
     # The product provisions the pool that holds its stock — "Leche" is created

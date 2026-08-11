@@ -8,7 +8,7 @@ Companion to [events-and-actions.md](./events-and-actions.md), [domain-rebuild-p
 
 The event-sourced core is four tables; everything a farm *does* still resolves to `event` rows.
 
-- **`asset`** — any trackable thing on a farm: animals, crops, equipment, materials, produce pools, locations. Has a `kind` (classifier enum) and, for animals only, a `mode` (`aggregated` for a bulk/count flock, `individual` for tagged instances) and an optional `gestation_days` (20–400). A producer asset may link to a produce pool via `produce_asset_id`. `archived_at` retires it without destroying its history — see [Retiring an asset](#retiring-an-asset-archive-vs-delete).
+- **`asset`** — any trackable thing on a farm: animals, crops, equipment, materials, produce pools, locations. Has a `kind` (classifier enum) and, for animals only, a `mode` (`aggregated` for a bulk/count flock, `individual` for tagged instances) and an optional `gestation_days` (20–400). A producer asset may link to a produce pool via `produce_asset_id`. `location_asset_id` says which `location` asset contains it (see [Containment](#containment-where-an-asset-is)), and `archived_at` retires it without destroying its history — see [Retiring an asset](#retiring-an-asset-archive-vs-delete).
 - **`individual`** — one tagged instance of an `individual`-mode animal asset. Optional. Created only when tracking a specific animal with parentage, tag, birth date, and lifecycle status. Carries FK columns pointing at the events its lifecycle actions emitted (`acquisition_event_id`, `acquisition_expense_event_id`, `mortality_event_id`, `sale_event_id`, `birth_event_id`).
 - **`event`** — one immutable fact against an asset (and optionally a specific individual): produced, spent, earned, observed, reproduced, acquired, died, or stock-adjusted.
 - **`event_category`** — a per-farm label for events, scoped by `(farm_id, type, name)`. For `production` events a category *is the product* — it carries the product's unit of measure and owns the produce pool holding its stock (`produce_asset_id`, unique). Creating the category provisions the pool, so a product is one thing the farmer creates; `POST /assets` refuses `kind=produce`. Not global.
@@ -20,6 +20,16 @@ Beyond the core, several first-class tables carry structured domain state: **`cu
 `AssetKind` (`asset/models.py`) is a closed enum: `animal, crop, equipment, material, produce, location`. Two of these bear stock: `INVENTORY_KINDS = {material, produce}`. `produce` was split out of `material` in #48 — a material is an input you buy and consume (feed), a produce pool is an output you harvest into and sell (eggs, milk, a crop yield).
 
 `mode` is nullable and meaningful only for animals — it is null for material/equipment/location/crop/produce assets.
+
+## Containment: where an asset is
+
+`asset.location_asset_id` is a nullable FK to a `kind=location` asset in the same farm. It replaced the free-text `location` string, which was a look-alike rather than a relationship: nothing kept a spelling like `"Potrero sur"` in agreement with the location asset of that name, so "which animals are in this paddock" broke on the first rename or typo. The same mistake as `"Huevos"` existing as both a category and an asset, and retired the same way — the string does not survive alongside the link.
+
+- **Current state, not history.** The column says where the asset *is*. There is no movement event and no replay, so "what was in this paddock in March" is not answerable yet. That is deliberate: nothing reads it, and the shape stays open — when a move action lands it emits its own event (as every action here does) and keeps this column as the current-state projection.
+- **Nesting is allowed.** A location may itself sit in a location (pen → paddock → field). Cycles are refused by `asset/containment.py`, which walks up from the proposed container.
+- **Reads match the link, not descendants.** `GET /assets?location_asset_id=` returns what is *directly* in that location. An asset in a pen inside a paddock does not answer to the paddock. No rollup until a report needs one.
+- **`ON DELETE SET NULL`**, matching `produce_asset_id` — deleting a paddock empties the link rather than deleting what stood in it.
+- Search no longer covers location text. Find the location by name, then filter by its id.
 
 ## Retiring an asset: archive vs delete
 

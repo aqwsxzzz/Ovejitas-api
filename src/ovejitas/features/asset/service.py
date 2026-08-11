@@ -9,12 +9,15 @@ from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
+from ovejitas.features.asset.containment import assert_no_location_cycle, assert_valid_location
 from ovejitas.features.asset.deletion import blocking_reason, deletable_map
 from ovejitas.features.asset.models import Asset, AssetKind, AssetMode
 from ovejitas.features.asset.schemas import AssetCreate, AssetFilters, AssetUpdate
 from ovejitas.features.event.balance import asset_has_events
 
-SEARCH_COLUMNS = [Asset.name, Asset.description, Asset.location]
+# Location left out: it is a link now, not text. Search for the paddock by name,
+# then filter assets by `location_asset_id`.
+SEARCH_COLUMNS = [Asset.name, Asset.description]
 SORT_ALLOWED = {
     "name": Asset.name,
     "kind": Asset.kind,
@@ -31,6 +34,11 @@ class AssetService:
         self._reject_hand_authored_produce(data.kind)
         self._validate_kind_mode(data.kind, data.mode)
         self._validate_gestation_kind(data.kind, data.gestation_days)
+        if data.location_asset_id is not None:
+            # No cycle check: nothing can be inside an asset that does not exist yet.
+            await assert_valid_location(
+                self.db, farm_id=farm_id, location_asset_id=data.location_asset_id
+            )
         asset = Asset(farm_id=farm_id, **data.model_dump())
         self.db.add(asset)
         await self.db.commit()
@@ -50,6 +58,13 @@ class AssetService:
         if updates.get("produce_asset_id") is not None:
             source_kind = updates.get("kind", asset.kind)
             await self._validate_produce_link(farm_id, source_kind, updates["produce_asset_id"])
+        if updates.get("location_asset_id") is not None:
+            await assert_valid_location(
+                self.db, farm_id=farm_id, location_asset_id=updates["location_asset_id"]
+            )
+            await assert_no_location_cycle(
+                self.db, asset_id=asset_id, location_asset_id=updates["location_asset_id"]
+            )
         structural_changed = ("kind" in updates and updates["kind"] != asset.kind) or (
             "mode" in updates and updates["mode"] != asset.mode
         )
@@ -165,6 +180,8 @@ class AssetService:
             stmt = stmt.where(Asset.kind == filters.kind)
         if filters.mode is not None:
             stmt = stmt.where(Asset.mode == filters.mode)
+        if filters.location_asset_id is not None:
+            stmt = stmt.where(Asset.location_asset_id == filters.location_asset_id)
         if filters.archived:
             stmt = stmt.where(Asset.archived_at.is_not(None))
         else:

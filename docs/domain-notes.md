@@ -14,7 +14,7 @@ Non-obvious domain knowledge distilled from legacy planning docs (temporal-datab
 ### Phase 2 — Extended — mostly SHIPPED
 - Full breeding management (→ `event` type=`reproductive`; `pregnancy` action) — SHIPPED
 - Financial tracking per unit / individual (→ `event` type=`expense`/`income`) — SHIPPED
-- Location history & movement tracking — still deferred (add `location` table / reuse `event`)
+- Location containment — SHIPPED as current state (`asset.location_asset_id` → a `location` asset). Movement *history* still deferred: when it lands it is a move action emitting its own event, with this column kept as the current-state projection.
 - Vaccination schedules with due-date reminders — still deferred (see "Deferred concerns")
 
 ### Phase 3 — Nice-to-have — partly SHIPPED
@@ -70,7 +70,7 @@ These legacy features are *not* in v1 scope but the schema should not preclude t
 - **Scheduled reminders** (vaccination due dates) — requires a notification system (email/push) + background jobs. Plan says "no background jobs in v1". Data model already supports the query (`next_due_date` in payload). Add ARQ + a daily job when this becomes real.
 - **Materialized views for analytics** — legacy plan suggested `animal_summary`. Skip until a report actually hurts.
 - **Partitioning** by date — premature; revisit when `event` table hits tens of millions of rows.
-- **Location as a first-class asset** — for v1, `asset.location` is free text. If farmers start moving individuals between real locations and need history, introduce a `location` table and convert movements into events.
+- **Movement history** — containment itself is settled: `asset.location_asset_id` points at a `location` asset, the free-text `location` string is gone, and nesting works. What is *not* built is history — the location of an asset at a past date. When a farmer needs it, add a move action that emits a movement event and keeps `location_asset_id` as the current-state projection; no separate `location` table, since a location is already an asset kind.
 - **Vaccination-type catalog** — legacy had a `vaccination_types` lookup table (species-specific recommended frequency). Not in v1; the user models this as `event_category` with notes. Revisit if multi-farm standardization becomes a goal.
 - **Weight-unit normalization** — `unit` is a closed enum (`Unit`: g/kg/lb/t/ml/l/gal/unit/dozen/head) shared across events, categories, and material/produce rows. UI converts at display time; DB stores the enum value as recorded.
 

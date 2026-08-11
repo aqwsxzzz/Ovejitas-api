@@ -210,17 +210,16 @@
           "kind": {
             "$ref": "#/components/schemas/AssetKind"
           },
-          "location": {
+          "location_asset_id": {
             "anyOf": [
               {
-                "maxLength": 255,
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Location"
+            "title": "Location Asset Id"
           },
           "mode": {
             "anyOf": [
@@ -545,16 +544,16 @@
           "kind": {
             "$ref": "#/components/schemas/AssetKind"
           },
-          "location": {
+          "location_asset_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Location"
+            "title": "Location Asset Id"
           },
           "mode": {
             "anyOf": [
@@ -593,7 +592,7 @@
           "name",
           "kind",
           "mode",
-          "location",
+          "location_asset_id",
           "description",
           "produce_asset_id",
           "gestation_days",
@@ -671,17 +670,16 @@
               }
             ]
           },
-          "location": {
+          "location_asset_id": {
             "anyOf": [
               {
-                "maxLength": 255,
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Location"
+            "title": "Location Asset Id"
           },
           "mode": {
             "anyOf": [
@@ -5765,7 +5763,7 @@
             }
           },
           {
-            "description": "Search across name, description, location",
+            "description": "Search across name, description",
             "in": "query",
             "name": "q",
             "required": false,
@@ -5778,7 +5776,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Search across name, description, location",
+              "description": "Search across name, description",
               "title": "Q"
             }
           },
@@ -5887,6 +5885,22 @@
                 }
               ],
               "title": "Mode"
+            }
+          },
+          {
+            "in": "query",
+            "name": "location_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Location Asset Id"
             }
           },
           {

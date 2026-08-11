@@ -38,7 +38,7 @@ types:
       name: string
       kind: animal | crop | equipment | material | produce | location
       mode: aggregated | individual | null
-      location: string | null
+      location_asset_id: integer | null
       description: string | null
       gestation_days: integer | null
   AssetKindCount:
@@ -49,15 +49,15 @@ types:
       count: integer
   AssetRead:
     kind: object
-    required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, gestation_days, archived_at, created_at,
-      updated_at, deletable]
+    required: [id, farm_id, name, kind, mode, location_asset_id, description, produce_asset_id, gestation_days, archived_at,
+      created_at, updated_at, deletable]
     fields:
       id: integer
       farm_id: integer
       name: string
       kind: animal | crop | equipment | material | produce | location
       mode: aggregated | individual | null
-      location: string | null
+      location_asset_id: integer | null
       description: string | null
       produce_asset_id: integer | null
       gestation_days: integer | null
@@ -76,7 +76,7 @@ types:
       name: string | null
       kind: animal | crop | equipment | material | produce | location | null
       mode: aggregated | individual | null
-      location: string | null
+      location_asset_id: integer | null
       description: string | null
       produce_asset_id: integer | null
       gestation_days: integer | null
