@@ -8,7 +8,7 @@ Companion to [events-and-actions.md](./events-and-actions.md), [domain-rebuild-p
 
 The event-sourced core is four tables; everything a farm *does* still resolves to `event` rows.
 
-- **`asset`** — any trackable thing on a farm: animals, crops, equipment, materials, produce pools, locations. Has a `kind` (classifier enum) and, for animals only, a `mode` (`aggregated` for a bulk/count flock, `individual` for tagged instances) and an optional `gestation_days` (20–400). A producer asset may link to a produce pool via `produce_asset_id`.
+- **`asset`** — any trackable thing on a farm: animals, crops, equipment, materials, produce pools, locations. Has a `kind` (classifier enum) and, for animals only, a `mode` (`aggregated` for a bulk/count flock, `individual` for tagged instances) and an optional `gestation_days` (20–400). A producer asset may link to a produce pool via `produce_asset_id`. `archived_at` retires it without destroying its history — see [Retiring an asset](#retiring-an-asset-archive-vs-delete).
 - **`individual`** — one tagged instance of an `individual`-mode animal asset. Optional. Created only when tracking a specific animal with parentage, tag, birth date, and lifecycle status. Carries FK columns pointing at the events its lifecycle actions emitted (`acquisition_event_id`, `acquisition_expense_event_id`, `mortality_event_id`, `sale_event_id`, `birth_event_id`).
 - **`event`** — one immutable fact against an asset (and optionally a specific individual): produced, spent, earned, observed, reproduced, acquired, died, or stock-adjusted.
 - **`event_category`** — a per-farm label for events, scoped by `(farm_id, type, name)`. For `production` events a category *is the product* — it carries the product's unit of measure and owns the produce pool holding its stock (`produce_asset_id`, unique). Creating the category provisions the pool, so a product is one thing the farmer creates; `POST /assets` refuses `kind=produce`. Not global.
@@ -20,6 +20,32 @@ Beyond the core, several first-class tables carry structured domain state: **`cu
 `AssetKind` (`asset/models.py`) is a closed enum: `animal, crop, equipment, material, produce, location`. Two of these bear stock: `INVENTORY_KINDS = {material, produce}`. `produce` was split out of `material` in #48 — a material is an input you buy and consume (feed), a produce pool is an output you harvest into and sell (eggs, milk, a crop yield).
 
 `mode` is nullable and meaningful only for animals — it is null for material/equipment/location/crop/produce assets.
+
+## Retiring an asset: archive vs delete
+
+An asset has three end states, and only one of them is usually right.
+
+`archived_at` (nullable `timestamptz`) is how a farmer takes an asset out of circulation — a flock sold, a field pulled, a tractor gone. Set it through the normal `PATCH /assets/{id}`, clear it with `null` to bring the asset back. Archiving is always permitted no matter how much history the asset carries, because it destroys nothing. Archived assets are **absent from the default asset list** (`?archived=true` returns them instead) and from `GET /assets/summary`, but still resolve by id so every event, harvest and report that names them keeps reading correctly. Archiving an asset does **not** touch its individuals — they carry their own `status`.
+
+Hard delete is refused once anything records the asset. Six foreign keys point at `asset.id` with `ON DELETE RESTRICT`:
+
+| table | column | what it means |
+|---|---|---|
+| `produce_lot` | `producer_asset_id` | the asset produced a harvest |
+| `produce_lot` | `produce_asset_id` | the pool holds harvested lots |
+| `event_category` | `produce_asset_id` | the pool backs a production category |
+| `material_consumption` | `consumer_asset_id` | the asset ate a material |
+| `material_consumption` | `material_asset_id` | the material was consumed |
+| `material_purchase` | `material_asset_id` | the material was purchased |
+
+A seventh path runs through individuals: `pregnancy` holds its individual with RESTRICT, so the CASCADE that clears an asset's individuals is refused too. Events, individuals and production targets cascade away cleanly; `asset.produce_asset_id` is SET NULL.
+
+`asset/deletion.py` declares all seven in one list and both readers use it, so they cannot disagree:
+
+- `AssetService.delete` checks it first and raises `ConflictError` → **409** with a message naming the blocking record ("Cannot delete an asset with recorded harvests"), never a 500. An `IntegrityError` catch sits behind the guard as a backstop.
+- `AssetRead.deletable` exposes the same answer, computed for a whole page in one correlated-`EXISTS` query, so a client can hide Delete and offer Retire instead of letting the farmer discover the refusal by clicking. `deletable == true` implies `DELETE` returns 204; `false` implies 409.
+
+Cascade deletion is deliberately not offered: `produce_lot` rows are recorded harvests feeding the productivity report, the pool's stock balance and revenue attribution. Deleting them to satisfy a foreign key would rewrite ledger history.
 
 ## Event types
 

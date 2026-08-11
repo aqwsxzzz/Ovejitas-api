@@ -489,11 +489,28 @@
         "type": "object"
       },
       "AssetRead": {
+        "description": "An asset as the API returns it: its columns plus whether DELETE can succeed.\n\n``deletable`` has no default and no model attribute behind it \u2014 it must be\npassed through ``of()``, so a caller cannot accidentally serialize an asset\nwith an optimistic guess about an outcome it never checked.",
         "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "deletable": {
+            "title": "Deletable",
+            "type": "boolean"
           },
           "description": {
             "anyOf": [
@@ -580,8 +597,10 @@
           "description",
           "produce_asset_id",
           "gestation_days",
+          "archived_at",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "deletable"
         ],
         "title": "AssetRead",
         "type": "object"
@@ -605,6 +624,18 @@
       "AssetUpdate": {
         "additionalProperties": false,
         "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
           "description": {
             "anyOf": [
               {
@@ -5857,6 +5888,16 @@
               ],
               "title": "Mode"
             }
+          },
+          {
+            "in": "query",
+            "name": "archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Archived",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -5996,6 +6037,7 @@
     },
     "/api/v1/farms/{farm_id}/assets/{asset_id}": {
       "delete": {
+        "description": "Refused with 409 once anything records the asset \u2014 a harvest, a feed consumption, a purchase, a product's pool. Archive it instead; `deletable` on the asset says up front which of the two applies.",
         "operationId": "assets_delete_asset",
         "parameters": [
           {
@@ -6021,6 +6063,9 @@
           "204": {
             "description": "Successful Response"
           },
+          "409": {
+            "description": "The asset is referenced by recorded history"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6043,6 +6088,7 @@
         ]
       },
       "get": {
+        "description": "Resolves archived assets too, so history views can still name them.",
         "operationId": "assets_get_asset",
         "parameters": [
           {
@@ -6097,6 +6143,7 @@
         ]
       },
       "patch": {
+        "description": "Set `archived_at` to retire the asset; set it to null to bring it back.",
         "operationId": "assets_update_asset",
         "parameters": [
           {

@@ -1,11 +1,15 @@
+from collections.abc import Sequence
+
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ovejitas.core.errors import NotFoundError, ValidationError
+from ovejitas.core.errors import ConflictError, NotFoundError, ValidationError
 from ovejitas.core.filters import apply_date_range
 from ovejitas.core.pagination import PageParams
 from ovejitas.core.search import apply_search
 from ovejitas.core.sorting import apply_sort
+from ovejitas.features.asset.deletion import blocking_reason, deletable_map
 from ovejitas.features.asset.models import Asset, AssetKind, AssetMode
 from ovejitas.features.asset.schemas import AssetCreate, AssetFilters, AssetUpdate
 from ovejitas.features.event.balance import asset_has_events
@@ -104,15 +108,43 @@ class AssetService:
             raise ValidationError("produce_asset_id must reference a produce asset")
 
     async def delete(self, farm_id: int, asset_id: int) -> None:
+        """Erase an asset, refusing once anything records it.
+
+        The refusal is named before the delete is attempted so the farmer is told
+        *which* record to go look at. The IntegrityError catch behind it is the
+        backstop for any RESTRICT the guard does not yet know about — a 409 with
+        a vague message still beats a 500 with an empty body.
+        """
         asset = await self.get(farm_id, asset_id)
-        await self.db.delete(asset)
-        await self.db.commit()
+        reason = await blocking_reason(self.db, asset_id)
+        if reason is not None:
+            raise ConflictError(reason)
+        try:
+            await self.db.delete(asset)
+            await self.db.commit()
+        except IntegrityError as exc:
+            await self.db.rollback()
+            raise ConflictError(
+                "Asset is referenced by another record and cannot be deleted"
+            ) from exc
+
+    async def is_deletable(self, asset_id: int) -> bool:
+        """Whether DELETE on this asset would succeed — same check the guard runs."""
+        return (await blocking_reason(self.db, asset_id)) is None
+
+    async def deletable_flags(self, assets: Sequence[Asset]) -> dict[int, bool]:
+        """The same answer for a whole page, in one query rather than one per row."""
+        return await deletable_map(self.db, [asset.id for asset in assets])
 
     async def count_by_kind(self, farm_id: int) -> list[tuple[AssetKind, int]]:
-        """One (kind, count) pair per kind present in the farm."""
+        """One (kind, count) pair per kind present in the farm.
+
+        Archived assets are left out: this feeds the "what do I have" summary,
+        and a flock the farmer already sold is not something they still have.
+        """
         stmt = (
             select(Asset.kind, func.count())
-            .where(Asset.farm_id == farm_id)
+            .where(Asset.farm_id == farm_id, Asset.archived_at.is_(None))
             .group_by(Asset.kind)
             .order_by(Asset.kind)
         )
@@ -133,6 +165,10 @@ class AssetService:
             stmt = stmt.where(Asset.kind == filters.kind)
         if filters.mode is not None:
             stmt = stmt.where(Asset.mode == filters.mode)
+        if filters.archived:
+            stmt = stmt.where(Asset.archived_at.is_not(None))
+        else:
+            stmt = stmt.where(Asset.archived_at.is_(None))
         stmt = apply_date_range(stmt, Asset.created_at, filters.date_from, filters.date_to)
         stmt = apply_search(stmt, search, SEARCH_COLUMNS)
         stmt = apply_sort(stmt, sort, SORT_ALLOWED)

@@ -1,6 +1,7 @@
+from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import CheckConstraint, ForeignKey, Identity, Index, Integer, String
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Identity, Index, Integer, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -71,3 +72,12 @@ class Asset(Base, TimestampMixin):
     # is simply never derived from it. Only animals gestate; every other kind
     # leaves it null (enforced in the service alongside the mode rule).
     gestation_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # When the farmer took this asset out of circulation — sold the flock, pulled
+    # the field, retired the tractor. An asset with events cannot change kind or
+    # mode and cannot be deleted once it has harvests, so without this there is
+    # no supported way to stop it appearing in every picker forever. Archiving
+    # destroys nothing: history, harvests and stock all stay exactly as recorded.
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )

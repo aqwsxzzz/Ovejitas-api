@@ -16,16 +16,20 @@ operations:
 - method: GET
   path: /api/v1/farms/{farm_id}/assets/{asset_id}
   summary: Get one asset
+  description: Resolves archived assets too, so history views can still name them.
   responses: {'200': AssetRead, '422': HTTPValidationError}
 - method: PATCH
   path: /api/v1/farms/{farm_id}/assets/{asset_id}
   summary: Update an asset
+  description: Set `archived_at` to retire the asset; set it to null to bring it back.
   body: AssetUpdate
   responses: {'200': AssetRead, '422': HTTPValidationError}
 - method: DELETE
   path: /api/v1/farms/{farm_id}/assets/{asset_id}
   summary: Delete an asset
-  responses: {'204': any, '422': HTTPValidationError}
+  description: Refused with 409 once anything records the asset — a harvest, a feed consumption, a purchase, a product's pool.
+    Archive it instead; `deletable` on the asset says up front which of the two applies.
+  responses: {'204': any, '409': any, '422': HTTPValidationError}
 types:
   AssetCreate:
     kind: object
@@ -45,7 +49,8 @@ types:
       count: integer
   AssetRead:
     kind: object
-    required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, gestation_days, created_at, updated_at]
+    required: [id, farm_id, name, kind, mode, location, description, produce_asset_id, gestation_days, archived_at, created_at,
+      updated_at, deletable]
     fields:
       id: integer
       farm_id: integer
@@ -56,8 +61,10 @@ types:
       description: string | null
       produce_asset_id: integer | null
       gestation_days: integer | null
+      archived_at: string (date-time) | null
       created_at: string (date-time)
       updated_at: string (date-time)
+      deletable: boolean
   AssetSummary:
     kind: object
     required: [data]
@@ -73,6 +80,7 @@ types:
       description: string | null
       produce_asset_id: integer | null
       gestation_days: integer | null
+      archived_at: string (date-time) | null
   HTTPValidationError:
     kind: object
     fields:
