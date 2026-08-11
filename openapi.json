@@ -210,17 +210,16 @@
           "kind": {
             "$ref": "#/components/schemas/AssetKind"
           },
-          "location": {
+          "location_asset_id": {
             "anyOf": [
               {
-                "maxLength": 255,
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Location"
+            "title": "Location Asset Id"
           },
           "mode": {
             "anyOf": [
@@ -545,16 +544,16 @@
           "kind": {
             "$ref": "#/components/schemas/AssetKind"
           },
-          "location": {
+          "location_asset_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Location"
+            "title": "Location Asset Id"
           },
           "mode": {
             "anyOf": [
@@ -593,7 +592,7 @@
           "name",
           "kind",
           "mode",
-          "location",
+          "location_asset_id",
           "description",
           "produce_asset_id",
           "gestation_days",
@@ -671,17 +670,16 @@
               }
             ]
           },
-          "location": {
+          "location_asset_id": {
             "anyOf": [
               {
-                "maxLength": 255,
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Location"
+            "title": "Location Asset Id"
           },
           "mode": {
             "anyOf": [
@@ -5765,7 +5763,7 @@
             }
           },
           {
-            "description": "Search across name, description, location",
+            "description": "Search across name, description",
             "in": "query",
             "name": "q",
             "required": false,
@@ -5778,7 +5776,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Search across name, description, location",
+              "description": "Search across name, description",
               "title": "Q"
             }
           },
@@ -5887,6 +5885,22 @@
                 }
               ],
               "title": "Mode"
+            }
+          },
+          {
+            "in": "query",
+            "name": "location_asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Location Asset Id"
             }
           },
           {
@@ -8381,6 +8395,179 @@
         "summary": "Update an event category",
         "tags": [
           "event-categories"
+        ]
+      }
+    },
+    "/api/v1/farms/{farm_id}/individuals": {
+      "get": {
+        "description": "Farm-wide counterpart to the per-asset list, for cases that span lots \u2014 picking a sire kept apart from the females, for one. Filter with `status=active` and `asset_id`; search across tag and name.",
+        "operationId": "individuals_list_farm_individuals_endpoint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "farm_id",
+            "required": true,
+            "schema": {
+              "title": "Farm Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Search across name, tag",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search across name, tag",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "e.g. -created_at,tag",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. -created_at,tag",
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/IndividualStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_IndividualRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List every individual in a farm",
+        "tags": [
+          "individuals"
         ]
       }
     },

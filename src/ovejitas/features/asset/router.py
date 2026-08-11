@@ -33,7 +33,7 @@ async def list_assets(
     _membership: FarmMembership,
     page: Annotated[PageParams, Depends()],
     filters: Annotated[AssetFilters, Depends(farm_local(AssetFilters))],
-    q: Annotated[str | None, Query(description="Search across name, description, location")] = None,
+    q: Annotated[str | None, Query(description="Search across name, description")] = None,
     sort: Annotated[str | None, Query(description="e.g. -created_at,name")] = None,
 ) -> Page[AssetRead]:
     rows, total = await svc.list_assets(

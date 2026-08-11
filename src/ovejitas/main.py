@@ -17,6 +17,7 @@ from ovejitas.features.farm_invitation.router import router as farm_invitation_r
 from ovejitas.features.farm_member.router import router as farm_member_router
 from ovejitas.features.flock.router import router as flock_router
 from ovejitas.features.harvest.router import router as harvest_router
+from ovejitas.features.individual.farm_router import router as farm_individual_router
 from ovejitas.features.individual.router import router as individual_router
 from ovejitas.features.material_consumption.router import router as material_consumption_router
 from ovejitas.features.material_purchase.router import router as material_purchase_router
@@ -67,6 +68,7 @@ def create_app() -> FastAPI:
     app.include_router(farm_member_router, prefix=API_PREFIX)
     app.include_router(asset_router, prefix=API_PREFIX)
     app.include_router(individual_router, prefix=API_PREFIX)
+    app.include_router(farm_individual_router, prefix=API_PREFIX)
     app.include_router(currency_router, prefix=API_PREFIX)
     app.include_router(event_category_router, prefix=API_PREFIX)
     app.include_router(event_router, prefix=API_PREFIX)

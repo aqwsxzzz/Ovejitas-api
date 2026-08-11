@@ -16,7 +16,9 @@ class AssetCreate(StrictModel):
     name: str = Field(min_length=1, max_length=255)
     kind: AssetKind
     mode: AssetMode | None = None
-    location: OptionalStr = Field(default=None, max_length=255)
+    # The location asset containing this one. Replaces the free-text `location`
+    # string: a link survives renames, a string does not.
+    location_asset_id: int | None = None
     description: OptionalStr = Field(default=None, max_length=1024)
     gestation_days: GestationDays = None
 
@@ -25,7 +27,8 @@ class AssetUpdate(StrictModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     kind: AssetKind | None = None
     mode: AssetMode | None = None
-    location: OptionalStr = Field(default=None, max_length=255)
+    # Set to move the asset, null to take it out of any location.
+    location_asset_id: int | None = None
     description: OptionalStr = Field(default=None, max_length=1024)
     produce_asset_id: int | None = None
     gestation_days: GestationDays = None
@@ -45,7 +48,7 @@ class AssetFields(BaseModel):
     name: str
     kind: AssetKind
     mode: AssetMode | None
-    location: str | None
+    location_asset_id: int | None
     description: str | None
     produce_asset_id: int | None
     gestation_days: int | None
@@ -72,6 +75,9 @@ class AssetRead(AssetFields):
 class AssetFilters(FilterParams):
     kind: AssetKind | None = None
     mode: AssetMode | None = None
+    # Exact containment only — an asset in a pen inside a paddock does not answer
+    # to the paddock. Nothing needs a descendant rollup yet.
+    location_asset_id: int | None = None
     # Retired assets are absent unless asked for, so every existing list call
     # quietly stops offering them without having to opt in.
     archived: bool = False

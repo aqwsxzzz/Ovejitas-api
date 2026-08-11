@@ -85,6 +85,13 @@ class IndividualFilters(FilterParams):
     status: IndividualStatus | None = None
 
 
+class FarmIndividualFilters(IndividualFilters):
+    """Filters for the farm-wide list. ``asset_id`` is meaningless on the
+    per-asset route (the path already fixes it), so it lives only here."""
+
+    asset_id: int | None = None
+
+
 class OffspringCreate(StrictModel):
     tag: str = Field(min_length=1, max_length=128)
     name: OptionalStr = Field(default=None, max_length=255)

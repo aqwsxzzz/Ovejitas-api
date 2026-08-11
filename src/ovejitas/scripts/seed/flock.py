@@ -40,13 +40,21 @@ from ovejitas.features.user.models import User
 
 async def seed_flock(db: AsyncSession, user: User, farm: Farm, today: datetime) -> None:
     assets = AssetService(db)
+    galpon = await assets.create(
+        farm.id,
+        AssetCreate(name="Galpón norte", kind=AssetKind.LOCATION),
+    )
+    silo = await assets.create(
+        farm.id,
+        AssetCreate(name="Silo principal", kind=AssetKind.LOCATION),
+    )
     flock = await assets.create(
         farm.id,
         AssetCreate(
             name="Gallinas ponedoras",
             kind=AssetKind.ANIMAL,
             mode=AssetMode.AGGREGATED,
-            location="Galpón norte",
+            location_asset_id=galpon.id,
         ),
     )
     # The product provisions the pool that holds its stock — "Huevos" is created
@@ -63,7 +71,7 @@ async def seed_flock(db: AsyncSession, user: User, farm: Farm, today: datetime) 
             name="Maíz molido",
             kind=AssetKind.MATERIAL,
             mode=AssetMode.AGGREGATED,
-            location="Silo principal",
+            location_asset_id=silo.id,
         ),
     )
     # link the flock to its produce asset so harvests flow into "Huevos"
